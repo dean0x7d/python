@@ -74,8 +74,8 @@
 //
 #include <patchlevel.h>
 
-#if PY_MAJOR_VERSION<2 || PY_MAJOR_VERSION==2 && PY_MINOR_VERSION<2
-#error Python 2.2 or higher is required for this version of Boost.Python.
+#if PY_MAJOR_VERSION<2 || PY_MAJOR_VERSION==2 && PY_MINOR_VERSION<7
+#error Python 2.7 or higher is required for this version of Boost.Python.
 #endif
 
 //
@@ -86,39 +86,6 @@
 # if defined(__GNUC__) && defined(__CYGWIN__)
 
 #  define SIZEOF_LONG 4
-
-#  if PY_MAJOR_VERSION < 2 || PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION <= 2
-
-typedef int pid_t;
-
-#   define WORD_BIT 32
-#   define hypot _hypot
-#   include <stdio.h>
-
-#   if PY_MAJOR_VERSION < 2
-#    define HAVE_CLOCK
-#    define HAVE_STRFTIME
-#    define HAVE_STRERROR
-#   endif
-
-#   define NT_THREADS
-
-#   ifndef NETSCAPE_PI
-#    define USE_SOCKET
-#   endif
-
-#   ifdef USE_DL_IMPORT
-#    define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
-#   endif
-
-#   ifdef USE_DL_EXPORT
-#    define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
-#    define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
-#   endif
-
-#   define HAVE_LONG_LONG 1
-#   define LONG_LONG long long
-#  endif
 
 # elif defined(__MWERKS__)
 
@@ -136,11 +103,7 @@ typedef int pid_t;
 
 #endif // _WIN32
 
-#if PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION == 2 && PY_MICRO_VERSION < 2
-# include <boost/python/detail/python22_fixed.h>
-#else
 # include <Python.h>
-#endif
 
 #ifdef BOOST_PYTHON_ULONG_MAX_UNDEFINED
 # undef ULONG_MAX
@@ -169,24 +132,6 @@ typedef int pid_t;
 #  undef _CRT_NOFORCE_MANIFEST
 # endif
 #endif
-
-#if !defined(PY_MAJOR_VERSION) || PY_MAJOR_VERSION < 2
-# define PyObject_INIT(op, typeobj) \
-        ( (op)->ob_type = (typeobj), _Py_NewReference((PyObject *)(op)), (op) )
-#endif
-
-// Define Python 3 macros for Python 2.x
-#if PY_VERSION_HEX < 0x02060000
-
-# define Py_TYPE(o)    (((PyObject*)(o))->ob_type)
-# define Py_REFCNT(o)  (((PyObject*)(o))->ob_refcnt)
-# define Py_SIZE(o)    (((PyVarObject*)(o))->ob_size)
-
-# define PyVarObject_HEAD_INIT(type, size) \
-        PyObject_HEAD_INIT(type) size,
-
-#endif
-
 
 #ifdef __MWERKS__
 # pragma warn_possunwant off

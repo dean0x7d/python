@@ -10,19 +10,9 @@
 
 namespace boost { namespace python {
 
-#if PY_VERSION_HEX >= 0x02050000
-
-typedef Py_ssize_t ssize_t;
-ssize_t const ssize_t_max = PY_SSIZE_T_MAX;
-ssize_t const ssize_t_min = PY_SSIZE_T_MIN;
-
-#else
-
-typedef int ssize_t;
-ssize_t const ssize_t_max = INT_MAX;
-ssize_t const ssize_t_min = INT_MIN;
-
-#endif
+using ssize_t = Py_ssize_t;
+constexpr ssize_t ssize_t_max = PY_SSIZE_T_MAX;
+constexpr ssize_t ssize_t_min = PY_SSIZE_T_MIN;
 
 }} // namespace boost::python
 

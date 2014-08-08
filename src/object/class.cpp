@@ -374,12 +374,7 @@ namespace objects
               // like, so we'll store the total size of the object
               // there. A negative number indicates that the extra
               // instance memory is not yet allocated to any holders.
-#if PY_VERSION_HEX >= 0x02060000
-              Py_SIZE(result) =
-#else
-              result->ob_size =
-#endif
-                  -(static_cast<int>(offsetof(instance<>,storage) + instance_size));
+              Py_SIZE(result) = -(static_cast<int>(offsetof(instance<>,storage) + instance_size));
           }
           return (PyObject*)result;
       }

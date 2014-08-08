@@ -109,11 +109,7 @@ namespace detail
 #endif
 
 // Bool is not signed.
-#if PY_VERSION_HEX >= 0x02030000
 BOOST_PYTHON_TO_PYTHON_BY_VALUE(bool, ::PyBool_FromLong(x), &PyBool_Type)
-#else
-BOOST_PYTHON_TO_PYTHON_BY_VALUE(bool, ::PyInt_FromLong(x), &PyInt_Type)
-#endif
   
 // note: handles signed char and unsigned char, but not char (see below)
 BOOST_PYTHON_TO_INT(char)

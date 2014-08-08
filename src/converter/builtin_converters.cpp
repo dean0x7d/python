@@ -154,7 +154,7 @@ namespace
               return 0;
 
           return (
-#if PY_VERSION_HEX >= 0x02040000 && defined(BOOST_PYTHON_BOOL_INT_STRICT)
+#if defined(BOOST_PYTHON_BOOL_INT_STRICT)
           !PyBool_Check(obj) &&
 #endif
           (PyInt_Check(obj) || PyLong_Check(obj)))
@@ -186,7 +186,7 @@ namespace
               return 0;
 
           return (
-#if PY_VERSION_HEX >= 0x02040000 && defined(BOOST_PYTHON_BOOL_INT_STRICT)
+#if defined(BOOST_PYTHON_BOOL_INT_STRICT)
           !PyBool_Check(obj) &&
 #endif
           (PyInt_Check(obj) || PyLong_Check(obj)))
@@ -308,7 +308,7 @@ namespace
       {
 #if PY_VERSION_HEX >= 0x03000000
           return obj == Py_None || PyLong_Check(obj) ? &py_object_identity : 0;
-#elif PY_VERSION_HEX >= 0x02040000 && defined(BOOST_PYTHON_BOOL_INT_STRICT)
+#elif defined(BOOST_PYTHON_BOOL_INT_STRICT)
           return obj == Py_None || PyBool_Check(obj) ? &py_object_identity : 0;
 #else
           return obj == Py_None || PyInt_Check(obj) ? &py_object_identity : 0;
@@ -322,11 +322,7 @@ namespace
 
       static PyTypeObject const* get_pytype()
       {
-#if PY_VERSION_HEX >= 0x02030000
-        return &PyBool_Type;
-#else
-        return &PyInt_Type;
-#endif
+          return &PyBool_Type;
       }
   };
 
