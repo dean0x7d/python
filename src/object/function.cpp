@@ -166,7 +166,6 @@ PyObject* function::call(PyObject* args, PyObject* keywords) const
                     else
                     {
                         // build a new arg tuple, will adjust its size later
-                        assert(max_arity <= static_cast<std::size_t>(ssize_t_max));
                         inner_args = handle<>(
                             PyTuple_New(static_cast<ssize_t>(max_arity)));
 
@@ -754,7 +753,7 @@ object function_object(
     return python::object(
         python::detail::new_non_null_reference(
             new function(
-                f, keywords.first, keywords.second - keywords.first)));
+                f, keywords.first, static_cast<unsigned>(keywords.second - keywords.first))));
 }
 
 object function_object(py_function const& f)

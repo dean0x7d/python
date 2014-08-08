@@ -433,7 +433,7 @@ namespace
           std::wstring result(::PyObject_Length(intermediate), L' ');
           if (!result.empty())
           {
-              int err = PyUnicode_AsWideChar(
+              auto err = PyUnicode_AsWideChar(
 #if PY_VERSION_HEX < 0x03020000
                   (PyUnicodeObject *)
 #endif
