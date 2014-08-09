@@ -5,68 +5,39 @@
 // accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 
-# include <boost/config.hpp>
-# include <boost/type.hpp>
-# include <boost/mpl/if.hpp>
-# include <boost/type_traits/object_traits.hpp>
-# include <boost/type_traits/cv_traits.hpp>
 # include <boost/python/tag.hpp>
 
 namespace boost { namespace python { namespace detail {
 
-template<class T> class borrowed
-{ 
-    typedef T type;
+template<class T> 
+class borrowed { 
+    using type = T;
 };
 
 template<typename T>
-struct is_borrowed_ptr
-{
-    BOOST_STATIC_CONSTANT(bool, value = false); 
-};
-
-#  if !defined(__MWERKS__) || __MWERKS__ > 0x3000
-template<typename T>
-struct is_borrowed_ptr<borrowed<T>*>
-{
-    BOOST_STATIC_CONSTANT(bool, value = true);
+struct is_borrowed_ptr {
+    static constexpr bool value = false;
 };
 
 template<typename T>
-struct is_borrowed_ptr<borrowed<T> const*>
-{
-    BOOST_STATIC_CONSTANT(bool, value = true);
+struct is_borrowed_ptr<borrowed<T>*> {
+    static constexpr bool value = true;
 };
 
 template<typename T>
-struct is_borrowed_ptr<borrowed<T> volatile*>
-{
-    BOOST_STATIC_CONSTANT(bool, value = true);
+struct is_borrowed_ptr<borrowed<T> const*> {
+    static constexpr bool value = true;
 };
 
 template<typename T>
-struct is_borrowed_ptr<borrowed<T> const volatile*>
-{
-    BOOST_STATIC_CONSTANT(bool, value = true);
+struct is_borrowed_ptr<borrowed<T> volatile*> {
+    static constexpr bool value = true;
 };
-#  else
-template<typename T>
-struct is_borrowed
-{
-    BOOST_STATIC_CONSTANT(bool, value = false);
-};
-template<typename T>
-struct is_borrowed<borrowed<T> >
-{
-    BOOST_STATIC_CONSTANT(bool, value = true);
-};
-template<typename T>
-struct is_borrowed_ptr<T*>
-    : is_borrowed<typename remove_cv<T>::type>
-{
-};
-#  endif 
 
+template<typename T>
+struct is_borrowed_ptr<borrowed<T> const volatile*> {
+    static constexpr bool value = true;
+};
 
 }
 
