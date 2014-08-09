@@ -378,10 +378,6 @@ namespace detail
         max_args,                                                                           \
         BOOST_PP_SUB_D(1, max_args, min_args))
 
-// deprecated macro names (to be removed)
-#define BOOST_PYTHON_FUNCTION_GENERATOR BOOST_PYTHON_FUNCTION_OVERLOADS
-#define BOOST_PYTHON_MEM_FUN_GENERATOR BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS
-
 ///////////////////////////////////////////////////////////////////////////////
 #endif // DEFAULTS_GEN_JDG20020807_HPP
 
