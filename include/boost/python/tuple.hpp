@@ -9,8 +9,6 @@
 
 #include <boost/python/object.hpp>
 #include <boost/python/converter/pytype_object_mgr_traits.hpp>
-#include <boost/preprocessor/enum_params.hpp>
-#include <boost/preprocessor/repetition/enum_binary_params.hpp>
 
 namespace boost { namespace python {
 
@@ -31,7 +29,7 @@ namespace detail
 
 class tuple : public detail::tuple_base
 {
-    typedef detail::tuple_base base;
+    using base = detail::tuple_base;
  public:
     tuple() {}
 
@@ -58,11 +56,26 @@ namespace converter
   };
 }
 
-// for completeness
-inline tuple make_tuple() { return tuple(); }
 
-# define BOOST_PP_ITERATION_PARAMS_1 (3, (1, BOOST_PYTHON_MAX_ARITY, <boost/python/detail/make_tuple.hpp>))
-# include BOOST_PP_ITERATE()
+namespace detail 
+{
+  inline void tuple_set_items(tuple const& t, int n) {}
+
+  template <class A, class... Args>
+  inline void tuple_set_items(tuple const& t, int n, A const& a, Args const&... args)
+  {
+      PyTuple_SET_ITEM(t.ptr(), n, python::incref(python::object(a).ptr()));
+      tuple_set_items(t, n + 1, args...);
+  }
+}
+
+template <class... Args>
+tuple make_tuple(Args const&... args)
+{
+    tuple result((detail::new_reference)::PyTuple_New(sizeof...(Args)));
+    detail::tuple_set_items(result, 0, args...);
+    return result;
+}
 
 }}  // namespace boost::python
 
