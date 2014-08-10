@@ -5,6 +5,8 @@
 #ifndef ARG_TO_PYTHON_DWA200265_HPP
 # define ARG_TO_PYTHON_DWA200265_HPP
 
+# include <boost/python/cpp14/type_traits.hpp>
+
 # include <boost/python/ptr.hpp>
 # include <boost/python/tag.hpp>
 # include <boost/python/to_python_indirect.hpp>
@@ -21,7 +23,6 @@
 # include <boost/python/base_type_traits.hpp>
 
 # include <boost/python/detail/indirect_traits.hpp>
-# include <boost/python/detail/convertible.hpp>
 # include <boost/python/detail/string_literal.hpp>
 # include <boost/python/detail/value_is_shared_ptr.hpp>
 
@@ -165,38 +166,16 @@ struct arg_to_python
 //
 namespace detail
 {
-  // reject_raw_object_ptr -- cause a compile-time error if the user
-  // should pass a raw Python object pointer
-  using python::detail::yes_convertible;
-  using python::detail::no_convertible;
-  using python::detail::unspecialized;
-  
-  template <class T> struct cannot_convert_raw_PyObject;
-
-  template <class T, class Convertibility>
-  struct reject_raw_object_helper
-  {
-      static void error(Convertibility)
-      {
-          cannot_convert_raw_PyObject<T*>::to_python_use_handle_instead();
-      }
-      static void error(...) {}
-  };
-  
   template <class T>
   inline void reject_raw_object_ptr(T*)
   {
-      reject_raw_object_helper<T,yes_convertible>::error(
-          python::detail::convertible<PyObject const volatile*>::check((T*)0));
+      using base_type_trait = base_type_traits<cpp14::remove_cv_t<T>>;
+      using python::detail::unspecialized;
       
-      typedef typename remove_cv<T>::type value_type;
-      
-      reject_raw_object_helper<T,no_convertible>::error(
-          python::detail::convertible<unspecialized*>::check(
-              (base_type_traits<value_type>*)0
-              ));
+      static_assert(std::is_convertible<T*, PyObject const volatile*>::value == false
+                    && std::is_convertible<base_type_trait*, unspecialized*>::value,
+                    "Passing a raw Python object pointer is not allowed");
   }
-  // ---------
       
   template <class T>
   inline function_arg_to_python<T>::function_arg_to_python(T const& x)

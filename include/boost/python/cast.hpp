@@ -5,100 +5,44 @@
 #ifndef CAST_DWA200269_HPP
 # define CAST_DWA200269_HPP
 
-# include <boost/python/detail/prefix.hpp>
-
-# include <boost/type_traits/same_traits.hpp>
-# include <boost/type_traits/cv_traits.hpp>
-# include <boost/type.hpp>
 # include <boost/python/base_type_traits.hpp>
-# include <boost/python/detail/convertible.hpp>
+# include <boost/python/cpp14/type_traits.hpp>
 
 namespace boost { namespace python { 
 
 namespace detail
 {
-  template <class Source, class Target> inline Target* upcast_impl(Source*, Target*);
+  // PyObject C structs must use C casts, while everything else should use C++ casts.
+  // This template will evaluate to true_type for C++ casts and false_type if C casts are needed.
+  template<class T>
+  using is_cpp_cast = typename std::is_convertible<
+      base_type_traits<cpp14::remove_cv_t<T>>*, 
+      unspecialized*
+  >::type;
   
-  template <class Source, class Target>
-  inline Target* upcast(Source* p, yes_convertible, no_convertible, Target*)
-  {
-      return p;
-  }
-
-  template <class Source, class Target>
-  inline Target* upcast(Source* p, no_convertible, no_convertible, Target*)
-  {
-      typedef typename base_type_traits<Source>::type base;
-      
-      return detail::upcast_impl((base*)p, (Target*)0);
-  }
-
-  template <bool is_same = true>
-  struct upcaster
-  {
-      template <class T>
-      static inline T* execute(T* x, T*) { return x; }
-  };
-  
-  template <>
-  struct upcaster<false>
-  {
-      template <class Source, class Target>
-      static inline Target* execute(Source* x, Target*)
-      {
-          return detail::upcast(
-              x, detail::convertible<Target*>::check(x)
-              , detail::convertible<Source*>::check((Target*)0)
-              , (Target*)0);
-      }
-  };
-
-
   template <class Target, class Source>
-  inline Target* downcast(Source* p, yes_convertible)
-  {
-      return static_cast<Target*>(p);
-  }
-
-  template <class Target, class Source>
-  inline Target* downcast(Source* p, no_convertible, boost::type<Target>* = 0)
-  {
-      typedef typename base_type_traits<Source>::type base;
-      return (Target*)detail::downcast<base>(p, convertible<Source*>::check((base*)0));
-  }
-
-  template <class T>
-  inline void assert_castable(boost::type<T>* = 0)
-  {
-      typedef char must_be_a_complete_type[sizeof(T)];
-  }
-
-  template <class Source, class Target>
-  inline Target* upcast_impl(Source* x, Target*)
-  {
-      typedef typename add_cv<Source>::type src_t;
-      typedef typename add_cv<Target>::type target_t;
-      bool const same = is_same<src_t,target_t>::value;
-      
-      return detail::upcaster<same>::execute(x, (Target*)0);
-  }
-}
-
-template <class Target, class Source>
-inline Target* upcast(Source* x, Target* = 0)
-{
-    detail::assert_castable<Source>();
-    detail::assert_castable<Target>();
-    return detail::upcast_impl(x, (Target*)0);
+  inline Target* upcast(Source* p, std::true_type) { return p; }
     
+  template <class Target, class Source>
+  inline Target* upcast(Source* p, std::false_type) { return (Target*)p; }
+
+  template <class Target, class Source>
+  inline Target* downcast(Source* p, std::true_type) { return static_cast<Target*>(p); }
+
+  template <class Target, class Source>
+  inline Target* downcast(Source* p, std::false_type) { return (Target*)p; }
 }
 
 template <class Target, class Source>
-inline Target* downcast(Source* x, Target* = 0)
+inline Target* upcast(Source* p)
 {
-    detail::assert_castable<Source>();
-    detail::assert_castable<Target>();
-    return detail::downcast<Target>(x, detail::convertible<Source*>::check((Target*)0));
+    return detail::upcast<Target>(p, detail::is_cpp_cast<Source>());
+}
+
+template <class Target, class Source>
+inline Target* downcast(Source* p)
+{
+    return detail::downcast<Target>(p, detail::is_cpp_cast<Source>());
 }
 
 }} // namespace boost::python
