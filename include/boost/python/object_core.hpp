@@ -25,9 +25,6 @@
 # include <boost/python/object/forward.hpp>
 # include <boost/python/object/add_to_namespace.hpp>
 
-# include <boost/preprocessor/iterate.hpp>
-# include <boost/preprocessor/debug/line.hpp>
-
 # include <boost/python/detail/is_xxx.hpp>
 # include <boost/python/detail/string_literal.hpp>
 # include <boost/python/detail/def_helper_fwd.hpp>
@@ -98,9 +95,9 @@ namespace api
       //
       object operator()() const;
 
-# define BOOST_PP_ITERATION_PARAMS_1 (3, (1, BOOST_PYTHON_MAX_ARITY, <boost/python/object_call.hpp>))
-# include BOOST_PP_ITERATE()
-    
+      template <typename... Args>
+      object operator()(Args const&... args) const;
+
       detail::args_proxy operator* () const; 
       object operator()(detail::args_proxy const &args) const; 
       object operator()(detail::args_proxy const &args, 
@@ -359,7 +356,16 @@ public:
   kwds_proxy operator* () const { return kwds_proxy(*this);} 
 }; 
 } 
- 
+
+template <typename U>
+template <typename... Args>
+object api::object_operators<U>::operator()(Args const&... args) const
+{
+    // TODO: this should use perfect forwarding, but the converter isn't compatible yet
+    U const& self = *static_cast<U const*>(this);
+    return call<object>(get_managed_object(self, tag), args...);
+}
+
 template <typename U> 
 detail::args_proxy api::object_operators<U>::operator* () const 
 { 
