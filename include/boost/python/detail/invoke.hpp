@@ -1,24 +1,11 @@
-#if !defined(BOOST_PP_IS_ITERATING)
-
 // Copyright David Abrahams 2002.
 // Distributed under the Boost Software License, Version 1.0. (See
 // accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
-# ifndef INVOKE_DWA20021122_HPP
-#  define INVOKE_DWA20021122_HPP
+#ifndef INVOKE_DWA20021122_HPP
+# define INVOKE_DWA20021122_HPP
 
-#  include <boost/python/detail/prefix.hpp>
-#  include <boost/python/detail/preprocessor.hpp>
-#  include <boost/python/detail/none.hpp>
-
-#  include <boost/type_traits/is_member_function_pointer.hpp>
-
-#  include <boost/preprocessor/iterate.hpp>
-#  include <boost/preprocessor/facilities/intercept.hpp>
-#  include <boost/preprocessor/repetition/enum_trailing_params.hpp>
-#  include <boost/preprocessor/repetition/enum_trailing_binary_params.hpp>
-#  include <boost/preprocessor/repetition/enum_binary_params.hpp>
-#  include <boost/python/to_python_value.hpp>
+# include <boost/python/detail/none.hpp>
 
 // This file declares a series of overloaded invoke(...)  functions,
 // used to invoke wrapped C++ function (object)s from Python. Each one
@@ -40,10 +27,6 @@
 
 namespace boost { namespace python { namespace detail { 
 
-// This "result converter" is really just used as a dispatch tag to
-// invoke(...), selecting the appropriate implementation
-typedef int void_result_to_python;
-
 template <bool void_return, bool member>
 struct invoke_tag_ {};
 
@@ -52,49 +35,38 @@ struct invoke_tag_ {};
 template <class R, class F>
 struct invoke_tag
   : invoke_tag_<
-        is_same<R,void>::value
-      , is_member_function_pointer<F>::value
+    std::is_same<R,void>::value,
+    std::is_member_function_pointer<F>::value
     >
 {
 };
 
-#  define BOOST_PP_ITERATION_PARAMS_1                                            \
-        (3, (0, BOOST_PYTHON_MAX_ARITY, <boost/python/detail/invoke.hpp>))
-#  include BOOST_PP_ITERATE()
+template <class RC, class F, class... ACs>
+inline PyObject* invoke(invoke_tag_<false,false>, RC const& rc, F& f, ACs&&... acs)
+{
+    return rc(f( std::forward<ACs>(acs)()... ));
+}
 
+template <class RC, class F, class... ACs>
+inline PyObject* invoke(invoke_tag_<true,false>, RC const&, F& f, ACs&&... acs)
+{
+    f( std::forward<ACs>(acs)()... );
+    return none();
+}
+
+template <class RC, class F, class TC, class... ACs>
+inline PyObject* invoke(invoke_tag_<false,true>, RC const& rc, F& f, TC& tc, ACs&&... acs)
+{
+    return rc( (tc().*f)(std::forward<ACs>(acs)()...) );
+}
+
+template <class RC, class F, class TC, class... ACs>
+inline PyObject* invoke(invoke_tag_<true,true>, RC const&, F& f, TC& tc, ACs&&... acs)
+{
+    (tc().*f)(std::forward<ACs>(acs)()...);
+    return none();
+}
+    
 }}} // namespace boost::python::detail
 
-# endif // INVOKE_DWA20021122_HPP
-#else 
-
-# define N BOOST_PP_ITERATION()
-
-template <class RC, class F BOOST_PP_ENUM_TRAILING_PARAMS_Z(1, N, class AC)>
-inline PyObject* invoke(invoke_tag_<false,false>, RC const& rc, F& f BOOST_PP_ENUM_TRAILING_BINARY_PARAMS_Z(1, N, AC, & ac) )
-{
-    return rc(f( BOOST_PP_ENUM_BINARY_PARAMS_Z(1, N, ac, () BOOST_PP_INTERCEPT) ));
-}
-                 
-template <class RC, class F BOOST_PP_ENUM_TRAILING_PARAMS_Z(1, N, class AC)>
-inline PyObject* invoke(invoke_tag_<true,false>, RC const&, F& f BOOST_PP_ENUM_TRAILING_BINARY_PARAMS_Z(1, N, AC, & ac) )
-{
-    f( BOOST_PP_ENUM_BINARY_PARAMS_Z(1, N, ac, () BOOST_PP_INTERCEPT) );
-    return none();
-}
-
-template <class RC, class F, class TC BOOST_PP_ENUM_TRAILING_PARAMS_Z(1, N, class AC)>
-inline PyObject* invoke(invoke_tag_<false,true>, RC const& rc, F& f, TC& tc BOOST_PP_ENUM_TRAILING_BINARY_PARAMS_Z(1, N, AC, & ac) )
-{
-    return rc( (tc().*f)(BOOST_PP_ENUM_BINARY_PARAMS_Z(1, N, ac, () BOOST_PP_INTERCEPT)) );
-}
-                 
-template <class RC, class F, class TC BOOST_PP_ENUM_TRAILING_PARAMS_Z(1, N, class AC)>
-inline PyObject* invoke(invoke_tag_<true,true>, RC const&, F& f, TC& tc BOOST_PP_ENUM_TRAILING_BINARY_PARAMS_Z(1, N, AC, & ac) )
-{
-    (tc().*f)(BOOST_PP_ENUM_BINARY_PARAMS_Z(1, N, ac, () BOOST_PP_INTERCEPT));
-    return none();
-}
-
-# undef N
-
-#endif // BOOST_PP_IS_ITERATING 
+#endif // INVOKE_DWA20021122_HPP
