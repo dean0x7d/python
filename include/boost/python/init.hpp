@@ -29,36 +29,15 @@
 
 #include <boost/type_traits/is_same.hpp>
 
-#include <boost/preprocessor/enum_params_with_a_default.hpp>
-#include <boost/preprocessor/enum_params.hpp>
-
 #include <utility>
 
-///////////////////////////////////////////////////////////////////////////////
-#define BOOST_PYTHON_OVERLOAD_TYPES_WITH_DEFAULT                                \
-    BOOST_PP_ENUM_PARAMS_WITH_A_DEFAULT(                                        \
-        BOOST_PYTHON_MAX_ARITY,                                                 \
-        class T,                                                                \
-        mpl::void_)                                                             \
-
-#define BOOST_PYTHON_OVERLOAD_TYPES                                             \
-    BOOST_PP_ENUM_PARAMS_Z(1,                                                   \
-        BOOST_PYTHON_MAX_ARITY,                                                 \
-        class T)                                                                \
-
-#define BOOST_PYTHON_OVERLOAD_ARGS                                              \
-    BOOST_PP_ENUM_PARAMS_Z(1,                                                   \
-        BOOST_PYTHON_MAX_ARITY,                                                 \
-        T)                                                                      \
-
-///////////////////////////////////////////////////////////////////////////////
 namespace boost { namespace python {
 
-template <BOOST_PYTHON_OVERLOAD_TYPES_WITH_DEFAULT>
+template <class... Ts>
 class init; // forward declaration
 
 
-template <BOOST_PYTHON_OVERLOAD_TYPES_WITH_DEFAULT>
+template <class... Ts>
 struct optional; // forward declaration
 
 namespace detail
@@ -82,8 +61,8 @@ namespace detail
       : mpl::false_
     {};
 
-    template <BOOST_PYTHON_OVERLOAD_TYPES>
-    struct is_optional<optional<BOOST_PYTHON_OVERLOAD_ARGS> >
+    template <class... Ts>
+    struct is_optional<optional<Ts...> >
       : mpl::true_
     {};
   
@@ -206,12 +185,12 @@ namespace detail
   {};
 }
 
-template <BOOST_PYTHON_OVERLOAD_TYPES>
-class init : public init_base<init<BOOST_PYTHON_OVERLOAD_ARGS> >
+template <class... Ts>
+class init : public init_base<init<Ts...> >
 {
-    typedef init_base<init<BOOST_PYTHON_OVERLOAD_ARGS> > base;
+    typedef init_base<init<Ts...> > base;
  public:
-    typedef init<BOOST_PYTHON_OVERLOAD_ARGS> self_t;
+    typedef init<Ts...> self_t;
 
     init(char const* doc_ = 0)
         : base(doc_)
@@ -244,7 +223,7 @@ class init : public init_base<init<BOOST_PYTHON_OVERLOAD_ARGS> >
             policies, this->doc_string(), this->keywords());
     }
 
-    typedef detail::type_list<BOOST_PYTHON_OVERLOAD_ARGS> signature_;
+    typedef detail::type_list<Ts...> signature_;
 
     typedef detail::is_optional<
         typename mpl::eval_if<
@@ -287,9 +266,9 @@ class init : public init_base<init<BOOST_PYTHON_OVERLOAD_ARGS> >
 //      optional<T0...TN>::type returns a typelist.
 //
 ///////////////////////////////////////////////////////////////////////////////
-template <BOOST_PYTHON_OVERLOAD_TYPES>
+template <class... Ts>
 struct optional
-    : detail::type_list<BOOST_PYTHON_OVERLOAD_ARGS>
+    : detail::type_list<Ts...>
 {
 };
 
@@ -381,19 +360,4 @@ namespace detail
 
 }} // namespace boost::python
 
-#undef BOOST_PYTHON_OVERLOAD_TYPES_WITH_DEFAULT
-#undef BOOST_PYTHON_OVERLOAD_TYPES
-#undef BOOST_PYTHON_OVERLOAD_ARGS
-#undef BOOST_PYTHON_IS_OPTIONAL_VALUE
-#undef BOOST_PYTHON_APPEND_TO_INIT
-
-///////////////////////////////////////////////////////////////////////////////
 #endif // INIT_JDG20020820_HPP
-
-
-
-
-
-
-
-
