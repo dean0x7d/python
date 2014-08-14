@@ -55,15 +55,15 @@ inline PyObject* invoke(invoke_tag_<true,false>, RC const&, F& f, ACs&&... acs)
 }
 
 template <class RC, class F, class TC, class... ACs>
-inline PyObject* invoke(invoke_tag_<false,true>, RC const& rc, F& f, TC& tc, ACs&&... acs)
+inline PyObject* invoke(invoke_tag_<false,true>, RC const& rc, F& f, TC&& tc, ACs&&... acs)
 {
-    return rc( (tc().*f)(std::forward<ACs>(acs)()...) );
+    return rc( (std::forward<TC>(tc)().*f)(std::forward<ACs>(acs)()...) );
 }
 
 template <class RC, class F, class TC, class... ACs>
-inline PyObject* invoke(invoke_tag_<true,true>, RC const&, F& f, TC& tc, ACs&&... acs)
+inline PyObject* invoke(invoke_tag_<true,true>, RC const&, F& f, TC&& tc, ACs&&... acs)
 {
-    (tc().*f)(std::forward<ACs>(acs)()...);
+    (std::forward<TC>(tc)().*f)(std::forward<ACs>(acs)()...);
     return none();
 }
     
