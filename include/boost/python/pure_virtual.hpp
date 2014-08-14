@@ -7,8 +7,6 @@
 
 # include <boost/python/def_visitor.hpp>
 # include <boost/python/default_call_policies.hpp>
-# include <boost/mpl/push_front.hpp>
-# include <boost/mpl/pop_front.hpp>
 
 # include <boost/python/detail/nullary_function_adaptor.hpp>
 
@@ -24,34 +22,22 @@ namespace detail
   // function was called.
   void BOOST_PYTHON_DECL pure_virtual_called();
 
-  // Replace the two front elements of S with T1 and T2
-  template <class S, class T1, class T2>
-  struct replace_front2
-  {
-      // Metafunction forwarding seemed to confound vc6 
-      typedef typename mpl::push_front<
-          typename mpl::push_front<
-              typename mpl::pop_front<
-                  typename mpl::pop_front<
-                      S
-                  >::type
-              >::type
-            , T2
-          >::type
-        , T1
-      >::type type;
-  };
+  // Replace the two front elements of Sig with T1 and T2
+  template <class Sig, class T1, class T2> struct replace_front2;
 
-  // Given an MPL sequence representing a member function [object]
-  // signature, returns a new MPL sequence whose return type is
+  template <class T1, class T2, class A1, class A2, class... Args>
+  struct replace_front2<type_list<A1, A2, Args...>, T1, T2> {
+      using type = type_list<T1, T2, Args...>;
+  };
+    
+  template <class Sig, class T1, class T2>
+  using replace_front2_t = typename replace_front2<Sig, T1, T2>::type;
+
+  // Given an type_list representing a member function [object]
+  // signature, returns a new type_list whose return type is
   // replaced by void, and whose first argument is replaced by C&.
   template <class C, class S>
-  typename replace_front2<S,void,C&>::type
-  error_signature(S)
-  {
-      typedef typename replace_front2<S,void,C&>::type r;
-      return r();
-  }
+  replace_front2_t<S, void, C&> error_signature(S) { return {}; }
 
   //
   // } 

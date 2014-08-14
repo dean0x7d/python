@@ -30,7 +30,6 @@
 
 # include <boost/mpl/eval_if.hpp>
 # include <boost/mpl/if.hpp>
-# include <boost/mpl/vector/vector10.hpp>
 
 # include <boost/detail/workaround.hpp>
 
@@ -163,7 +162,7 @@ namespace detail
   inline object make_getter(D* d, Policies const& policies, mpl::false_, int)
   {
       return python::make_function(
-          detail::datum<D>(d), policies, mpl::vector1<D&>()
+          detail::datum<D>(d), policies, detail::type_list<D&>()
       );
   }
   
@@ -187,7 +186,7 @@ namespace detail
       return python::make_function(
           detail::member<D,Class>(pm)
         , policies
-        , mpl::vector2<D&,Class&>()
+        , detail::type_list<D&,Class&>()
       );
   }
       
@@ -220,7 +219,7 @@ namespace detail
   inline object make_setter(D* p, Policies const& policies, mpl::false_, int)
   {
       return python::make_function(
-          detail::datum<D>(p), policies, mpl::vector2<void,D const&>()
+          detail::datum<D>(p), policies, detail::type_list<void,D const&>()
       );
   }
 
@@ -231,7 +230,7 @@ namespace detail
       return python::make_function(
           detail::member<D,C>(pm)
         , policies
-        , mpl::vector3<void, C&, D const&>()
+        , detail::type_list<void, C&, D const&>()
       );
   }
 

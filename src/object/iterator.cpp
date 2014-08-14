@@ -5,8 +5,7 @@
 
 #include <boost/python/object/iterator_core.hpp>
 #include <boost/python/object/function_object.hpp>
-#include <boost/bind.hpp>
-#include <boost/mpl/vector/vector10.hpp>
+#include <boost/python/detail/type_list.hpp>
 
 namespace boost { namespace python { namespace objects { 
 
@@ -24,7 +23,7 @@ BOOST_PYTHON_DECL object const& identity_function()
 {
     static object result(
         function_object(
-            py_function(&identity, mpl::vector2<PyObject*,PyObject*>())
+            py_function(&identity, detail::type_list<PyObject*, PyObject*>())
         )
     );
     return result;

@@ -21,8 +21,6 @@
 
 # include <boost/mpl/size.hpp>
 # include <boost/mpl/int.hpp>
-# include <boost/mpl/push_front.hpp>
-# include <boost/mpl/pop_front.hpp>
 # include <boost/mpl/assert.hpp>
 
 namespace boost { namespace python {
@@ -116,20 +114,15 @@ namespace detail
       typedef offset_args<typename BasePolicy_::argument_package, mpl::int_<1> > argument_package;
   };
 
-  template <class InnerSignature>
-  struct outer_constructor_signature
-  {
-      typedef typename mpl::pop_front<InnerSignature>::type inner_args;
-      typedef typename mpl::push_front<inner_args,object>::type outer_args;
-      typedef typename mpl::push_front<outer_args,void>::type type;
+  template <class InnerSignature> struct outer_constructor_signature;
+
+  template <class A0, class... Args>
+  struct outer_constructor_signature<type_list<A0, Args...>> {
+      using type = type_list<void, object, Args...>;
   };
 
-  // ETI workaround
-  template <>
-  struct outer_constructor_signature<int>
-  {
-      typedef int type;
-  };
+  template <class Sig>
+  using outer_constructor_signature_t = typename outer_constructor_signature<Sig>::type;
   
   //
   // These helper functions for make_constructor (below) do the raw work
@@ -145,14 +138,12 @@ namespace detail
     , Sig const&                      // An MPL sequence of argument types expected by F
   )
   {
-      typedef typename outer_constructor_signature<Sig>::type outer_signature;
-
       typedef constructor_policy<CallPolicies> inner_policy;
       
       return objects::function_object(
           objects::py_function(
               detail::caller<F,inner_policy,Sig>(f, inner_policy(p))
-            , outer_signature()
+            , outer_constructor_signature_t<Sig>()
           )
       );
   }
@@ -176,14 +167,12 @@ namespace detail
           NumKeywords::value, arity
           >::too_many_keywords assertion;
     
-      typedef typename outer_constructor_signature<Sig>::type outer_signature;
-
       typedef constructor_policy<CallPolicies> inner_policy;
       
       return objects::function_object(
           objects::py_function(
               detail::caller<F,inner_policy,Sig>(f, inner_policy(p))
-            , outer_signature()
+            , outer_constructor_signature_t<Sig>()
           )
           , kw
       );

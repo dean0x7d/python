@@ -19,7 +19,6 @@
 
 #include <boost/python/detail/signature.hpp>
 #include <boost/python/detail/none.hpp>
-#include <boost/mpl/vector/vector10.hpp>
 
 #include <boost/bind.hpp>
 
@@ -404,7 +403,7 @@ namespace
       
       static object keeper(
           function_object(
-              py_function(&not_implemented, mpl::vector1<void>(), 2)
+              py_function(&not_implemented, detail::type_list<void>(), 2)
             , python::detail::keyword_range())
           );
       return handle<function>(borrowed(downcast<function>(keeper.ptr())));

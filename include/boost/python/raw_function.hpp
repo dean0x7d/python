@@ -10,7 +10,6 @@
 # include <boost/python/tuple.hpp>
 # include <boost/python/dict.hpp>
 # include <boost/python/object/py_function.hpp>
-# include <boost/mpl/vector/vector10.hpp>
 
 # include <boost/limits.hpp>
 # include <cstddef>
@@ -49,7 +48,7 @@ object raw_function(F f, std::size_t min_args = 0)
     return detail::make_raw_function(
         objects::py_function(
             detail::raw_dispatcher<F>(f)
-          , mpl::vector1<PyObject*>()
+          , detail::type_list<PyObject*>()
           , min_args
           , (std::numeric_limits<unsigned>::max)()
         )

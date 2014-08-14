@@ -17,7 +17,6 @@
 # include <boost/python/object/class_detail.hpp>
 # include <boost/python/object/function_object.hpp>
 
-# include <boost/mpl/vector/vector10.hpp>
 # include <boost/mpl/if.hpp>
 
 # include <boost/python/detail/raw_pyobject.hpp>
@@ -109,7 +108,7 @@ namespace detail
             , make_function(
                 next_fn()
               , policies
-              , mpl::vector2<result_type,range_&>()
+              , python::detail::type_list<result_type,range_&>()
             ));
   }
 
@@ -162,7 +161,7 @@ namespace detail
       return make_function(
           py_iter_<Target,Iterator,Accessor1,Accessor2,NextPolicies>(get_start, get_finish)
         , default_call_policies()
-        , mpl::vector2<iterator_range<NextPolicies,Iterator>, back_reference<Target&> >()
+        , python::detail::type_list<iterator_range<NextPolicies,Iterator>, back_reference<Target&> >()
       );
   }
 
