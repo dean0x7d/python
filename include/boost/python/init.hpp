@@ -12,24 +12,10 @@
 # include <boost/python/detail/prefix.hpp>
 
 #include <boost/python/detail/type_list.hpp>
+#include <boost/python/cpp14/utility.hpp>
 #include <boost/python/args_fwd.hpp>
 #include <boost/python/detail/make_keyword_range_fn.hpp>
 #include <boost/python/def_visitor.hpp>
-
-#include <boost/mpl/if.hpp>
-#include <boost/mpl/eval_if.hpp>
-#include <boost/mpl/size.hpp>
-#include <boost/mpl/iterator_range.hpp>
-#include <boost/mpl/empty.hpp>
-#include <boost/mpl/begin_end.hpp>
-#include <boost/mpl/bool.hpp>
-#include <boost/mpl/prior.hpp>
-#include <boost/mpl/joint_view.hpp>
-#include <boost/mpl/back.hpp>
-
-#include <boost/type_traits/is_same.hpp>
-
-#include <utility>
 
 namespace boost { namespace python {
 
@@ -38,7 +24,8 @@ class init; // forward declaration
 
 
 template <class... Ts>
-struct optional; // forward declaration
+using optional = detail::type_list<Ts...>;
+
 
 namespace detail
 {
@@ -55,17 +42,67 @@ namespace detail
   //
   //      This metaprogram checks if T is an optional
   //
+  template <class T>
+  struct is_optional : std::false_type {};
 
-    template <class T>
-    struct is_optional
-      : mpl::false_
-    {};
+  template <class... Ts>
+  struct is_optional<optional<Ts...>> : std::true_type {};
 
-    template <class... Ts>
-    struct is_optional<optional<Ts...> >
-      : mpl::true_
-    {};
-  
+  // sub_t<type_list<Ts...>, N> 
+  //
+  //     Returns a type_list with only the first N elements
+  //
+  template<class T, class I> struct sub_list;
+
+  template<class... Ts, std::size_t... Is>
+  struct sub_list<type_list<Ts...>, cpp14::index_sequence<Is...>> {
+      using tup = std::tuple<Ts...>;
+      using type = type_list< typename std::tuple_element<Is, tup>::type... >;
+  };
+
+  template<class List, int N>
+  using sub_t = typename sub_list<List, cpp14::make_index_sequence<N>>::type;
+
+  // drop_t<type_list<Ts...>, N>
+  //
+  //     Returns a type_list without the last N elements
+  //
+  template<class List, int N>
+  using drop_t = sub_t<List, List::is_empty ? 0 : List::k_size - N>; 
+
+  // concat_t<type_list<Ts...>, type_list<As...>
+  //
+  //     Returns a concatenation of the two type_lists
+  //
+  template<class T1, class T2> struct concat_lists;
+
+  template<class... Ts, class... As>
+  struct concat_lists<type_list<Ts...>, type_list<As...>> {
+      using type = type_list<Ts..., As...>;
+  };
+
+  template<class List1, class List2>
+  using concat_t = typename concat_lists<List1, List2>::type;
+    
+  // get_t<type_list<Ts...>, N>
+  //
+  //     Return the Nth type, or std::false_type if the list is empty
+  //
+  template<class T, int N>
+  struct list_get {
+      using type = std::false_type;
+  };
+
+  template<int N, class T, class... Ts>
+  struct list_get<type_list<T, Ts...>, N> {
+      using type = typename std::tuple_element<N, std::tuple<T, Ts...>>::type;
+  };
+
+  template<class List, int N>
+  using get_t = typename list_get<List, N>::type;
+    
+  template<class List>
+  using back_t = get_t<List, List::k_size - 1>;
 
   template <int NDefaults>
   struct define_class_init_helper;
@@ -169,21 +206,6 @@ class init_with_call_policies
     CallPoliciesT m_policies;
 };
 
-//
-// drop1<S> is the initial length(S) elements of S
-//
-namespace detail
-{
-  template <class S>
-  struct drop1
-    : mpl::iterator_range<
-          typename mpl::begin<S>::type
-        , typename mpl::prior<
-              typename mpl::end<S>::type
-          >::type
-      >
-  {};
-}
 
 template <class... Ts>
 class init : public init_base<init<Ts...> >
@@ -223,53 +245,33 @@ class init : public init_base<init<Ts...> >
             policies, this->doc_string(), this->keywords());
     }
 
-    typedef detail::type_list<Ts...> signature_;
-
-    typedef detail::is_optional<
-        typename mpl::eval_if<
-            mpl::empty<signature_>
-          , mpl::false_
-          , mpl::back<signature_>
-        >::type
-    > back_is_optional;
+    using signature_ = detail::type_list<Ts...>;
+    using back_is_optional = detail::is_optional<detail::back_t<signature_>>;
     
-    typedef typename mpl::eval_if<
-        back_is_optional
-      , mpl::back<signature_>
-      , detail::type_list<>
-    >::type optional_args;
+    using optional_args = cpp14::conditional_t<
+        back_is_optional::value,
+        detail::back_t<signature_>,
+        detail::type_list<>
+    >;
 
-    typedef typename mpl::eval_if<
-        back_is_optional
-      , mpl::if_<
-            mpl::empty<optional_args>
-          , detail::drop1<signature_>
-          , mpl::joint_view<
-                detail::drop1<signature_>
-              , optional_args
+    using signature = cpp14::conditional_t<
+        !back_is_optional::value,
+        signature_,
+        cpp14::conditional_t<
+            optional_args::is_empty,
+            detail::drop_t<signature_, 1>,
+            detail::concat_t<
+                detail::drop_t<signature_, 1>,
+                optional_args
             >
         >
-      , signature_
-    >::type signature;
+    >;
 
     // TODO: static assert to make sure there are no other optional elements
 
     // Count the number of default args
-    typedef mpl::size<optional_args> n_defaults;
-    typedef mpl::size<signature> n_arguments;
-};
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//  optional
-//
-//      optional<T0...TN>::type returns a typelist.
-//
-///////////////////////////////////////////////////////////////////////////////
-template <class... Ts>
-struct optional
-    : detail::type_list<Ts...>
-{
+    using n_defaults = std::integral_constant<int, optional_args::k_size>;
+    using n_arguments = std::integral_constant<int, signature::k_size>;
 };
 
 namespace detail
@@ -325,7 +327,7 @@ namespace detail
           if (keywords.second > keywords.first)
               --keywords.second;
 
-          typedef typename mpl::prior<NArgs>::type next_nargs;
+          using next_nargs = std::integral_constant<int, NArgs::value - 1>;
           define_class_init_helper<NDefaults-1>::apply(
               cl, policies, Signature(), next_nargs(), doc, keywords);
       }

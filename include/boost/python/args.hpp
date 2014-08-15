@@ -9,7 +9,6 @@
 
 # include <boost/python/args_fwd.hpp>
 # include <boost/config.hpp>
-# include <boost/python/detail/type_list.hpp>
 
 # include <boost/type_traits/is_reference.hpp>
 # include <boost/type_traits/remove_reference.hpp>

@@ -10,7 +10,11 @@
 namespace boost { namespace python { namespace detail { 
 
 template <class... Ts>
-struct type_list : mpl::vector<Ts...> {};
+struct type_list : mpl::vector<Ts...>
+{
+    static constexpr int k_size = sizeof...(Ts);
+    static constexpr bool is_empty = k_size == 0;
+};
     
 }}} // namespace boost::python::detail
 
