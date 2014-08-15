@@ -9,17 +9,11 @@
 
 # include <boost/python/args_fwd.hpp>
 # include <boost/config.hpp>
-# include <boost/python/detail/preprocessor.hpp>
 # include <boost/python/detail/type_list.hpp>
 
 # include <boost/type_traits/is_reference.hpp>
 # include <boost/type_traits/remove_reference.hpp>
 # include <boost/type_traits/remove_cv.hpp>
-
-# include <boost/preprocessor/enum_params.hpp>
-# include <boost/preprocessor/repeat.hpp>
-# include <boost/preprocessor/facilities/intercept.hpp>
-# include <boost/preprocessor/iteration/local.hpp>
 
 # include <boost/python/detail/mpl_lambda.hpp>
 # include <boost/python/object_core.hpp>
@@ -132,16 +126,16 @@ inline detail::keywords<1> args(char const* name)
     return detail::keywords<1>(name);
 }
 
-#  define BOOST_PYTHON_ASSIGN_NAME(z, n, _) result.elements[n].name = name##n;
-#  define BOOST_PP_LOCAL_MACRO(n)                                               \
-inline detail::keywords<n> args(BOOST_PP_ENUM_PARAMS_Z(1, n, char const* name)) \
-{                                                                               \
-    detail::keywords<n> result;                                                 \
-    BOOST_PP_REPEAT_1(n, BOOST_PYTHON_ASSIGN_NAME, _)                           \
-    return result;                                                              \
+template<typename... Ts, int N = sizeof...(Ts)>
+detail::keywords<N> args(Ts... names)
+{
+    detail::keywords<N> result;
+    auto list = { detail::keyword(names)... };
+    std::move(std::begin(list), std::end(list), 
+              std::begin(result.elements));
+    
+    return result;
 }
-#  define BOOST_PP_LOCAL_LIMITS (2, BOOST_PYTHON_MAX_ARITY)
-#  include BOOST_PP_LOCAL_ITERATE()
 
 }} // namespace boost::python
 
