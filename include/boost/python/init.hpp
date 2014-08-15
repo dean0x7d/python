@@ -159,14 +159,12 @@ struct init_base : def_visitor<DerivedT>
     void visit(classT& cl) const
     {
         typedef typename DerivedT::signature signature;
-        typedef typename DerivedT::n_arguments n_arguments;
         typedef typename DerivedT::n_defaults n_defaults;
     
         detail::define_class_init_helper<n_defaults::value>::apply(
             cl
           , derived().call_policies()
           , signature()
-          , n_arguments()
           , derived().doc_string()
           , derived().keywords());
     }
@@ -276,11 +274,10 @@ class init : public init_base<init<Ts...> >
 
 namespace detail
 {
-  template <class ClassT, class CallPoliciesT, class Signature, class NArgs>
+  template <class ClassT, class CallPoliciesT, class Signature>
   inline void def_init_aux(
       ClassT& cl
       , Signature const&
-      , NArgs
       , CallPoliciesT const& policies
       , char const* doc
       , detail::keyword_range const& keywords_
@@ -288,7 +285,7 @@ namespace detail
   {
       cl.def(
           "__init__"
-        , detail::make_keyword_range_constructor<Signature,NArgs>(
+        , detail::make_keyword_range_constructor<Signature>(
               policies
             , keywords_
             , (typename ClassT::metadata::holder*)0
@@ -312,24 +309,22 @@ namespace detail
   template <int NDefaults>
   struct define_class_init_helper
   {
-
-      template <class ClassT, class CallPoliciesT, class Signature, class NArgs>
+      template <class ClassT, class CallPoliciesT, class Signature>
       static void apply(
           ClassT& cl
           , CallPoliciesT const& policies
           , Signature const& args
-          , NArgs
           , char const* doc
           , detail::keyword_range keywords)
       {
-          detail::def_init_aux(cl, args, NArgs(), policies, doc, keywords);
+          detail::def_init_aux(cl, args, policies, doc, keywords);
 
           if (keywords.second > keywords.first)
               --keywords.second;
 
-          using next_nargs = std::integral_constant<int, NArgs::value - 1>;
+          using sig = detail::drop_t<Signature, 1>;
           define_class_init_helper<NDefaults-1>::apply(
-              cl, policies, Signature(), next_nargs(), doc, keywords);
+              cl, policies, sig(), doc, keywords);
       }
   };
 
@@ -344,18 +339,17 @@ namespace detail
   //
   ///////////////////////////////////////////////////////////////////////////////
   template <>
-  struct define_class_init_helper<0> {
-
-      template <class ClassT, class CallPoliciesT, class Signature, class NArgs>
+  struct define_class_init_helper<0> 
+  {
+      template <class ClassT, class CallPoliciesT, class Signature>
       static void apply(
           ClassT& cl
         , CallPoliciesT const& policies
         , Signature const& args
-        , NArgs
         , char const* doc
         , detail::keyword_range const& keywords)
       {
-          detail::def_init_aux(cl, args, NArgs(), policies, doc, keywords);
+          detail::def_init_aux(cl, args, policies, doc, keywords);
       }
   };
 }

@@ -7,11 +7,7 @@
 
 # include <boost/python/make_function.hpp>
 # include <boost/python/args_fwd.hpp>
-
 # include <boost/python/object/make_holder.hpp>
-
-# include <boost/mpl/size.hpp>
-
 
 namespace boost { namespace python { namespace detail { 
 
@@ -50,19 +46,18 @@ object make_keyword_range_function(
 // constructor.
 //
 // Holder and ArgList are intended to be explicitly specified. 
-template <class ArgList, class Arity, class Holder, class CallPolicies>
+template <class ArgList, class Holder, class CallPolicies>
 object make_keyword_range_constructor(
     CallPolicies const& policies        // The CallPolicies with which to invoke the Holder's constructor
     , detail::keyword_range const& kw   // The (possibly empty) set of associated argument keywords
     , Holder* = 0                       
-    , ArgList* = 0, Arity* = 0)
+    , ArgList* = 0)
 {
 #if !defined( BOOST_PYTHON_NO_PY_SIGNATURES) && defined( BOOST_PYTHON_PY_SIGNATURES_PROPER_INIT_SELF_TYPE)
     python_class<BOOST_DEDUCED_TYPENAME Holder::value_type>::register_();
 #endif
     return detail::make_keyword_range_function(
-        objects::make_holder<Arity::value>
-            ::template apply<Holder,ArgList>::execute
+         objects::make_holder<Holder, ArgList>::execute
         , policies
         , kw);
 }

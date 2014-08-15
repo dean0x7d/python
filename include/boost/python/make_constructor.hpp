@@ -12,7 +12,6 @@
 # include <boost/python/object_fwd.hpp>
 
 # include <boost/python/object/function_object.hpp>
-# include <boost/python/object/make_holder.hpp>
 # include <boost/python/object/pointer_holder.hpp>
 # include <boost/python/converter/context_result_converter.hpp>
 
