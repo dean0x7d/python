@@ -5,15 +5,13 @@
 #ifndef TYPE_LIST_DWA2002913_HPP
 # define TYPE_LIST_DWA2002913_HPP
 
-# include <boost/mpl/vector.hpp>
-
 namespace boost { namespace python { namespace detail { 
 
 template <class... Ts>
-struct type_list : mpl::vector<Ts...>
+struct type_list
 {
-    static constexpr int k_size = sizeof...(Ts);
-    static constexpr bool is_empty = k_size == 0;
+    static constexpr int size = sizeof...(Ts);
+    static constexpr bool is_empty = size == 0;
 };
     
 }}} // namespace boost::python::detail

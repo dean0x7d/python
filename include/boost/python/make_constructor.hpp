@@ -159,7 +159,7 @@ namespace detail
       , NumKeywords                     // An MPL integral type wrapper: the size of kw
       )
   {
-      constexpr auto arity = Sig::k_size;
+      constexpr auto arity = Sig::size;
       
       typedef typename detail::error::more_keywords_than_function_arguments<
           NumKeywords::value, arity

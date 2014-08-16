@@ -213,8 +213,8 @@ class init : public init_base<init<Ts...> >
     // TODO: static assert to make sure there are no other optional elements
 
     // Count the number of default args
-    using n_defaults = std::integral_constant<int, optional_args::k_size>;
-    using n_arguments = std::integral_constant<int, signature::k_size>;
+    using n_defaults = std::integral_constant<int, optional_args::size>;
+    using n_arguments = std::integral_constant<int, signature::size>;
 };
 
 namespace detail

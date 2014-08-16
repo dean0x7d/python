@@ -242,7 +242,7 @@ namespace detail
           , non_void_return_type
       >::type stubs_type;
 
-      static_assert(stubs_type::max_args <= SigT::k_size,
+      static_assert(stubs_type::max_args <= SigT::size,
                     "Too many arguments.");
 
       typedef typename stubs_type::template gen<SigT> gen_type;

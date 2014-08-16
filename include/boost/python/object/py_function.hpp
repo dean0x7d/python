@@ -65,7 +65,7 @@ struct signature_py_function_impl : py_function_impl_base
     
     virtual unsigned min_arity() const
     {
-        return Sig::k_size - 1;
+        return Sig::size - 1;
     }
     
     virtual python::detail::py_func_sig_info signature() const

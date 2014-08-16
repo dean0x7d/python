@@ -40,7 +40,7 @@ using sub_t = typename tl::sub<List, cpp14::make_index_sequence<N>>::type;
 
 // Returns a type_list without the last N elements
 template<class List, int N>
-using drop_t = sub_t<List, List::is_empty ? 0 : List::k_size - N>; 
+using drop_t = sub_t<List, List::is_empty ? 0 : List::size - N>; 
 
 // Returns a concatenation of the two type_lists
 template<class List1, class List2>
@@ -54,6 +54,6 @@ template<class List>
 using front_t = get_t<List, 0>;
 
 template<class List>
-using back_t = get_t<List, List::k_size - 1>;
+using back_t = get_t<List, List::size - 1>;
 
 }}} // namespace boost::python::detail
