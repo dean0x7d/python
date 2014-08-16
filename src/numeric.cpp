@@ -76,12 +76,12 @@ namespace
       PyErr_Clear();
       return false;
   }
-
-  object demand_array_function()
-  {
-      load(true);
-      return object(array_function);
-  }
+} // namespace
+    
+object demand_array_function()
+{
+    load(true);
+    return object(array_function);
 }
 
 void array::set_module_and_type(char const* package_name, char const* type_attribute_name)
@@ -120,19 +120,6 @@ namespace aux
       if(!array_type) return 0;
       return downcast<PyTypeObject>(array_type.get());
   }
-
-# define BOOST_PYTHON_AS_OBJECT(z, n, _) object(x##n)
-# define BOOST_PP_LOCAL_MACRO(n)                                        \
-    array_base::array_base(BOOST_PP_ENUM_PARAMS(n, object const& x))    \
-        : object(demand_array_function()(BOOST_PP_ENUM_PARAMS(n, x)))   \
-    {}
-# define BOOST_PP_LOCAL_LIMITS (1, 6)
-# include BOOST_PP_LOCAL_ITERATE()
-# undef BOOST_PYTHON_AS_OBJECT
-
-    array_base::array_base(BOOST_PP_ENUM_PARAMS(7, object const& x))
-        : object(demand_array_function()(BOOST_PP_ENUM_PARAMS(7, x)))
-    {}
 
   object array_base::argmax(long axis)
   {

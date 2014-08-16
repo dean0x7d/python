@@ -9,24 +9,20 @@
 
 # include <boost/python/tuple.hpp>
 # include <boost/python/str.hpp>
-# include <boost/preprocessor/iteration/local.hpp>
-# include <boost/preprocessor/cat.hpp>
-# include <boost/preprocessor/repetition/enum.hpp>
-# include <boost/preprocessor/repetition/enum_params.hpp>
-# include <boost/preprocessor/repetition/enum_binary_params.hpp>
 
 namespace boost { namespace python { namespace numeric {
 
 class array;
+object demand_array_function();
 
 namespace aux
 {
   struct BOOST_PYTHON_DECL array_base : object
   {
-# define BOOST_PP_LOCAL_MACRO(n)                                \
-      array_base(BOOST_PP_ENUM_PARAMS_Z(1, n, object const& x));
-# define BOOST_PP_LOCAL_LIMITS (1, 7)
-# include BOOST_PP_LOCAL_ITERATE()
+      template<class... Objects>
+      array_base(Objects const&... xs)
+          : object(demand_array_function()(xs...))
+      {}
 
       object argmax(long axis=-1);
       object argmin(long axis=-1);
@@ -121,13 +117,11 @@ class array : public aux::array_base
         base::resize(object(x));
     }
     
-# define BOOST_PP_LOCAL_MACRO(n)                                \
-      void resize(BOOST_PP_ENUM_PARAMS_Z(1, n, long x))              \
-      {                                                         \
-          resize(make_tuple(BOOST_PP_ENUM_PARAMS_Z(1, n, x)));       \
-      }
-# define BOOST_PP_LOCAL_LIMITS (1, BOOST_PYTHON_MAX_ARITY)
-# include BOOST_PP_LOCAL_ITERATE()
+    template<typename... Ls>
+    void resize(Ls... xs)
+    {
+        resize(make_tuple(long(xs)...));
+    }
 
     template <class Sequence>
     void setshape(Sequence const& x)
@@ -135,13 +129,11 @@ class array : public aux::array_base
         base::setshape(object(x));
     }
     
-# define BOOST_PP_LOCAL_MACRO(n)                                \
-    void setshape(BOOST_PP_ENUM_PARAMS_Z(1, n, long x))              \
-    {                                                           \
-        setshape(make_tuple(BOOST_PP_ENUM_PARAMS_Z(1, n, x)));       \
+    template<typename... Ls>
+    void setshape(Ls... xs)
+    {
+        setshape(make_tuple(long(xs)...));
     }
-# define BOOST_PP_LOCAL_LIMITS (1, BOOST_PYTHON_MAX_ARITY)
-# include BOOST_PP_LOCAL_ITERATE()
 
     template <class Indices, class Values>
     void put(Indices const& indices, Values const& values)
@@ -208,15 +200,10 @@ class array : public aux::array_base
         return base::factory(object(sequence), object(typecode_), copy, savespace, object(type), object(shape));
     }
     
-# define BOOST_PYTHON_ENUM_AS_OBJECT(z, n, x) object(BOOST_PP_CAT(x,n))
-# define BOOST_PP_LOCAL_MACRO(n)                                        \
-    template <BOOST_PP_ENUM_PARAMS_Z(1, n, class T)>                    \
-    explicit array(BOOST_PP_ENUM_BINARY_PARAMS_Z(1, n, T, const& x))    \
-    : base(BOOST_PP_ENUM_1(n, BOOST_PYTHON_ENUM_AS_OBJECT, x))          \
+    template<class... Ts>
+    explicit array(Ts const&... xs)
+        : base(object(xs)...)
     {}
-# define BOOST_PP_LOCAL_LIMITS (1, 7)
-# include BOOST_PP_LOCAL_ITERATE()
-# undef BOOST_PYTHON_AS_OBJECT
 
     static BOOST_PYTHON_DECL void set_module_and_type(char const* package_name = 0, char const* type_attribute_name = 0);
     static BOOST_PYTHON_DECL std::string get_module_name();
