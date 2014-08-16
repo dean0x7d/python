@@ -27,11 +27,8 @@
 # include <boost/mpl/bool.hpp>
 # include <boost/mpl/or.hpp>
 # include <boost/mpl/identity.hpp>
-# include <boost/mpl/for_each.hpp>
 # include <boost/mpl/placeholders.hpp>
-# include <boost/mpl/single_view.hpp>
 
-# include <boost/mpl/assert.hpp>
 # include <boost/type_traits/is_same.hpp>
 
 # include <boost/type_traits/is_convertible.hpp>
@@ -47,33 +44,43 @@ void copy_class_object(type_info const& src, type_info const& dst);
 //
 // Support for registering base/derived relationships
 //
-template <class Derived>
-struct register_base_of
+template <class Derived, class BasesPack>
+struct register_bases_of;
+
+template <class Derived, class Base, class... Tail>
+struct register_bases_of<Derived, bases<Base, Tail...>>
 {
-    template <class Base>
-    inline void operator()(Base*) const
+    static void execute()
     {
-        BOOST_MPL_ASSERT_NOT((is_same<Base,Derived>));
+        static_assert(!std::is_same<Base, Derived>::value, 
+                      "Base cannot be the same as Derived");
         
         // Register the Base class
         register_dynamic_id<Base>();
 
         // Register the up-cast
-        register_conversion<Derived,Base>(false);
+        register_conversion<Derived, Base>(false);
 
         // Register the down-cast, if appropriate.
-        this->register_downcast((Base*)0, is_polymorphic<Base>());
+        register_downcast(is_polymorphic<Base>());
+        
+        // Repeat for the rest of the bases
+        register_bases_of<Derived, bases<Tail...>>::execute();
     }
 
  private:
-    static inline void register_downcast(void*, mpl::false_) {}
+    static inline void register_downcast(mpl::false_) {}
     
-    template <class Base>
-    static inline void register_downcast(Base*, mpl::true_)
+    static inline void register_downcast(mpl::true_)
     {
         register_conversion<Base, Derived>(true);
     }
+};
 
+template <class Derived>
+struct register_bases_of<Derived, bases<>>
+{
+    static void execute() {}
 };
 
 //
@@ -86,12 +93,9 @@ inline void register_shared_ptr_from_python_and_casts(T*, Bases)
     // Constructor performs registration
     python::detail::force_instantiate(converter::shared_ptr_from_python<T>());
 
-    //
-    // register all up/downcasts here.  We're using the alternate
-    // interface to mpl::for_each to avoid an MSVC 6 bug.
-    //
+    // Register all up/downcasts here
     register_dynamic_id<T>();
-    mpl::for_each(register_base_of<T>(), (Bases*)0, (add_pointer<mpl::_>*)0);
+    register_bases_of<T, Bases>::execute();
 }
 
 //
@@ -281,7 +285,7 @@ struct class_metadata
     inline static void maybe_register_callback_class(T2*, mpl::true_)
     {
         objects::register_shared_ptr_from_python_and_casts(
-            (wrapped*)0, mpl::single_view<T2>());
+            (wrapped*)0, python::bases<T2>());
 
         // explicit qualification of type_id makes msvc6 happy
         objects::copy_class_object(python::type_id<T2>(), python::type_id<wrapped>());

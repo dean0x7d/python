@@ -35,8 +35,6 @@
 # include <boost/type_traits/is_member_function_pointer.hpp>
 # include <boost/type_traits/is_polymorphic.hpp>
 
-# include <boost/mpl/size.hpp>
-# include <boost/mpl/for_each.hpp>
 # include <boost/mpl/bool.hpp>
 # include <boost/mpl/not.hpp>
 
@@ -64,23 +62,6 @@ enum no_init_t { no_init };
 
 namespace detail
 {
-  // This function object is used with mpl::for_each to write the id
-  // of the type a pointer to which is passed as its 2nd compile-time
-  // argument. into the iterator pointed to by its runtime argument
-  struct write_type_id
-  {
-      write_type_id(type_info**p) : p(p) {}
-
-      // Here's the runtime behavior
-      template <class T>
-      void operator()(T*) const
-      {
-          *(*p)++ = type_id<T>();
-      }
-
-      type_info** p;
-  };
-
   template <class T>
   struct is_data_member_pointer
       : mpl::and_<
@@ -169,25 +150,20 @@ class class_ : public objects::class_base
 
     // A helper class which will contain an array of id objects to be
     // passed to the base class constructor
-    struct id_vector
+    template<class Derived, class BasesPack>
+    struct id_vector_impl;
+    
+    template<class Derived, class... Bases>
+    struct id_vector_impl<Derived, bases<Bases...>>
     {
-        typedef typename metadata::bases bases;
+        id_vector_impl()
+        : ids{ detail::unwrap_type_id((Derived*)0, (Derived*)0), type_id<Bases>()... }
+        {}
         
-        id_vector()
-        {
-            // Stick the derived class id into the first element of the array
-            ids[0] = detail::unwrap_type_id((W*)0, (W*)0);
-
-            // Write the rest of the elements into succeeding positions.
-            type_info* p = ids + 1;
-            mpl::for_each(detail::write_type_id(&p), (bases*)0, (add_pointer<mpl::_>*)0);
-        }
-
-        BOOST_STATIC_CONSTANT(
-            std::size_t, size = mpl::size<bases>::value + 1);
+        static constexpr auto size = sizeof...(Bases) + 1;
         type_info ids[size];
     };
-    friend struct id_vector;
+    using id_vector = id_vector_impl<W, typename metadata::bases>;
 
  public: // constructors
     
