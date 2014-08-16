@@ -12,7 +12,7 @@
 # include <boost/python/detail/prefix.hpp>
 
 #include <boost/python/detail/type_list.hpp>
-#include <boost/python/cpp14/utility.hpp>
+#include <boost/python/detail/type_list_utils.hpp>
 #include <boost/python/args_fwd.hpp>
 #include <boost/python/detail/make_keyword_range_fn.hpp>
 #include <boost/python/def_visitor.hpp>
@@ -48,61 +48,6 @@ namespace detail
   template <class... Ts>
   struct is_optional<optional<Ts...>> : std::true_type {};
 
-  // sub_t<type_list<Ts...>, N> 
-  //
-  //     Returns a type_list with only the first N elements
-  //
-  template<class T, class I> struct sub_list;
-
-  template<class... Ts, std::size_t... Is>
-  struct sub_list<type_list<Ts...>, cpp14::index_sequence<Is...>> {
-      using tup = std::tuple<Ts...>;
-      using type = type_list< typename std::tuple_element<Is, tup>::type... >;
-  };
-
-  template<class List, int N>
-  using sub_t = typename sub_list<List, cpp14::make_index_sequence<N>>::type;
-
-  // drop_t<type_list<Ts...>, N>
-  //
-  //     Returns a type_list without the last N elements
-  //
-  template<class List, int N>
-  using drop_t = sub_t<List, List::is_empty ? 0 : List::k_size - N>; 
-
-  // concat_t<type_list<Ts...>, type_list<As...>
-  //
-  //     Returns a concatenation of the two type_lists
-  //
-  template<class T1, class T2> struct concat_lists;
-
-  template<class... Ts, class... As>
-  struct concat_lists<type_list<Ts...>, type_list<As...>> {
-      using type = type_list<Ts..., As...>;
-  };
-
-  template<class List1, class List2>
-  using concat_t = typename concat_lists<List1, List2>::type;
-    
-  // get_t<type_list<Ts...>, N>
-  //
-  //     Return the Nth type, or std::false_type if the list is empty
-  //
-  template<class T, int N>
-  struct list_get {
-      using type = std::false_type;
-  };
-
-  template<int N, class T, class... Ts>
-  struct list_get<type_list<T, Ts...>, N> {
-      using type = typename std::tuple_element<N, std::tuple<T, Ts...>>::type;
-  };
-
-  template<class List, int N>
-  using get_t = typename list_get<List, N>::type;
-    
-  template<class List>
-  using back_t = get_t<List, List::k_size - 1>;
 
   template <int NDefaults>
   struct define_class_init_helper;
