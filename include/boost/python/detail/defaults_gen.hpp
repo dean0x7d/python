@@ -9,6 +9,7 @@
 #ifndef DEFAULTS_GEN_JDG20020807_HPP
 #define DEFAULTS_GEN_JDG20020807_HPP
 
+#include <boost/python/detail/type_list_utils.hpp>
 #include <boost/python/detail/preprocessor.hpp>
 #include <boost/preprocessor/repeat.hpp>
 #include <boost/preprocessor/repeat_from_to.hpp>
@@ -23,9 +24,6 @@
 #include <boost/preprocessor/empty.hpp>
 #include <boost/preprocessor/comma_if.hpp>
 #include <boost/config.hpp>
-#include <boost/mpl/begin_end.hpp>
-#include <boost/mpl/next.hpp>
-#include <boost/mpl/deref.hpp>
 #include <cstddef>
 
 namespace boost { namespace python {
@@ -117,10 +115,7 @@ namespace detail
 
 
 #define BOOST_PYTHON_TYPEDEF_GEN(z, index, data)                                \
-    typedef typename ::boost::mpl::next<BOOST_PP_CAT(iter, index)>::type        \
-        BOOST_PP_CAT(iter, BOOST_PP_INC(index));                                \
-    typedef typename ::boost::mpl::deref<BOOST_PP_CAT(iter, index)>::type       \
-        BOOST_PP_CAT(T, index);
+    typedef ::boost::python::detail::get_t<SigT, index+data> BOOST_PP_CAT(T, index);
 
 #define BOOST_PYTHON_FUNC_WRAPPER_GEN(z, index, data)                   \
     static RT BOOST_PP_CAT(func_,                                       \
@@ -144,14 +139,12 @@ namespace detail
         template <typename SigT>                                                \
         struct gen                                                              \
         {                                                                       \
-            typedef typename ::boost::mpl::begin<SigT>::type rt_iter;           \
-            typedef typename ::boost::mpl::deref<rt_iter>::type RT;             \
-            typedef typename ::boost::mpl::next<rt_iter>::type iter0;           \
+            typedef ::boost::python::detail::front_t<SigT> RT;                  \
                                                                                 \
             BOOST_PP_REPEAT_2ND(                                                \
                 n_args,                                                         \
                 BOOST_PYTHON_TYPEDEF_GEN,                                       \
-                0)                                                              \
+                1)                                                              \
                                                                                 \
             BOOST_PP_REPEAT_FROM_TO_2(                                          \
                 BOOST_PP_SUB_D(1, n_args, n_dflts),                             \
@@ -183,17 +176,13 @@ namespace detail
         template <typename SigT>                                                \
         struct gen                                                              \
         {                                                                       \
-            typedef typename ::boost::mpl::begin<SigT>::type rt_iter;           \
-            typedef typename ::boost::mpl::deref<rt_iter>::type RT;             \
-                                                                                \
-            typedef typename ::boost::mpl::next<rt_iter>::type class_iter;      \
-            typedef typename ::boost::mpl::deref<class_iter>::type ClassT;      \
-            typedef typename ::boost::mpl::next<class_iter>::type iter0;        \
+            typedef ::boost::python::detail::front_t<SigT> RT;                  \
+            typedef ::boost::python::detail::get_t<SigT, 1> ClassT;             \
                                                                                 \
             BOOST_PP_REPEAT_2ND(                                                \
                 n_args,                                                         \
                 BOOST_PYTHON_TYPEDEF_GEN,                                       \
-                0)                                                              \
+                2)                                                              \
                                                                                 \
             BOOST_PP_REPEAT_FROM_TO_2(                                          \
                 BOOST_PP_SUB_D(1, n_args, n_dflts),                             \

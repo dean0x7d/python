@@ -7,7 +7,6 @@
 
 # include <boost/python/detail/signature.hpp>
 # include <boost/detail/workaround.hpp>
-# include <boost/mpl/size.hpp>
 # include <memory>
 
 namespace boost { namespace python { namespace objects {
@@ -66,7 +65,7 @@ struct signature_py_function_impl : py_function_impl_base
     
     virtual unsigned min_arity() const
     {
-        return mpl::size<Sig>::value - 1;
+        return Sig::k_size - 1;
     }
     
     virtual python::detail::py_func_sig_info signature() const

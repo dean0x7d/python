@@ -20,8 +20,6 @@ BOOST_PYTHON_DECL handle<> function_handle_impl(py_function const& f);
 template <class F, class Signature>
 inline handle<> function_handle(F const& f, Signature)
 {
-    enum { n_arguments = mpl::size<Signature>::value - 1 };
-
     return objects::function_handle_impl(
         python::detail::caller<
             F,default_call_policies,Signature

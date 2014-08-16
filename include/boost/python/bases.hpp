@@ -15,7 +15,7 @@ namespace boost { namespace python {
 
   // A type list for specifying bases
   template <typename... Bases>
-  struct bases : detail::type_list<Bases...>::type {};
+  struct bases : detail::type_list<Bases...> {};
 
   namespace detail
   {

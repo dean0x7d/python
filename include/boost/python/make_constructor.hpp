@@ -18,7 +18,6 @@
 # include <boost/python/detail/caller.hpp>
 # include <boost/python/detail/none.hpp>
 
-# include <boost/mpl/size.hpp>
 # include <boost/mpl/int.hpp>
 # include <boost/mpl/assert.hpp>
 
@@ -160,7 +159,7 @@ namespace detail
       , NumKeywords                     // An MPL integral type wrapper: the size of kw
       )
   {
-      enum { arity = mpl::size<Sig>::value - 1 };
+      constexpr auto arity = Sig::k_size;
       
       typedef typename detail::error::more_keywords_than_function_arguments<
           NumKeywords::value, arity

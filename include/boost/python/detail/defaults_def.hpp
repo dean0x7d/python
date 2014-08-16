@@ -13,8 +13,6 @@
 
 #include <boost/python/detail/defaults_gen.hpp>
 #include <boost/type_traits.hpp>
-#include <boost/mpl/front.hpp>
-#include <boost/mpl/size.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/preprocessor/iterate.hpp>
 #include <boost/python/class_fwd.hpp>
@@ -23,6 +21,7 @@
 #include <boost/python/detail/scope.hpp>
 #include <boost/python/detail/make_keyword_range_fn.hpp>
 #include <boost/python/object/add_to_namespace.hpp>
+#include <boost/python/detail/type_list_utils.hpp>
 
 ///////////////////////////////////////////////////////////////////////////////
 namespace boost { namespace python {
@@ -233,7 +232,7 @@ namespace detail
       NameSpaceT& name_space,
       SigT const&)
   {
-      typedef typename mpl::front<SigT>::type return_type;
+      typedef typename detail::front_t<SigT> return_type;
       typedef typename OverloadsT::void_return_type void_return_type;
       typedef typename OverloadsT::non_void_return_type non_void_return_type;
 
@@ -243,8 +242,8 @@ namespace detail
           , non_void_return_type
       >::type stubs_type;
 
-      BOOST_STATIC_ASSERT(
-          (stubs_type::max_args) <= mpl::size<SigT>::value);
+      static_assert(stubs_type::max_args <= SigT::k_size,
+                    "Too many arguments.");
 
       typedef typename stubs_type::template gen<SigT> gen_type;
       define_with_defaults_helper<stubs_type::n_funcs-1>::def(

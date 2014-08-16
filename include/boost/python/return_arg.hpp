@@ -16,7 +16,6 @@
 # include <boost/type_traits/add_const.hpp>
 
 # include <boost/mpl/int.hpp>
-# include <boost/mpl/at.hpp>
 
 # include <boost/static_assert.hpp>
 # include <boost/python/refcount.hpp>
@@ -91,11 +90,10 @@ struct return_arg : Base
         return incref( detail::get(mpl::int_<arg_pos-1>(),args) );
     }
 
-    template <class Sig> 
-    struct extract_return_type : mpl::at_c<Sig, arg_pos>
-    {
+    template <class Sig>
+    struct extract_return_type {
+        using type = detail::get_t<Sig, arg_pos>;
     };
-
 };
 
 template <

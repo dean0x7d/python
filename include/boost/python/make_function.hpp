@@ -13,7 +13,6 @@
 
 # include <boost/python/object/function_object.hpp>
 
-# include <boost/mpl/size.hpp>
 # include <boost/mpl/int.hpp>
 
 namespace boost { namespace python {
@@ -51,7 +50,7 @@ namespace detail
       , NumKeywords                     // An MPL integral type wrapper: the size of kw
       )
   {
-      enum { arity = mpl::size<Sig>::value - 1 };
+      constexpr int arity = Sig::k_size - 1;
       
       typedef typename detail::error::more_keywords_than_function_arguments<
           NumKeywords::value, arity
