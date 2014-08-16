@@ -15,7 +15,6 @@
 # include <boost/python/handle_fwd.hpp>
 # include <boost/python/errors.hpp>
 # include <boost/python/refcount.hpp>
-# include <boost/python/detail/preprocessor.hpp>
 # include <boost/python/tag.hpp>
 # include <boost/python/def_visitor.hpp>
 

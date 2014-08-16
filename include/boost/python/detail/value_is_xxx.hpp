@@ -7,8 +7,6 @@
 
 # include <boost/config.hpp>
 # include <boost/mpl/bool.hpp>
-# include <boost/preprocessor/enum_params.hpp>
-
 
 #  include <boost/type_traits/remove_reference.hpp>
 #  include <boost/type_traits/remove_cv.hpp>
