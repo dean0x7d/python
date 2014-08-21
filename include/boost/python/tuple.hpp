@@ -56,25 +56,15 @@ namespace converter
   };
 }
 
-
-namespace detail 
-{
-  inline void tuple_set_items(tuple const& t, int n) {}
-
-  template <class A, class... Args>
-  inline void tuple_set_items(tuple const& t, int n, A const& a, Args const&... args)
-  {
-      PyTuple_SET_ITEM(t.ptr(), n, python::incref(python::object(a).ptr()));
-      tuple_set_items(t, n + 1, args...);
-  }
-}
-
 template <class... Args>
 tuple make_tuple(Args const&... args)
 {
-    tuple result((detail::new_reference)::PyTuple_New(sizeof...(Args)));
-    detail::tuple_set_items(result, 0, args...);
-    return result;
+    return tuple(detail::new_reference(
+        PyTuple_Pack(
+            sizeof...(Args), 
+            python::incref(python::object(args).ptr())...
+        )
+    ));
 }
 
 }}  // namespace boost::python
