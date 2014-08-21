@@ -13,22 +13,14 @@
 
 namespace boost { namespace python {
 
-namespace detail {
-    template<typename T>
-    constexpr char O() { return 'O'; }
-}
-
 template<typename R, typename... Args>
 typename detail::returnable<R>::type 
     call(PyObject* callable, Args const&... args)
 {
-    // Format should be "(OOOO...)" with as many O's as there are arguments
-    constexpr char format[] = {'(', detail::O<Args>()..., ')', '\0'};
-    
-    PyObject* const result = PyEval_CallFunction(
+    PyObject* const result = PyObject_CallFunctionObjArgs(
         callable, 
-        const_cast<char*>(format),
-        converter::arg_to_python<Args>(args).get()...
+        converter::arg_to_python<Args>(args).get()...,
+        nullptr
     );
     
     // This conversion *must not* be done in the same expression as

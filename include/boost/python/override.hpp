@@ -88,13 +88,11 @@ class override : public object
     template<class... Args>
     detail::method_result operator()(Args const&... args) const
     {
-        constexpr char format[] = {'(', detail::O<Args>()..., ')', '\0'};
-        
         detail::method_result x(
-            PyEval_CallFunction(
+            PyObject_CallFunctionObjArgs(
                 this->ptr(),
-                const_cast<char*>(format),
-                converter::arg_to_python<Args>(args).get()...
+                converter::arg_to_python<Args>(args).get()...,
+                nullptr
             )
         );
         return x;
