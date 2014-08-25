@@ -7,14 +7,11 @@
 
 # include <boost/python/detail/prefix.hpp>
 
-# include <boost/python/detail/msvc_typeinfo.hpp>
+# include <boost/type.hpp>
 # include <boost/operators.hpp>
 # include <typeinfo>
 # include <cstring>
 # include <ostream>
-# include <boost/static_assert.hpp>
-# include <boost/detail/workaround.hpp>
-# include <boost/type_traits/same_traits.hpp>
 
 #  ifndef BOOST_PYTHON_HAVE_GCC_CP_DEMANGLE
 #   if defined(__GNUC__)                                                \
@@ -68,47 +65,11 @@ struct type_info : private totally_ordered<type_info>
 };
 
 
-// This macro is obsolete. Port away and remove.
-# define BOOST_PYTHON_EXPLICIT_TT_DEF(T)
-
 template <class T>
 inline type_info type_id()
 {
-    return type_info(
-#  if !defined(_MSC_VER)                                       \
-      || !BOOST_WORKAROUND(BOOST_INTEL_CXX_VERSION, <= 700)
-        typeid(T)
-#  else // strip the decoration which Intel mistakenly leaves in
-        python::detail::msvc_typeid((boost::type<T>*)0)
-#  endif 
-        );
+    return type_info(typeid(T));
 }
-
-#  if (defined(__EDG_VERSION__) && __EDG_VERSION__ < 245) \
-   || (defined(__sgi) && defined(_COMPILER_VERSION) && _COMPILER_VERSION <= 744)
-// Older EDG-based compilers seems to mistakenly distinguish "int" from
-// "signed int", etc., but only in typeid() expressions. However
-// though int == signed int, the "signed" decoration is propagated
-// down into template instantiations. Explicit specialization stops
-// that from taking hold.
-
-#   define BOOST_PYTHON_SIGNED_INTEGRAL_TYPE_ID(T)              \
-template <>                                                     \
-inline type_info type_id<T>()                                   \
-{                                                               \
-    return type_info(typeid(T));                                \
-}
-
-BOOST_PYTHON_SIGNED_INTEGRAL_TYPE_ID(short)
-BOOST_PYTHON_SIGNED_INTEGRAL_TYPE_ID(int)
-BOOST_PYTHON_SIGNED_INTEGRAL_TYPE_ID(long)
-// using Python's macro instead of Boost's - we don't seem to get the
-// config right all the time.
-#   ifdef HAVE_LONG_LONG
-BOOST_PYTHON_SIGNED_INTEGRAL_TYPE_ID(long long)
-#   endif
-#   undef BOOST_PYTHON_SIGNED_INTEGRAL_TYPE_ID
-#  endif
 
 //
 inline type_info::type_info(std::type_info const& id)

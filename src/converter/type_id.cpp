@@ -11,60 +11,19 @@
 #include <memory>
 #include <cstdlib>
 #include <cstring>
+#include <ostream>
 
-#if defined(__QNXNTO__)
-# include <ostream>
-#else                       /*  defined(__QNXNTO__) */
-
-#if !defined(__GNUC__) || __GNUC__ >= 3 || __SGI_STL_PORT || __EDG_VERSION__
-# include <ostream>
-#else 
-# include <ostream.h>
+#ifdef BOOST_PYTHON_HAVE_GCC_CP_DEMANGLE
+# include <cxxabi.h>
 #endif 
-
-#  ifdef BOOST_PYTHON_HAVE_GCC_CP_DEMANGLE
-#   if defined(__GNUC__) &&  __GNUC__ >= 3
-
-// http://lists.debian.org/debian-gcc/2003/09/msg00055.html notes
-// that, in cxxabi.h of gcc-3.x for x < 4, this type is used before it
-// is declared.
-#    if __GNUC__ == 3 && __GNUC_MINOR__ < 4
-class __class_type_info;
-#    endif
-
-#    include <cxxabi.h>
-#   endif
-#  endif 
-#endif                      /*  defined(__QNXNTO__) */
 
 namespace boost { namespace python {
 
-#  ifdef BOOST_PYTHON_HAVE_GCC_CP_DEMANGLE
+#ifdef BOOST_PYTHON_HAVE_GCC_CP_DEMANGLE
 
-#   if defined(__QNXNTO__)
-namespace cxxabi {
-extern "C" char* __cxa_demangle(char const*, char*, std::size_t*, int*);
-}
-#   else                    /*  defined(__QNXNTO__) */
-
-#    ifdef __GNUC__
-#     if __GNUC__ < 3
-
-namespace cxxabi = :: ;
-extern "C" char* __cxa_demangle(char const*, char*, std::size_t*, int*);
-#     else
-
+# ifdef __GNUC__
 namespace cxxabi = ::abi;       // GCC 3.1 and later
-
-#      if __GNUC__ == 3 && __GNUC_MINOR__ == 0
-namespace abi
-{
-  extern "C" char* __cxa_demangle(char const*, char*, std::size_t*, int*);
-}
-#      endif            /*  __GNUC__ == 3 && __GNUC_MINOR__ == 0    */
-#     endif             /*  __GNUC__ < 3                            */
-#    endif              /*  __GNUC__                                */
-#   endif               /*  defined(__QNXNTO__)                     */
+# endif
 
 namespace
 {
@@ -188,7 +147,7 @@ namespace detail
       return p->second;
   }
 }
-#  endif
+#endif // BOOST_PYTHON_HAVE_GCC_CP_DEMANGLE
 
 BOOST_PYTHON_DECL std::ostream& operator<<(std::ostream& os, type_info const& x)
 {
@@ -209,4 +168,5 @@ namespace detail
       return os;
   }
 }
-}} // namespace boost::python::converter
+
+}} // namespace boost::python
