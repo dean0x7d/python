@@ -28,18 +28,15 @@
 # include <boost/mpl/apply.hpp>
 # include <boost/mpl/eval_if.hpp>
 # include <boost/mpl/identity.hpp>
-# include <boost/mpl/int.hpp>
 
 namespace boost { namespace python { namespace detail { 
 
 template <int N>
-inline PyObject* get(mpl::int_<N>, PyObject* const& args_)
-{
-    return PyTuple_GET_ITEM(args_,N);
+inline PyObject* get(PyObject* const& args_) {
+    return PyTuple_GET_ITEM(args_, N);
 }
 
-inline Py_ssize_t arity(PyObject* const& args_)
-{
+inline Py_ssize_t arity(PyObject* const& args_) {
     return PyTuple_GET_SIZE(args_);
 }
 
@@ -133,7 +130,7 @@ struct caller<F, CallPolicies, type_list<Result, Args...>>
     template <std::size_t... Is>
     bool check_converters(argument_package pack, cpp14::index_sequence<Is...>)
     {
-        bool chk[] = { arg_from_python<Args>(get(mpl::int_<Is>(), pack)).convertible()... };
+        bool chk[] = { arg_from_python<Args>(get<Is>(pack)).convertible()... };
         for (auto is_convertible : chk) {
             if (!is_convertible)
                 return false;
@@ -150,7 +147,7 @@ struct caller<F, CallPolicies, type_list<Result, Args...>>
             detail::invoke_tag<Result, F>(),
             create_result_converter(args_, (result_converter*)0, (result_converter*)0),
             m_data.first(),
-            arg_from_python<Args>(get(mpl::int_<Is>(), inner_args))...
+            arg_from_python<Args>(get<Is>(inner_args))...
         );
     }
     

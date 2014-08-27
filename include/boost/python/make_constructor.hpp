@@ -82,9 +82,9 @@ namespace detail
   };
 
   template <int N, class BaseArgs, class Offset>
-  inline PyObject* get(mpl::int_<N>, offset_args<BaseArgs,Offset> const& args_)
+  inline PyObject* get(offset_args<BaseArgs,Offset> const& args_)
   {
-      return get(mpl::int_<(N+Offset::value)>(), args_.base);
+      return get<N+Offset::value>(args_.base);
   }
   
   template <class BaseArgs, class Offset>

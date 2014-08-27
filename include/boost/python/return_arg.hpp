@@ -15,8 +15,6 @@
 # include <boost/type_traits/add_reference.hpp>
 # include <boost/type_traits/add_const.hpp>
 
-# include <boost/mpl/int.hpp>
-
 # include <boost/static_assert.hpp>
 # include <boost/python/refcount.hpp>
 
@@ -87,7 +85,7 @@ struct return_arg : Base
         if (!result)
             return 0;
         Py_DECREF(result);
-        return incref( detail::get(mpl::int_<arg_pos-1>(),args) );
+        return incref( detail::get<arg_pos-1>(args) );
     }
 
     template <class Sig>

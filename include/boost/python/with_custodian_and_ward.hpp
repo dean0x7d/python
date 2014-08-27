@@ -21,8 +21,7 @@ namespace detail
       template <class ArgumentPackage>
       static PyObject* execute(ArgumentPackage const& args, PyObject* = 0)
       {
-          int const pre_n = static_cast<int>(N) - 1; // separate line is gcc-2.96 workaround
-          return detail::get(mpl::int_<pre_n>(), args);
+          return detail::get<N-1>(args);
       }
   };
   template <>
