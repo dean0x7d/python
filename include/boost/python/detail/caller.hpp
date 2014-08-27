@@ -7,37 +7,27 @@
 # define CALLER_DWA20021121_HPP
 
 # include <boost/python/cpp14/utility.hpp>
-
-# include <boost/python/type_id.hpp>
-# include <boost/python/handle.hpp>
-
-# include <boost/detail/indirect_traits.hpp>
+# include <boost/python/cpp14/type_traits.hpp>
 
 # include <boost/python/detail/invoke.hpp>
 # include <boost/python/detail/signature.hpp>
 
+# include <boost/python/type_id.hpp>
 # include <boost/python/arg_from_python.hpp>
 # include <boost/python/converter/context_result_converter.hpp>
 # include <boost/python/converter/builtin_converters.hpp>
 
 # include <boost/compressed_pair.hpp>
 
-# include <boost/type_traits/is_same.hpp>
-# include <boost/type_traits/is_convertible.hpp>
-
-# include <boost/mpl/apply.hpp>
-# include <boost/mpl/eval_if.hpp>
-# include <boost/mpl/identity.hpp>
-
 namespace boost { namespace python { namespace detail { 
 
 template <int N>
-inline PyObject* get(PyObject* const& args_) {
-    return PyTuple_GET_ITEM(args_, N);
+inline PyObject* get(PyObject* const& args) {
+    return PyTuple_GET_ITEM(args, N);
 }
 
-inline Py_ssize_t arity(PyObject* const& args_) {
-    return PyTuple_GET_SIZE(args_);
+inline Py_ssize_t arity(PyObject* const& args) {
+    return PyTuple_GET_SIZE(args);
 }
 
 // This "result converter" is really just used as
@@ -49,33 +39,26 @@ typedef int void_result_to_python;
 // metafunction selects the appropriate converter to use for
 // converting the result to python.
 template <class Policies, class Result>
-struct select_result_converter
-  : mpl::eval_if<
-        is_same<Result,void>
-      , mpl::identity<void_result_to_python>
-      , mpl::apply1<typename Policies::result_converter,Result>
-    >
-{
-};
+using select_result_converter_t = cpp14::conditional_t<
+    std::is_same<Result, void>::value,
+    void_result_to_python,
+    typename Policies::result_converter::template apply<Result>::type
+>;
 
-template <class ArgPackage, class ResultConverter>
-inline ResultConverter create_result_converter(
-    ArgPackage const& args_
-  , ResultConverter*
-  , converter::context_result_converter*
-)
-{
-    return ResultConverter(args_);
+template <class ResultConverter, class ArgPackage>
+inline ResultConverter create_result_converter(ArgPackage const& args, std::true_type) {
+    return {args};
 }
-    
-template <class ArgPackage, class ResultConverter>
-inline ResultConverter create_result_converter(
-    ArgPackage const&
-  , ResultConverter*
-  , ...
-)
-{
-    return ResultConverter();
+
+template <class ResultConverter, class ArgPackage>
+inline ResultConverter create_result_converter(ArgPackage const& args, std::false_type) {
+    return {};
+}
+
+template <class ResultConverter, class ArgPackage>
+inline ResultConverter create_result_converter(ArgPackage const& args) {
+    using pick = std::is_convertible<ResultConverter*, converter::context_result_converter*>;
+    return create_result_converter<ResultConverter>(args, pick());
 }
 
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
@@ -84,7 +67,7 @@ struct converter_target_type
 {
     static PyTypeObject const *get_pytype()
     {
-        return create_result_converter((PyObject*)0, (ResultConverter *)0, (ResultConverter *)0).get_pytype();
+        return create_result_converter<ResultConverter>((PyObject*)nullptr).get_pytype();
     }
 };
 
@@ -93,7 +76,7 @@ struct converter_target_type <void_result_to_python >
 {
     static PyTypeObject const *get_pytype()
     {
-        return 0;
+        return nullptr;
     }
 };
 #endif
@@ -139,25 +122,25 @@ struct caller<F, CallPolicies, type_list<Result, Args...>>
     }
     
     template <std::size_t... Is>
-    PyObject* call_impl(argument_package inner_args, PyObject* args_, cpp14::index_sequence<Is...>)
+    PyObject* call_impl(argument_package inner_args, PyObject* args, cpp14::index_sequence<Is...>)
     {
-        using result_converter = typename select_result_converter<CallPolicies, Result>::type;
+        using result_converter = select_result_converter_t<CallPolicies, Result>;
         
         return detail::invoke(
             detail::invoke_tag<Result, F>(),
-            create_result_converter(args_, (result_converter*)0, (result_converter*)0),
+            create_result_converter<result_converter>(args),
             m_data.first(),
             arg_from_python<Args>(get<Is>(inner_args))...
         );
     }
     
-    PyObject* operator()(PyObject* args_, PyObject*) // eliminate
+    PyObject* operator()(PyObject* args, PyObject*) // eliminate
                                                      // this
                                                      // trailing
                                                      // keyword dict
     {
         using argument_package = typename CallPolicies::argument_package;
-        argument_package inner_args(args_);
+        argument_package inner_args(args);
         
         if (!check_converters(inner_args, cpp14::index_sequence_for<Args...>()))
             return nullptr;
@@ -169,7 +152,7 @@ struct caller<F, CallPolicies, type_list<Result, Args...>>
         
         // TODO: Currently, the converters are created twice (check_converters, call_impl).
         //       This can be improved by making a tuple<converters...> and passing it to both.
-        PyObject* result = call_impl(inner_args, args_, cpp14::index_sequence_for<Args...>());
+        PyObject* result = call_impl(inner_args, args, cpp14::index_sequence_for<Args...>());
         
         return m_data.second().postcall(inner_args, result);
     }
@@ -184,7 +167,7 @@ struct caller<F, CallPolicies, type_list<Result, Args...>>
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
         
         typedef typename CallPolicies::template extract_return_type<Sig>::type rtype;
-        typedef typename select_result_converter<CallPolicies, rtype>::type result_converter;
+        using result_converter = select_result_converter_t<CallPolicies, rtype>;
         
         static const signature_element ret = {
             (boost::is_void<rtype>::value ? "void" : type_id<rtype>().name())
