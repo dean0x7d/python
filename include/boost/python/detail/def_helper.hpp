@@ -6,18 +6,10 @@
 # define DEF_HELPER_DWA200287_HPP
 
 # include <boost/python/args.hpp>
-# include <boost/type_traits/ice.hpp>
-# include <boost/type_traits/same_traits.hpp>
-# include <boost/python/detail/indirect_traits.hpp>
-# include <boost/mpl/not.hpp>
-# include <boost/mpl/and.hpp>
-# include <boost/mpl/or.hpp>
-# include <boost/type_traits/add_reference.hpp>
-# include <boost/mpl/lambda.hpp>
-# include <boost/mpl/apply.hpp>
-# include <boost/tuple/tuple.hpp>
-# include <boost/python/detail/not_specified.hpp>
 # include <boost/python/detail/def_helper_fwd.hpp>
+
+# include <boost/python/cpp14/type_traits.hpp>
+# include <tuple>
 
 namespace boost { namespace python {
 
@@ -25,116 +17,52 @@ struct default_call_policies;
 
 namespace detail
 {
-  // tuple_extract<Tuple,Predicate>::extract(t) returns the first
-  // element of a Tuple whose type E satisfies the given Predicate
-  // applied to add_reference<E>. The Predicate must be an MPL
-  // metafunction class.
-  template <class Tuple, class Predicate>
-  struct tuple_extract;
+  namespace impl {
+    template<template<class> class Predicate, class Tuple>
+    struct get_by_predicate;
+    
+    template<template<class> class Predicate, class... Args>
+    struct get_by_predicate<Predicate, std::tuple<Args...>>
+    {
+        // Predicate result is 'true', return the index.
+        template<bool result, int N, class... Tail>
+        struct find_index {
+            static constexpr auto value = N;
+        };
 
-  // Implementation class for when the tuple's head type does not
-  // satisfy the Predicate
-  template <bool matched>
-  struct tuple_extract_impl
-  {
-      template <class Tuple, class Predicate>
-      struct apply
-      {
-          typedef typename Tuple::head_type result_type;
-          
-          static typename Tuple::head_type extract(Tuple const& x)
-          {
-              return x.get_head();
-          }
-      };
-  };
+        // Predicate result is 'false', test the next element.
+        template<int N, class T, class... Tail>
+        struct find_index<false, N, T, Tail...> {
+            static constexpr auto value = find_index<
+                Predicate<
+                    cpp14::remove_cv_t<cpp14::remove_reference_t<T>>
+                >::value, N + 1, Tail...
+            >::value;
+        };
+    
+        static constexpr auto index = find_index<false, -1, Args...>::value;
+        
+        using Tuple = std::tuple<Args...>;
+        static_assert(index < std::tuple_size<Tuple>::value, 
+                      "No tuple element satisfies the predicate");
+        
+        using type = typename std::tuple_element<index, Tuple>::type;
+        static type extract(const Tuple& t) {
+            return std::get<index>(t);
+        }
+    };
+  }
 
-  // Implementation specialization for when the tuple's head type
-  // satisfies the predicate
-  template <>
-  struct tuple_extract_impl<false>
-  {
-      template <class Tuple, class Predicate>
-      struct apply
-      {
-          // recursive application of tuple_extract on the tail of the tuple
-          typedef tuple_extract<typename Tuple::tail_type, Predicate> next;
-          typedef typename next::result_type result_type;
-          
-          static result_type extract(Tuple const& x)
-          {
-              return next::extract(x.get_tail());
-          }
-      };
-  };
+  template<template<class> class Predicate, class Tuple>
+  using get_by_predicate_t = typename impl::get_by_predicate<Predicate, Tuple>::type;
 
-  // A metafunction which selects a version of tuple_extract_impl to
-  // use for the implementation of tuple_extract
-  template <class Tuple, class Predicate>
-  struct tuple_extract_base_select
-  {
-      typedef typename Tuple::head_type head_type;
-      typedef typename mpl::apply1<Predicate, typename add_reference<head_type>::type>::type match_t;
-      BOOST_STATIC_CONSTANT(bool, match = match_t::value);
-      typedef typename tuple_extract_impl<match>::template apply<Tuple,Predicate> type;
-  };
-  
-  template <class Tuple, class Predicate>
-  struct tuple_extract
-      : tuple_extract_base_select<
-         Tuple
-         , typename mpl::lambda<Predicate>::type
-      >::type
-  {
-  };
-
-
-  //
-  // Specialized extractors for the docstring, keywords, CallPolicies,
-  // and default implementation of virtual functions
-  //
-
-  template <class Tuple>
-  struct doc_extract
-      : tuple_extract<
-        Tuple
-        , mpl::not_<
-           mpl::or_<
-               indirect_traits::is_reference_to_class<mpl::_1>
-             , indirect_traits::is_reference_to_member_function_pointer<mpl::_1 >
-           >
-        >
-     >
-  {
-  };
-  
-  template <class Tuple>
-  struct keyword_extract
-      : tuple_extract<Tuple, is_reference_to_keywords<mpl::_1 > >
-  {
-  };
-
-  template <class Tuple>
-  struct policy_extract
-      : tuple_extract<
-          Tuple
-          , mpl::and_<
-             mpl::not_<is_same<not_specified const&,mpl::_1> >
-              , indirect_traits::is_reference_to_class<mpl::_1 >
-              , mpl::not_<is_reference_to_keywords<mpl::_1 > >
-          >
-        >
-  {
-  };
-
-  template <class Tuple>
-  struct default_implementation_extract
-      : tuple_extract<
-          Tuple
-          , indirect_traits::is_reference_to_member_function_pointer<mpl::_1 >
-          >
-  {
-  };
+  // Get the first tuple element that satisfies the predicate.
+  // References and cv qualifiers are removed from the element type 
+  // before passing it to the predicate.
+  template<template<class> class Predicate, class Tuple>
+  get_by_predicate_t<Predicate, Tuple> get_by_predicate(const Tuple& t) {
+      return impl::get_by_predicate<Predicate, Tuple>::extract(t);
+  }
 
   //
   // A helper class for decoding the optional arguments to def()
@@ -149,7 +77,7 @@ namespace detail
       // A tuple type which begins with references to the supplied
       // arguments and ends with actual representatives of the default
       // types.
-      typedef boost::tuples::tuple<
+      using all_t = std::tuple<
           T1 const&
           , T2 const&
           , T3 const&
@@ -159,7 +87,7 @@ namespace detail
           , char const*
           , void(not_specified::*)()   // A function pointer type which is never an
                                        // appropriate default implementation
-          > all_t;
+      >;
 
       // Constructors; these initialize an member of the tuple type
       // shown above.
@@ -168,37 +96,50 @@ namespace detail
       def_helper(T1 const& a1, T2 const& a2, T3 const& a3) : m_all(a1,a2,a3,m_nil) {}
       def_helper(T1 const& a1, T2 const& a2, T3 const& a3, T4 const& a4) : m_all(a1,a2,a3,a4) {}
 
+   private: // predicates
+      template<class T>
+      struct is_doc {
+          static constexpr bool value = !(std::is_class<T>::value || 
+                                          std::is_member_function_pointer<T>::value);
+      };
+      
+      template<class T>
+      struct is_policy {
+          static constexpr bool value = (!std::is_same<not_specified, T>::value &&
+                                         std::is_class<T>::value &&
+                                         !is_keywords<T>::value);
+      };
+      
    private: // types
-      typedef typename default_implementation_extract<all_t>::result_type default_implementation_t;
+      using default_implementation_t = get_by_predicate_t<std::is_member_function_pointer, all_t>;
       
    public: // Constants which can be used for static assertions.
 
       // Users must not supply a default implementation for non-class
       // methods.
-      BOOST_STATIC_CONSTANT(
-          bool, has_default_implementation = (
-              !is_same<default_implementation_t, void(not_specified::*)()>::value));
+      static constexpr bool has_default_implementation = 
+              !is_same<default_implementation_t, void(not_specified::*)()>::value;
       
    public: // Extractor functions which pull the appropriate value out
            // of the tuple
       char const* doc() const
       {
-          return doc_extract<all_t>::extract(m_all);
+          return get_by_predicate<is_doc>(m_all);
       }
       
-      typename keyword_extract<all_t>::result_type keywords() const
+      get_by_predicate_t<is_keywords, all_t> keywords() const
       {
-          return keyword_extract<all_t>::extract(m_all);
+          return get_by_predicate<is_keywords>(m_all);
       }
       
-      typename policy_extract<all_t>::result_type policies() const
+      get_by_predicate_t<is_policy, all_t> policies() const
       {
-          return policy_extract<all_t>::extract(m_all);
+          return get_by_predicate<is_policy>(m_all);
       }
 
       default_implementation_t default_implementation() const
       {
-          return default_implementation_extract<all_t>::extract(m_all);
+          return get_by_predicate<std::is_member_function_pointer>(m_all);
       }
       
    private: // data members
