@@ -6,10 +6,8 @@
 # define BASES_DWA2002321_HPP
 
 # include <boost/python/detail/prefix.hpp>
-# include <boost/type_traits/object_traits.hpp>
 # include <boost/python/detail/type_list.hpp>
-# include <boost/mpl/if.hpp>
-# include <boost/mpl/bool.hpp>
+# include <boost/python/cpp14/type_traits.hpp>
 
 namespace boost { namespace python { 
 
@@ -20,26 +18,13 @@ namespace boost { namespace python {
   namespace detail
   {
     template <class T> 
-    struct specifies_bases
-        : mpl::false_
-    {
-    };
+    struct specifies_bases : std::false_type {};
     
     template <class... Bases>
-    struct specifies_bases< bases<Bases...> >
-        : mpl::true_
-    {
-    };
+    struct specifies_bases<bases<Bases...>> : std::true_type {};
 
-    template <class T, class Prev = bases<> >
-    struct select_bases
-        : mpl::if_<
-                specifies_bases<T>
-                , T
-                , Prev
-          >
-    {
-    };
+    template <class T, class Prev = bases<>>
+    using select_bases_t = cpp14::conditional_t<specifies_bases<T>::value, T, Prev>;
   }
 
 }} // namespace boost::python

@@ -141,16 +141,9 @@ struct class_metadata
     >::type held_type_arg;
 
     // bases
-    typedef typename python::detail::select_bases<
-        X1
-      , typename python::detail::select_bases<
-            X2
-          , typename python::detail::select_bases<
-                X3
-              , python::bases<>
-            >::type
-        >::type
-    >::type bases;
+    using bases = python::detail::select_bases_t<X1,
+                    python::detail::select_bases_t<X2,
+                      python::detail::select_bases_t<X3>>>;
 
     typedef mpl::or_<
         is_same<X1,noncopyable>
