@@ -14,6 +14,11 @@ template< class T >
 using add_lvalue_reference_t = typename std::add_lvalue_reference<T>::type;
 template< class T >
 using add_rvalue_reference = typename std::add_rvalue_reference<T>::type;
+
+template<typename T>
+using remove_pointer_t = typename std::remove_pointer<T>::type;
+template<typename T>
+using add_pointer_t = typename std::add_pointer<T>::type;
     
 template<bool B, class T, class F>
 using conditional_t = typename std::conditional<B, T, F>::type;
