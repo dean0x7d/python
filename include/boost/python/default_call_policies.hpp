@@ -6,29 +6,13 @@
 # define DEFAULT_CALL_POLICIES_DWA2002131_HPP
 
 # include <boost/python/detail/prefix.hpp>
-# include <boost/mpl/if.hpp>
 # include <boost/python/to_python_value.hpp>
 # include <boost/python/detail/value_arg.hpp>
-# include <boost/python/detail/type_list.hpp>
 # include <boost/python/detail/type_list_utils.hpp>
-# include <boost/type_traits/transform_traits.hpp>
-# include <boost/type_traits/is_pointer.hpp>
-# include <boost/type_traits/is_reference.hpp>
-# include <boost/mpl/or.hpp>
 
 namespace boost { namespace python { 
 
 template <class T> struct to_python_value;
-
-namespace detail
-{
-// for "readable" error messages
-  template <class T> struct specify_a_return_value_policy_to_wrap_functions_returning
-# if defined(__GNUC__) || defined(__EDG__)
-  {}
-# endif 
-  ;
-}
 
 struct default_result_converter;
 
@@ -63,13 +47,12 @@ struct default_result_converter
     template <class R>
     struct apply
     {
-        typedef typename mpl::if_<
-            mpl::or_<is_pointer<R>, is_reference<R> >
-          , detail::specify_a_return_value_policy_to_wrap_functions_returning<R>
-          , boost::python::to_python_value<
-                typename detail::value_arg<R>::type
-            >
-        >::type type;
+        static_assert(!std::is_pointer<R>::value && !std::is_reference<R>::value,
+                      "Specify a return value policy to wrap functions");
+
+        using type = boost::python::to_python_value<
+            typename detail::value_arg<R>::type
+        >;
     };
 };
 
