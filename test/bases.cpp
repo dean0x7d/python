@@ -9,15 +9,6 @@ struct A;
 struct B;
 
 template <class X, class Y, class Z>
-struct choose_bases
-    : boost::python::detail::select_bases_t<X, 
-        boost::python::detail::select_bases_t<Y,
-            boost::python::detail::select_bases_t<Z>>>
-{
-    
-};
-
-template <class X, class Y, class Z>
 using choose_bases_t = boost::python::detail::select_bases_t<X, 
                           boost::python::detail::select_bases_t<Y,
                               boost::python::detail::select_bases_t<Z>>>;
