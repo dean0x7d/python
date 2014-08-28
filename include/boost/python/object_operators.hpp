@@ -10,7 +10,6 @@
 # include <boost/python/object_core.hpp>
 # include <boost/python/call.hpp>
 # include <boost/iterator/detail/enable_if.hpp>
-# include <boost/mpl/bool.hpp>
 
 # include <boost/iterator/detail/config_def.hpp>
 
@@ -34,7 +33,7 @@ struct is_object_operators
            < 4
         )
     };
-    typedef mpl::bool_<value> type;
+    using type = std::integral_constant<bool, value>;
 };
 
 # if !defined(BOOST_NO_SFINAE) && !defined(BOOST_NO_IS_CONVERTIBLE)

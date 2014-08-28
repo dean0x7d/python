@@ -31,104 +31,11 @@
 # include <boost/python/detail/unwrap_type_id.hpp>
 # include <boost/python/detail/unwrap_wrapper.hpp>
 
-# include <boost/type_traits/is_same.hpp>
-# include <boost/type_traits/is_member_function_pointer.hpp>
-# include <boost/type_traits/is_polymorphic.hpp>
-
-# include <boost/mpl/bool.hpp>
-# include <boost/mpl/not.hpp>
-
-# include <boost/detail/workaround.hpp>
-
-# if BOOST_WORKAROUND(__MWERKS__, <= 0x3004)                        \
-    /* pro9 reintroduced the bug */                                 \
-    || (BOOST_WORKAROUND(__MWERKS__, > 0x3100)                      \
-        && BOOST_WORKAROUND(__MWERKS__, BOOST_TESTED_AT(0x3201)))
-
-#  define BOOST_PYTHON_NO_MEMBER_POINTER_ORDERING 1
-
-# endif
-
-# ifdef BOOST_PYTHON_NO_MEMBER_POINTER_ORDERING
-#  include <boost/mpl/and.hpp>
-#  include <boost/type_traits/is_member_pointer.hpp>
-# endif
-
 namespace boost { namespace python {
 
 template <class DerivedVisitor> class def_visitor;
 
 enum no_init_t { no_init };
-
-namespace detail
-{
-  template <class T>
-  struct is_data_member_pointer
-      : mpl::and_<
-            is_member_pointer<T>
-          , mpl::not_<is_member_function_pointer<T> >
-        >
-  {};
-  
-# ifdef BOOST_PYTHON_NO_MEMBER_POINTER_ORDERING
-#  define BOOST_PYTHON_DATA_MEMBER_HELPER(D) , detail::is_data_member_pointer<D>()
-#  define BOOST_PYTHON_YES_DATA_MEMBER , mpl::true_
-#  define BOOST_PYTHON_NO_DATA_MEMBER , mpl::false_
-# elif defined(BOOST_NO_FUNCTION_TEMPLATE_ORDERING)
-#  define BOOST_PYTHON_DATA_MEMBER_HELPER(D) , 0
-#  define BOOST_PYTHON_YES_DATA_MEMBER , int
-#  define BOOST_PYTHON_NO_DATA_MEMBER , ...
-# else 
-#  define BOOST_PYTHON_DATA_MEMBER_HELPER(D)
-#  define BOOST_PYTHON_YES_DATA_MEMBER
-#  define BOOST_PYTHON_NO_DATA_MEMBER
-# endif
-  
-  namespace error
-  {
-    //
-    // A meta-assertion mechanism which prints nice error messages and
-    // backtraces on lots of compilers. Usage:
-    //
-    //      assertion<C>::failed
-    //
-    // where C is an MPL metafunction class
-    //
-    
-    template <class C> struct assertion_failed { };
-    template <class C> struct assertion_ok { typedef C failed; };
-
-    template <class C>
-    struct assertion
-        : mpl::if_<C, assertion_ok<C>, assertion_failed<C> >::type
-    {};
-
-    //
-    // Checks for validity of arguments used to define virtual
-    // functions with default implementations.
-    //
-    
-    template <class Default>
-    void not_a_derived_class_member(Default) {}
-    
-    template <class T, class Fn>
-    struct virtual_function_default
-    {
-        template <class Default>
-        static void
-        must_be_derived_class_member(Default const&)
-        {
-            // https://svn.boost.org/trac/boost/ticket/5803
-            //typedef typename assertion<mpl::not_<is_same<Default,Fn> > >::failed test0;
-# if !BOOST_WORKAROUND(__MWERKS__, <= 0x2407)
-            typedef typename assertion<is_polymorphic<T> >::failed test1;
-# endif 
-            typedef typename assertion<is_member_function_pointer<Fn> >::failed test2;
-            not_a_derived_class_member<Default>(Fn());
-        }
-    };
-  }
-}
 
 // This is the primary mechanism through which users will expose
 // C++ classes to Python.
@@ -255,25 +162,25 @@ class class_ : public objects::class_base
     template <class D>
     self& def_readonly(char const* name, D const& d, char const* doc=0)
     {
-        return this->def_readonly_impl(name, d, doc BOOST_PYTHON_DATA_MEMBER_HELPER(D));
+        return this->def_readonly_impl(name, d, doc);
     }
 
     template <class D>
     self& def_readwrite(char const* name, D const& d, char const* doc=0)
     {
-        return this->def_readwrite_impl(name, d, doc BOOST_PYTHON_DATA_MEMBER_HELPER(D));
+        return this->def_readwrite_impl(name, d, doc);
     }
     
     template <class D>
     self& def_readonly(char const* name, D& d, char const* doc=0)
     {
-        return this->def_readonly_impl(name, d, doc BOOST_PYTHON_DATA_MEMBER_HELPER(D));
+        return this->def_readonly_impl(name, d, doc);
     }
 
     template <class D>
     self& def_readwrite(char const* name, D& d, char const* doc=0)
     {
-        return this->def_readwrite_impl(name, d, doc BOOST_PYTHON_DATA_MEMBER_HELPER(D));
+        return this->def_readwrite_impl(name, d, doc);
     }
 
     // Property creation
@@ -354,7 +261,7 @@ class class_ : public objects::class_base
         
         return this->make_fn_impl(
             detail::unwrap_wrapper((W*)0)
-          , f, is_obj_or_proxy(), (char*)0, detail::is_data_member_pointer<F>()
+          , f, is_obj_or_proxy(), (char*)0, std::is_member_object_pointer<F>()
         );
     }
     
@@ -365,32 +272,32 @@ class class_ : public objects::class_base
         
         return this->make_fn_impl(
             detail::unwrap_wrapper((W*)0)
-          , f, is_obj_or_proxy(), (int*)0, detail::is_data_member_pointer<F>()
+          , f, is_obj_or_proxy(), (int*)0, std::is_member_object_pointer<F>()
         );
     }
     
     template <class T, class F>
-    object make_fn_impl(T*, F const& f, mpl::false_, void*, mpl::false_)
+    object make_fn_impl(T*, F const& f, std::false_type, void*, std::false_type)
     {
         return python::make_function(f, default_call_policies(), detail::get_signature(f, (T*)0));
     }
 
     template <class T, class D, class B>
-    object make_fn_impl(T*, D B::*pm_, mpl::false_, char*, mpl::true_)
+    object make_fn_impl(T*, D B::*pm_, std::false_type, char*, std::true_type)
     {
         D T::*pm = pm_;
         return python::make_getter(pm);
     }
 
     template <class T, class D, class B>
-    object make_fn_impl(T*, D B::*pm_, mpl::false_, int*, mpl::true_)
+    object make_fn_impl(T*, D B::*pm_, std::false_type, int*, std::true_type)
     {
         D T::*pm = pm_;
         return python::make_setter(pm);
     }
 
     template <class T, class F>
-    object make_fn_impl(T*, F const& x, mpl::true_, void*, mpl::false_)
+    object make_fn_impl(T*, F const& x, std::true_type, void*, std::false_type)
     {
         return x;
     }
@@ -398,28 +305,28 @@ class class_ : public objects::class_base
     
     template <class D, class B>
     self& def_readonly_impl(
-        char const* name, D B::*pm_, char const* doc BOOST_PYTHON_YES_DATA_MEMBER)
+        char const* name, D B::*pm_, char const* doc)
     {
         return this->add_property(name, pm_, doc);
     }
 
     template <class D, class B>
     self& def_readwrite_impl(
-        char const* name, D B::*pm_, char const* doc BOOST_PYTHON_YES_DATA_MEMBER)
+        char const* name, D B::*pm_, char const* doc)
     {
         return this->add_property(name, pm_, pm_, doc);
     }
 
     template <class D>
     self& def_readonly_impl(
-        char const* name, D& d, char const* BOOST_PYTHON_NO_DATA_MEMBER)
+        char const* name, D& d, char const*)
     {
         return this->add_static_property(name, python::make_getter(d));
     }
 
     template <class D>
     self& def_readwrite_impl(
-        char const* name, D& d, char const* BOOST_PYTHON_NO_DATA_MEMBER)
+        char const* name, D& d, char const*)
     {
         return this->add_static_property(name, python::make_getter(d), python::make_setter(d));
     }
@@ -479,7 +386,8 @@ class class_ : public objects::class_base
           , helper.doc()
         );
 
-        this->def_default(name, fn, helper, mpl::bool_<Helper::has_default_implementation>());
+        this->def_default(name, fn, helper, 
+                          std::integral_constant<bool, Helper::has_default_implementation>());
     }
     // }
 
@@ -494,11 +402,13 @@ class class_ : public objects::class_base
         char const* name
         , Fn
         , Helper const& helper
-        , mpl::bool_<true>)
+        , std::true_type)
     {
-        detail::error::virtual_function_default<W,Fn>::must_be_derived_class_member(
-            helper.default_implementation());
-            
+        static_assert(std::is_polymorphic<W>::value &&
+                      std::is_member_function_pointer<Fn>::value &&
+                      std::is_convertible<Fn, typename Helper::default_implementation_t>::value,
+                      "Virtual function default must be a derived class member");
+
         objects::add_to_namespace(
             *this, name,
             make_function(
@@ -507,7 +417,7 @@ class class_ : public objects::class_base
     }
     
     template <class Fn, class Helper>
-    inline void def_default(char const*, Fn, Helper const&, mpl::bool_<false>)
+    inline void def_default(char const*, Fn, Helper const&, std::false_type)
     { }
     // }
     
@@ -579,10 +489,5 @@ inline class_<W,X1,X2,X3>::class_(char const* name, char const* doc, no_init_t)
 }
 
 }} // namespace boost::python
-
-# undef BOOST_PYTHON_DATA_MEMBER_HELPER
-# undef BOOST_PYTHON_YES_DATA_MEMBER
-# undef BOOST_PYTHON_NO_DATA_MEMBER
-# undef BOOST_PYTHON_NO_MEMBER_POINTER_ORDERING
 
 #endif // CLASS_DWA200216_HPP

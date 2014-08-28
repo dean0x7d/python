@@ -111,13 +111,11 @@ namespace detail
                                          !is_keywords<T>::value);
       };
       
-   private: // types
-      using default_implementation_t = get_by_predicate_t<std::is_member_function_pointer, all_t>;
-      
    public: // Constants which can be used for static assertions.
 
       // Users must not supply a default implementation for non-class
       // methods.
+      using default_implementation_t = get_by_predicate_t<std::is_member_function_pointer, all_t>;
       static constexpr bool has_default_implementation = 
               !is_same<default_implementation_t, void(not_specified::*)()>::value;
       
