@@ -91,10 +91,11 @@ namespace detail
 
       // Constructors; these initialize an member of the tuple type
       // shown above.
-      def_helper(T1 const& a1) : m_all(a1,m_nil,m_nil,m_nil) {}
-      def_helper(T1 const& a1, T2 const& a2) : m_all(a1,a2,m_nil,m_nil) {}
-      def_helper(T1 const& a1, T2 const& a2, T3 const& a3) : m_all(a1,a2,a3,m_nil) {}
-      def_helper(T1 const& a1, T2 const& a2, T3 const& a3, T4 const& a4) : m_all(a1,a2,a3,a4) {}
+      def_helper(T1 const& a1) : def_helper(a1,m_nil,m_nil,m_nil) {}
+      def_helper(T1 const& a1, T2 const& a2) : def_helper(a1,a2,m_nil,m_nil) {}
+      def_helper(T1 const& a1, T2 const& a2, T3 const& a3) : def_helper(a1,a2,a3,m_nil) {}
+      def_helper(T1 const& a1, T2 const& a2, T3 const& a3, T4 const& a4) 
+      : m_all(a1,a2,a3,a4,{},{},{},{}) {}
 
    private: // predicates
       template<class T>
