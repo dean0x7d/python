@@ -21,11 +21,7 @@ template <class F, class Signature>
 inline handle<> function_handle(F const& f, Signature)
 {
     return objects::function_handle_impl(
-        python::detail::caller<
-            F,default_call_policies,Signature
-        >(
-            f, default_call_policies()
-         )
+        python::detail::caller<F,default_call_policies,Signature>(f)
     );
 }
 

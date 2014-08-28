@@ -33,7 +33,7 @@ namespace detail
       )
   {
       return objects::function_object(
-          detail::caller<F,CallPolicies,Sig>(f, p)
+          detail::caller<F,CallPolicies,Sig>(f)
       );
   }
 
@@ -57,7 +57,7 @@ namespace detail
           >::too_many_keywords assertion;
     
       return objects::function_object(
-          detail::caller<F,CallPolicies,Sig>(f, p)
+          detail::caller<F,CallPolicies,Sig>(f)
         , kw);
   }
 

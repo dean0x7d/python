@@ -17,8 +17,6 @@
 # include <boost/python/converter/context_result_converter.hpp>
 # include <boost/python/converter/builtin_converters.hpp>
 
-# include <boost/compressed_pair.hpp>
-
 namespace boost { namespace python { namespace detail { 
 
 template <int N>
@@ -106,7 +104,7 @@ struct caller;
 template <class F, class CallPolicies, class Result, class... Args>
 struct caller<F, CallPolicies, type_list<Result, Args...>>
 {
-    caller(F f, CallPolicies p) : m_data(f, p) {}
+    caller(F f) : m_function(f) {}
     
     using argument_package = typename CallPolicies::argument_package;
 
@@ -129,7 +127,7 @@ struct caller<F, CallPolicies, type_list<Result, Args...>>
         return detail::invoke(
             detail::invoke_tag<Result, F>(),
             create_result_converter<result_converter>(args),
-            m_data.first(),
+            m_function,
             arg_from_python<Args>(get<Is>(inner_args))...
         );
     }
@@ -147,14 +145,14 @@ struct caller<F, CallPolicies, type_list<Result, Args...>>
         
         // all converters have been checked. Now we can do the
         // precall part of the policy
-        if (!m_data.second().precall(inner_args))
+        if (!CallPolicies::precall(inner_args))
             return nullptr;
         
         // TODO: Currently, the converters are created twice (check_converters, call_impl).
         //       This can be improved by making a tuple<converters...> and passing it to both.
         PyObject* result = call_impl(inner_args, args, cpp14::index_sequence_for<Args...>());
         
-        return m_data.second().postcall(inner_args, result);
+        return CallPolicies::postcall(inner_args, result);
     }
     
     static unsigned min_arity() { return sizeof...(Args); }
@@ -183,7 +181,7 @@ struct caller<F, CallPolicies, type_list<Result, Args...>>
     }
 
 private:
-    compressed_pair<F, CallPolicies> m_data;
+    F m_function;
 };
     
 }}} // namespace boost::python::detail

@@ -140,7 +140,7 @@ namespace detail
       
       return objects::function_object(
           objects::py_function(
-              detail::caller<F,inner_policy,Sig>(f, inner_policy(p))
+              detail::caller<F,inner_policy,Sig>(f)
             , outer_constructor_signature_t<Sig>()
           )
       );
@@ -169,7 +169,7 @@ namespace detail
       
       return objects::function_object(
           objects::py_function(
-              detail::caller<F,inner_policy,Sig>(f, inner_policy(p))
+              detail::caller<F,inner_policy,Sig>(f)
             , outer_constructor_signature_t<Sig>()
           )
           , kw
