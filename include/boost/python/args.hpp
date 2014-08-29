@@ -8,31 +8,20 @@
 # include <boost/python/detail/prefix.hpp>
 
 # include <boost/python/args_fwd.hpp>
-# include <boost/config.hpp>
-
-# include <boost/type_traits/is_reference.hpp>
-# include <boost/type_traits/remove_reference.hpp>
-# include <boost/type_traits/remove_cv.hpp>
-
-# include <boost/python/detail/mpl_lambda.hpp>
 # include <boost/python/object_core.hpp>
 
-# include <boost/mpl/bool.hpp>
-
-# include <cstddef>
 # include <algorithm>
 
 namespace boost { namespace python {
 
-typedef detail::keywords<1> arg;
-typedef arg arg_; // gcc 2.96 workaround
+using arg = detail::keywords<1>;
 
 namespace detail
 {
   template <std::size_t nkeywords>
   struct keywords_base
   {
-      BOOST_STATIC_CONSTANT(std::size_t, size = nkeywords);
+      static constexpr auto size = nkeywords;
       
       keyword_range range() const
       {
@@ -96,27 +85,22 @@ namespace detail
   }
 
   template<typename T>
-  struct is_keywords
-  {
-      BOOST_STATIC_CONSTANT(bool, value = false); 
+  struct is_keywords {
+      static constexpr bool value = false;
   };
 
   template<std::size_t nkeywords>
-  struct is_keywords<keywords<nkeywords> >
-  {
-      BOOST_STATIC_CONSTANT(bool, value = true);
+  struct is_keywords<keywords<nkeywords> > {
+      static constexpr bool value = true;
   };
+
   template <class T>
   struct is_reference_to_keywords
   {
-      BOOST_STATIC_CONSTANT(bool, is_ref = is_reference<T>::value);
-      typedef typename remove_reference<T>::type deref;
-      typedef typename remove_cv<deref>::type key_t;
-      BOOST_STATIC_CONSTANT(bool, is_key = is_keywords<key_t>::value);
-      BOOST_STATIC_CONSTANT(bool, value = (is_ref & is_key));
+      using key_t = cpp14::remove_cv_t<cpp14::remove_reference_t<T>>;
+      static constexpr bool value = is_reference<T>::value && is_keywords<key_t>::value;
       
-      typedef mpl::bool_<value> type;
-      BOOST_PYTHON_MPL_LAMBDA_SUPPORT(1,is_reference_to_keywords,(T))
+      using type = std::integral_constant<bool, value>;
   };
 }
 
@@ -137,6 +121,5 @@ detail::keywords<N> args(Ts... names)
 }
 
 }} // namespace boost::python
-
 
 # endif // KEYWORDS_DWA2002323_HPP

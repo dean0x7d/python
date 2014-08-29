@@ -33,20 +33,20 @@ namespace detail
 
       PyObject* operator()(T x) const
       {
-          dispatch(x, is_pointer<T>());
+          dispatch(x, std::is_pointer<T>());
           return none();
       }
 
    private:
       template <class U>
-      void dispatch(U* x, mpl::true_) const
+      void dispatch(U* x, std::true_type) const
       {
           std::auto_ptr<U> owner(x);
-          dispatch(owner, mpl::false_());
+          dispatch(owner, std::false_type());
       }
       
       template <class Ptr>
-      void dispatch(Ptr x, mpl::false_) const
+      void dispatch(Ptr x, std::false_type) const
       {
           typedef typename pointee<Ptr>::type value_type;
           typedef objects::pointer_holder<Ptr,value_type> holder;
@@ -159,11 +159,7 @@ namespace detail
       , NumKeywords                     // An MPL integral type wrapper: the size of kw
       )
   {
-      constexpr auto arity = Sig::size;
-      
-      typedef typename detail::error::more_keywords_than_function_arguments<
-          NumKeywords::value, arity
-          >::too_many_keywords assertion;
+      static_assert(NumKeywords::value <= Sig::size, "More keywords than function arguments");
     
       typedef constructor_policy<CallPolicies> inner_policy;
       
@@ -185,7 +181,8 @@ namespace detail
   //   @group Helpers for make_constructor when called with 3 arguments. {
   //
   template <class F, class CallPolicies, class Keywords>
-  object make_constructor_dispatch(F f, CallPolicies const& policies, Keywords const& kw, mpl::true_)
+  object make_constructor_dispatch(F f, CallPolicies const& policies, 
+                                   Keywords const& kw, std::true_type)
   {
       return detail::make_constructor_aux(
           f
@@ -197,7 +194,8 @@ namespace detail
   }
 
   template <class F, class CallPolicies, class Signature>
-  object make_constructor_dispatch(F f, CallPolicies const& policies, Signature const& sig, mpl::false_)
+  object make_constructor_dispatch(F f, CallPolicies const& policies, 
+                                   Signature const& sig, std::false_type)
   {
       return detail::make_constructor_aux(
           f

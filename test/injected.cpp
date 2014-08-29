@@ -31,7 +31,7 @@ BOOST_PYTHON_MODULE(injected_ext)
         .def("__init__", make_constructor(sum))
         .def("__init__", make_constructor(product
             , default_call_policies()
-            , ( arg_("a"), arg_("b"), arg_("c"))
+            , ( arg("a"), arg("b"), arg("c"))
             ),
             "this is product's docstring")
         .def("value", &X::value)

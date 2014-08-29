@@ -200,18 +200,14 @@ namespace detail
         : ::boost::python::detail::overloads_common<fstubs_name>(                           \
             doc, keywords.range())                                                          \
     {                                                                                       \
-        typedef typename ::boost::python::detail::                                          \
-            error::more_keywords_than_function_arguments<                                   \
-                N,n_args>::too_many_keywords assertion;                                     \
+        static_assert(N <= n_args, "More keywords than function arguments");                \
     }                                                                                       \
     template <std::size_t N>                                                                \
     fstubs_name(::boost::python::detail::keywords<N> const& keywords, char const* doc = 0)  \
         : ::boost::python::detail::overloads_common<fstubs_name>(                           \
             doc, keywords.range())                                                          \
     {                                                                                       \
-        typedef typename ::boost::python::detail::                                          \
-            error::more_keywords_than_function_arguments<                                   \
-                N,n_args>::too_many_keywords assertion;                                     \
+        static_assert(N <= n_args, "More keywords than function arguments");                \
     }
 
 # if defined(BOOST_NO_VOID_RETURNS)

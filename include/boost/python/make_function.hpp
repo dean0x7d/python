@@ -50,11 +50,7 @@ namespace detail
       , NumKeywords                     // An MPL integral type wrapper: the size of kw
       )
   {
-      constexpr auto arity = Sig::size - 1;
-      
-      typedef typename detail::error::more_keywords_than_function_arguments<
-          NumKeywords::value, arity
-          >::too_many_keywords assertion;
+      static_assert(NumKeywords::value <= Sig::size - 1, "More keywords than function arguments");
     
       return objects::function_object(
           detail::caller<F,CallPolicies,Sig>(f)
@@ -67,7 +63,8 @@ namespace detail
   //
   // @group {
   template <class F, class CallPolicies, class Keywords>
-  object make_function_dispatch(F f, CallPolicies const& policies, Keywords const& kw, mpl::true_)
+  object make_function_dispatch(F f, CallPolicies const& policies, 
+                                Keywords const& kw, std::true_type)
   {
       return detail::make_function_aux(
           f
@@ -79,7 +76,8 @@ namespace detail
   }
 
   template <class F, class CallPolicies, class Signature>
-  object make_function_dispatch(F f, CallPolicies const& policies, Signature const& sig, mpl::false_)
+  object make_function_dispatch(F f, CallPolicies const& policies, 
+                                Signature const& sig, std::false_type)
   {
       return detail::make_function_aux(
           f
