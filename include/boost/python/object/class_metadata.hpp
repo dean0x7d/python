@@ -18,23 +18,7 @@
 # include <boost/python/has_back_reference.hpp>
 # include <boost/python/bases.hpp>
 
-# include <boost/type_traits/add_pointer.hpp>
-# include <boost/type_traits/is_convertible.hpp>
-# include <boost/type_traits/is_polymorphic.hpp>
-
-# include <boost/mpl/if.hpp>
-# include <boost/mpl/eval_if.hpp>
-# include <boost/mpl/bool.hpp>
-# include <boost/mpl/or.hpp>
-# include <boost/mpl/identity.hpp>
-# include <boost/mpl/placeholders.hpp>
-
-# include <boost/type_traits/is_same.hpp>
-
-# include <boost/type_traits/is_convertible.hpp>
-
 # include <boost/noncopyable.hpp>
-# include <boost/detail/workaround.hpp>
 
 namespace boost { namespace python { namespace objects { 
 
@@ -62,16 +46,16 @@ struct register_bases_of<Derived, bases<Base, Tail...>>
         register_conversion<Derived, Base>(false);
 
         // Register the down-cast, if appropriate.
-        register_downcast(is_polymorphic<Base>());
+        register_downcast(std::is_polymorphic<Base>());
         
         // Repeat for the rest of the bases
         register_bases_of<Derived, bases<Tail...>>::execute();
     }
 
  private:
-    static inline void register_downcast(mpl::false_) {}
+    static inline void register_downcast(std::false_type) {}
     
-    static inline void register_downcast(mpl::true_)
+    static inline void register_downcast(std::true_type)
     {
         register_conversion<Base, Derived>(true);
     }
@@ -97,22 +81,59 @@ inline void register_shared_ptr_from_python_and_casts(T*, Bases)
     register_dynamic_id<T>();
     register_bases_of<T, Bases>::execute();
 }
+  
+namespace detail {
+    template<template<class> class Predicate, class Default, class... Args>
+    struct select;
+    
+    template<template<class> class Predicate, class Default>
+    struct select<Predicate, Default> {
+        using type = Default;
+    };
+    
+    template<template<class> class Predicate, class Default, class T, class... Tail>
+    struct select<Predicate, Default, T, Tail...> {
+        using type = cpp14::conditional_t<
+            Predicate<T>::value,
+            T,
+            typename select<Predicate, Default, Tail...>::type
+        >;
+    };
+    
+    template<template<class> class Predicate, class... Args>
+    struct any;
+    
+    template<template<class> class Predicate>
+    struct any<Predicate> {
+        static constexpr bool value = false;
+    };
+    
+    template<template<class> class Predicate, class T, class... Tail>
+    struct any<Predicate, T, Tail...> {
+        static constexpr bool value = Predicate<T>::value || any<Predicate, Tail...>::value;
+    };
+}
+
+// Select the Arg that satisfies the Predicate or return Default if none do.
+template<template<class> class Predicate, class Default, class... Args>
+using select_t = typename detail::select<Predicate, Default, Args...>::type;
+
+// Does any Arg satisfy the Predicate?
+template<template<class> class Predicate, class... Args>
+using any_t = std::integral_constant<bool, detail::any<Predicate, Args...>::value>;
 
 //
 // Helper for choosing the unnamed held_type argument
 //
-template <class T, class Prev>
-struct select_held_type
-  : mpl::if_<
-        mpl::or_<
-            python::detail::specifies_bases<T>
-          , is_same<T,noncopyable>
-        >
-      , Prev
-      , T
-    >
-{
-};
+template<class T>
+using is_held_type = std::integral_constant<bool, 
+    !python::detail::specifies_bases<T>::value && !std::is_same<T, noncopyable>::value
+>;
+
+template<class T>
+using is_noncopyable_type = std::integral_constant<bool, 
+    std::is_same<T, noncopyable>::value
+>;
 
 template <
     class T // class being wrapped
@@ -129,69 +150,50 @@ struct class_metadata
     // held_type_arg -- not_specified, [a class derived from] T or a
     // smart pointer to [a class derived from] T.  Preserving
     // not_specified allows us to give class_<T,T> a back-reference.
-    typedef typename select_held_type<
-        X1
-      , typename select_held_type<
-            X2
-          , typename select_held_type<
-                X3
-              , python::detail::not_specified
-            >::type
-        >::type
-    >::type held_type_arg;
+    using held_type_arg = select_t<is_held_type, python::detail::not_specified, X1, X2, X3>;
 
     // bases
-    using bases = python::detail::select_bases_t<X1,
-                    python::detail::select_bases_t<X2,
-                      python::detail::select_bases_t<X3>>>;
+    using bases = select_t<python::detail::specifies_bases, python::bases<>, X1, X2, X3>;
 
-    typedef mpl::or_<
-        is_same<X1,noncopyable>
-      , is_same<X2,noncopyable>
-      , is_same<X3,noncopyable>
-    > is_noncopyable;
+    using is_noncopyable = any_t<is_noncopyable_type, X1, X2, X3>;
     
     //
     // Holder computation.
     //
     
     // Compute the actual type that will be held in the Holder.
-    typedef typename mpl::if_<
-        is_same<held_type_arg,python::detail::not_specified>, T, held_type_arg
-    >::type held_type;
+    using held_type = cpp14::conditional_t<
+        std::is_same<held_type_arg, python::detail::not_specified>::value, T, held_type_arg
+    >;
 
     // Determine if the object will be held by value
-    typedef is_convertible<held_type*,T*> use_value_holder;
+    using use_value_holder = std::is_convertible<held_type*, T*>;
     
     // Compute the "wrapped type", that is, if held_type is a smart
     // pointer, we're talking about the pointee.
-    typedef typename mpl::eval_if<
-        use_value_holder
-      , mpl::identity<held_type>
-      , pointee<held_type>
-    >::type wrapped;
+    using wrapped = pointee_t<held_type, !use_value_holder::value>;
 
     // Determine whether to use a "back-reference holder"
-    typedef mpl::or_<
-        has_back_reference<T>
-      , is_same<held_type_arg,T>
-      , is_base_and_derived<T,wrapped>
-    > use_back_reference;
+    using use_back_reference = std::integral_constant<bool,
+        has_back_reference<T>::value || 
+        std::is_same<held_type_arg, T>::value || 
+        (std::is_base_of<T, wrapped>::value && !std::is_same<T, wrapped>::value)
+    >;
 
     // Select the holder.
-    typedef typename mpl::eval_if<
-        use_back_reference
-      , mpl::if_<
-            use_value_holder
-          , value_holder_back_reference<T, wrapped>
-          , pointer_holder_back_reference<held_type,T>
+    using holder = cpp14::conditional_t<
+        use_back_reference::value,
+        cpp14::conditional_t<
+            use_value_holder::value,
+            value_holder_back_reference<T, wrapped>,
+            pointer_holder_back_reference<held_type, T>
+        >,
+        cpp14::conditional_t<
+            use_value_holder::value,
+            value_holder<T>,
+            pointer_holder<held_type, wrapped>
         >
-      , mpl::if_<
-            use_value_holder
-          , value_holder<T>
-          , pointer_holder<held_type,wrapped>
-        >
-    >::type holder;
+    >;
     
     inline static void register_() // Register the runtime metadata.
     {
@@ -202,22 +204,24 @@ struct class_metadata
     template <class T2>
     inline static void register_aux(python::wrapper<T2>*) 
     {
-        typedef typename mpl::not_<is_same<T2,wrapped> >::type use_callback;
-        class_metadata::register_aux2((T2*)0, use_callback());
+        class_metadata::register_aux2<T2, !std::is_same<T2, wrapped>::value>();
     }
 
     inline static void register_aux(void*) 
     {
-        typedef typename is_base_and_derived<T,wrapped>::type use_callback;
-        class_metadata::register_aux2((T*)0, use_callback());
+        class_metadata::register_aux2<
+            T, 
+            std::is_base_of<T, wrapped>::value && !std::is_same<T, wrapped>::value
+        >();
     }
 
-    template <class T2, class Callback>
-    inline static void register_aux2(T2*, Callback) 
+    template <class T2, bool use_callback>
+    inline static void register_aux2() 
     {
         objects::register_shared_ptr_from_python_and_casts((T2*)0, bases());
         
-        class_metadata::maybe_register_callback_class((T2*)0, Callback());
+        class_metadata::maybe_register_callback_class((T2*)0, 
+            std::integral_constant<bool, use_callback>());
 
         class_metadata::maybe_register_class_to_python((T2*)0, is_noncopyable());
         
@@ -232,7 +236,7 @@ struct class_metadata
     inline static void maybe_register_pointer_to_python(...) {}
 
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    inline static void maybe_register_pointer_to_python(void*,void*,mpl::true_*) 
+    inline static void maybe_register_pointer_to_python(void*,void*,std::true_type*) 
     {
         objects::copy_class_object(python::type_id<T>(), python::type_id<back_reference<T const &> >());
         objects::copy_class_object(python::type_id<T>(), python::type_id<back_reference<T &> >());
@@ -240,7 +244,7 @@ struct class_metadata
 #endif
 
     template <class T2>
-    inline static void maybe_register_pointer_to_python(T2*, mpl::false_*, mpl::false_*)
+    inline static void maybe_register_pointer_to_python(T2*, std::false_type*, std::false_type*)
     {
         python::detail::force_instantiate(
             objects::class_value_wrapper<
@@ -256,11 +260,11 @@ struct class_metadata
     //
     // Support for registering to-python converters
     //
-    inline static void maybe_register_class_to_python(void*, mpl::true_) {}
+    inline static void maybe_register_class_to_python(void*, std::true_type) {}
     
 
     template <class T2>
-    inline static void maybe_register_class_to_python(T2*, mpl::false_)
+    inline static void maybe_register_class_to_python(T2*, std::false_type)
     {
         python::detail::force_instantiate(class_cref_wrapper<T2, make_instance<T2, holder> >());
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
@@ -272,10 +276,10 @@ struct class_metadata
     //
     // Support for registering callback classes
     //
-    inline static void maybe_register_callback_class(void*, mpl::false_) {}
+    inline static void maybe_register_callback_class(void*, std::false_type) {}
 
     template <class T2>
-    inline static void maybe_register_callback_class(T2*, mpl::true_)
+    inline static void maybe_register_callback_class(T2*, std::true_type)
     {
         objects::register_shared_ptr_from_python_and_casts(
             (wrapped*)0, python::bases<T2>());
