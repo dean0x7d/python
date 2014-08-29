@@ -42,7 +42,7 @@ namespace detail
                   return true;
               }
               
-              PyObject *operator()( typename value_arg<T>::type ) const
+              PyObject *operator()(value_arg_t<T>) const
               {
                   return none();
               }

@@ -21,7 +21,7 @@ struct return_by_value
     struct apply
     {
        typedef to_python_value<
-           typename detail::value_arg<R>::type
+           detail::value_arg_t<R>
        > type;
     };
 };

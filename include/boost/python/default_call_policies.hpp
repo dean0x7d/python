@@ -50,9 +50,7 @@ struct default_result_converter
         static_assert(!std::is_pointer<R>::value && !std::is_reference<R>::value,
                       "Specify a return value policy to wrap functions");
 
-        using type = boost::python::to_python_value<
-            typename detail::value_arg<R>::type
-        >;
+        using type = boost::python::to_python_value<detail::value_arg_t<R>>;
     };
 };
 

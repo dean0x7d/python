@@ -35,7 +35,7 @@ struct return_opaque_pointer
         
         struct type :  
           boost::python::to_python_value<
-              typename detail::value_arg<R>::type
+              detail::value_arg_t<R>
           >
         {
             type() { detail::opaque_pointee(R()); }

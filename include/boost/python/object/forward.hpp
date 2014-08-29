@@ -57,10 +57,8 @@ struct unforward<reference_to_value<T> >
 
 template <typename T>
 struct unforward_cref
-  : python::detail::value_arg<
-        typename unwrap_reference<T>::type
-    >
 {
+    using type = python::detail::value_arg_t<typename unwrap_reference<T>::type>;
 };
 
 template<typename T>

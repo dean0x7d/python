@@ -5,22 +5,16 @@
 # define VALUE_ARG_DWA2004312_HPP
 
 # include <boost/python/detail/copy_ctor_mutates_rhs.hpp>
-# include <boost/mpl/if.hpp>
-# include <boost/type_traits/add_reference.hpp>
-# include <boost/type_traits/add_const.hpp>
+# include <boost/python/cpp14/type_traits.hpp>
 
 namespace boost { namespace python { namespace detail { 
 
 template <class T>
-struct value_arg
-  : mpl::if_<
-        copy_ctor_mutates_rhs<T>
-      , T
-      , typename add_reference<
-            typename add_const<T>::type
-        >::type
-  >
-{};
+using value_arg_t = cpp14::conditional_t<
+    copy_ctor_mutates_rhs<T>::value,
+    T,
+    cpp14::add_lvalue_reference_t<cpp14::add_const_t<T>>
+>;
   
 }}} // namespace boost::python::detail
 

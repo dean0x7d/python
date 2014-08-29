@@ -57,7 +57,7 @@ struct object_manager_get_pytype<true>
   template <class T>
   struct object_manager_to_python_value
   {
-      typedef typename value_arg<T>::type argument_type;
+      using argument_type = value_arg_t<T>;
     
       PyObject* operator()(argument_type) const;
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
@@ -86,7 +86,7 @@ struct object_manager_get_pytype<true>
   template <class T>
   struct registry_to_python_value
   {
-      typedef typename value_arg<T>::type argument_type;
+      using argument_type = value_arg_t<T>;
     
       PyObject* operator()(argument_type) const;
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
@@ -102,7 +102,7 @@ struct object_manager_get_pytype<true>
   template <class T>
   struct shared_ptr_to_python_value
   {
-      typedef typename value_arg<T>::type argument_type;
+      using argument_type = value_arg_t<T>;
     
       PyObject* operator()(argument_type) const;
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
