@@ -77,11 +77,11 @@ namespace boost { namespace python {
             elem_name += class_name_extractor();
             elem_name += "_entry";
 
-            typedef typename mpl::if_<
-                mpl::and_<is_class<data_type>, mpl::bool_<!NoProxy> >
-              , return_internal_reference<>
-              , default_call_policies
-            >::type get_data_return_policy;
+            using get_data_return_policy = cpp14::conditional_t<
+                std::is_class<data_type>::value && !NoProxy,
+                return_internal_reference<>,
+                default_call_policies
+            >;
 
             class_<value_type>(elem_name.c_str())
                 .def("__repr__", &DerivedPolicies::print_elem)
@@ -97,11 +97,11 @@ namespace boost { namespace python {
         }
 
         static
-        typename mpl::if_<
-            mpl::and_<is_class<data_type>, mpl::bool_<!NoProxy> >
-          , data_type&
-          , data_type
-        >::type
+        cpp14::conditional_t<
+            std::is_class<data_type>::value && !NoProxy,
+            data_type&,
+            data_type
+        >
         get_data(typename Container::value_type& e)
         {
             return e.second;

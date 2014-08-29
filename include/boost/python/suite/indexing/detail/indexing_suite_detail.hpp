@@ -11,7 +11,6 @@
 # include <boost/get_pointer.hpp>
 # include <boost/detail/binary_search.hpp>
 # include <boost/numeric/conversion/cast.hpp>
-# include <boost/type_traits/is_pointer.hpp>
 # include <vector>
 # include <map>
 #include <iostream>
@@ -96,7 +95,7 @@ namespace boost { namespace python { namespace detail {
         }
 
         void
-        erase(index_type i, mpl::false_)
+        erase(index_type i, std::false_type)
         {
             BOOST_PYTHON_INDEXING_CHECK_INVARIANT;
             // Erase the proxy with index i 
@@ -105,7 +104,7 @@ namespace boost { namespace python { namespace detail {
         }
 
         void
-        erase(index_type i, mpl::true_)
+        erase(index_type i, std::true_type)
         {
             BOOST_PYTHON_INDEXING_CHECK_INVARIANT;
             // Erase the proxy with index i 
@@ -465,14 +464,14 @@ namespace boost { namespace python { namespace detail {
 
         template <class DataType> 
         static object
-        base_get_item_helper(DataType const& p, mpl::true_)
+        base_get_item_helper(DataType const& p, std::true_type)
         { 
             return object(ptr(p));
         }
 
         template <class DataType> 
         static object
-        base_get_item_helper(DataType const& x, mpl::false_)
+        base_get_item_helper(DataType const& x, std::false_type)
         { 
             return object(x);
         }
@@ -482,9 +481,9 @@ namespace boost { namespace python { namespace detail {
         { 
             return base_get_item_helper(
                 DerivedPolicies::get_item(
-                    container.get(), DerivedPolicies::
-                        convert_index(container.get(), i))
-              , is_pointer<BOOST_DEDUCED_TYPENAME Container::value_type>()
+                    container.get(), DerivedPolicies::convert_index(container.get(), i)
+                ),
+                std::is_pointer<typename Container::value_type>()
             );
         }
 

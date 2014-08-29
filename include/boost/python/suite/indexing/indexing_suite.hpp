@@ -12,9 +12,6 @@
 # include <boost/python/suite/indexing/detail/indexing_suite_detail.hpp>
 # include <boost/python/return_internal_reference.hpp>
 # include <boost/python/iterator.hpp>
-# include <boost/mpl/or.hpp>
-# include <boost/mpl/not.hpp>
-# include <boost/type_traits/is_same.hpp>
 
 namespace boost { namespace python {
 
@@ -118,56 +115,36 @@ namespace boost { namespace python {
     {
     private:
 
-        typedef mpl::or_<
-            mpl::bool_<NoProxy>
-          , mpl::not_<is_class<Data> >
-          , typename mpl::or_<
-                is_same<Data, std::string>
-              , is_same<Data, std::complex<float> >
-              , is_same<Data, std::complex<double> >
-              , is_same<Data, std::complex<long double> > >::type>
-        no_proxy;
+        static constexpr bool no_proxy = 
+            NoProxy ||
+            !std::is_class<Data>::value ||
+            std::is_same<Data, std::string>::value ||
+            std::is_same<Data, std::complex<float>>::value ||
+            std::is_same<Data, std::complex<double>>::value ||
+            std::is_same<Data, std::complex<long double>>::value;
 
-        typedef detail::container_element<Container, Index, DerivedPolicies>
-            container_element_t;
+        using container_element_t =
+            detail::container_element<Container, Index, DerivedPolicies>;
 
-        typedef return_internal_reference<> return_policy;
+        using return_policy = return_internal_reference<>;
 
-        typedef typename mpl::if_<
-            no_proxy
-          , iterator<Container>
-          , iterator<Container, return_policy> >::type
-        def_iterator;
+        using def_iterator = cpp14::conditional_t<
+            no_proxy,
+            iterator<Container>,
+            iterator<Container, return_policy>
+        >;
 
-        typedef typename mpl::if_<
-            no_proxy
-          , detail::no_proxy_helper<
-                Container
-              , DerivedPolicies
-              , container_element_t
-              , Index>
-          , detail::proxy_helper<
-                Container
-              , DerivedPolicies
-              , container_element_t
-              , Index> >::type
-        proxy_handler;
+        using proxy_handler = cpp14::conditional_t<
+            no_proxy,
+            detail::no_proxy_helper<Container, DerivedPolicies, container_element_t, Index>,
+            detail::proxy_helper<Container, DerivedPolicies, container_element_t, Index>
+        >;
 
-        typedef typename mpl::if_<
-            mpl::bool_<NoSlice>
-          , detail::no_slice_helper<
-                Container
-              , DerivedPolicies
-              , proxy_handler
-              , Data
-              , Index>
-          , detail::slice_helper<
-                Container
-              , DerivedPolicies
-              , proxy_handler
-              , Data
-              , Index> >::type
-        slice_handler;
+        using slice_handler = cpp14::conditional_t<
+            NoSlice,
+            detail::no_slice_helper<Container, DerivedPolicies, proxy_handler, Data, Index>,
+            detail::slice_helper<Container, DerivedPolicies, proxy_handler, Data, Index>
+        >;
 
     public:
 
@@ -259,7 +236,8 @@ namespace boost { namespace python {
             }
 
             Index index = DerivedPolicies::convert_index(container, i);
-            proxy_handler::base_erase_index(container, index, mpl::bool_<NoSlice>());
+            proxy_handler::base_erase_index(container, index, 
+                                            std::integral_constant<bool, NoSlice>());
             DerivedPolicies::delete_item(container, index);
         }
 

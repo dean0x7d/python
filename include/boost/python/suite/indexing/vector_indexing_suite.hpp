@@ -67,11 +67,11 @@ namespace boost { namespace python {
         }
         
         static 
-        typename mpl::if_<
-            is_class<data_type>
-          , data_type&
-          , data_type
-        >::type
+        cpp14::conditional_t<
+            std::is_class<data_type>::value,
+            data_type&,
+            data_type
+        >
         get_item(Container& container, index_type i)
         { 
             return container[i];
