@@ -52,7 +52,7 @@ BOOST_PYTHON_MODULE(embedded_hello)
 void eval_test()
 {
   python::object result = python::eval("'abcdefg'.upper()");
-  std::string value = python::extract<std::string>(result) BOOST_EXTRACT_WORKAROUND;
+  std::string value = python::extract<std::string>(result);
   BOOST_TEST(value == "ABCDEFG");
 }
 
@@ -91,7 +91,7 @@ void exec_test()
   // But now creating and using instances of the Python class is almost
   // as easy!
   python::object py_base = PythonDerived();
-  Base& py = python::extract<Base&>(py_base) BOOST_EXTRACT_WORKAROUND;
+  Base& py = python::extract<Base&>(py_base);
 
   // Make sure the right 'hello' method is called.
   BOOST_TEST(py.hello() == "Hello from Python!");

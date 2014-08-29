@@ -21,12 +21,6 @@
 # include <boost/python/detail/void_return.hpp>
 # include <boost/call_traits.hpp>
 
-#if BOOST_WORKAROUND(BOOST_INTEL_WIN, <= 900)
-# define BOOST_EXTRACT_WORKAROUND ()
-#else
-# define BOOST_EXTRACT_WORKAROUND
-#endif
-
 namespace boost { namespace python {
 
 namespace api
@@ -65,13 +59,16 @@ namespace converter
   };
   
   template <class T>
-  struct extract_rvalue : private noncopyable
+  struct extract_rvalue
   {
-      typedef typename mpl::if_<
-          python::detail::copy_ctor_mutates_rhs<T>
-        , T&
-        , typename call_traits<T>::param_type
-      >::type result_type;
+      extract_rvalue(const extract_rvalue&) = delete;
+      extract_rvalue& operator=(const extract_rvalue&) = delete;
+      
+      using result_type = cpp14::conditional_t<
+          python::detail::copy_ctor_mutates_rhs<T>::value,
+          T&,
+          typename call_traits<T>::param_type
+      >;
 
       extract_rvalue(PyObject*);
 
@@ -95,41 +92,29 @@ namespace converter
   };
   
   template <class T>
-  struct select_extract
-  {
-      BOOST_STATIC_CONSTANT(
-          bool, obj_mgr = is_object_manager<T>::value);
-
-      BOOST_STATIC_CONSTANT(
-          bool, ptr = is_pointer<T>::value);
-    
-      BOOST_STATIC_CONSTANT(
-          bool, ref = is_reference<T>::value);
-
-      typedef typename mpl::if_c<
-          obj_mgr
-          , extract_object_manager<T>
-          , typename mpl::if_c<
-              ptr
-              , extract_pointer<T>
-              , typename mpl::if_c<
-                  ref
-                  , extract_reference<T>
-                  , extract_rvalue<T>
-                >::type
-            >::type
-         >::type type;
-  };
+  using select_extract_t = cpp14::conditional_t<
+      is_object_manager<T>::value,
+      extract_object_manager<T>,
+      cpp14::conditional_t<
+          is_pointer<T>::value,
+          extract_pointer<T>,
+          cpp14::conditional_t<
+              is_reference<T>::value,
+              extract_reference<T>,
+              extract_rvalue<T>
+          >
+      >
+  >;
 }
 
 template <class T>
 struct extract
-    : converter::select_extract<T>::type
+    : converter::select_extract_t<T>
 {
  private:
-    typedef typename converter::select_extract<T>::type base;
+    using base = converter::select_extract_t<T>;
  public:
-    typedef typename base::result_type result_type;
+    using result_type = typename base::result_type;
     
     operator result_type() const
     {
