@@ -7,16 +7,7 @@
 
 # include <boost/python/detail/prefix.hpp>
 # include <boost/python/converter/from_python.hpp>
-# include <boost/python/detail/indirect_traits.hpp>
-# include <boost/type_traits/transform_traits.hpp>
-# include <boost/type_traits/cv_traits.hpp>
 # include <boost/python/converter/rvalue_from_python_data.hpp>
-# include <boost/mpl/eval_if.hpp>
-# include <boost/mpl/if.hpp>
-# include <boost/mpl/identity.hpp>
-# include <boost/mpl/and.hpp>
-# include <boost/mpl/or.hpp>
-# include <boost/mpl/not.hpp>
 # include <boost/python/converter/registry.hpp>
 # include <boost/python/converter/registered.hpp>
 # include <boost/python/converter/registered_pointee.hpp>
@@ -24,6 +15,7 @@
 # include <boost/python/back_reference.hpp>
 # include <boost/python/detail/referent_storage.hpp>
 # include <boost/python/converter/obj_mgr_arg_from_python.hpp>
+# include <boost/python/cpp14/type_traits.hpp>
 
 namespace boost { namespace python
 {
@@ -115,9 +107,6 @@ struct arg_rvalue_from_python
     arg_rvalue_from_python(PyObject*);
     bool convertible() const;
 
-# if _MSC_FULL_VER > 13102196
-    typename arg_rvalue_from_python<T>::
-# endif
     result_type operator()();
     
  private:
@@ -146,50 +135,52 @@ struct back_reference_arg_from_python
 
 // ==================
 
-template <class C, class T, class F>
-struct if_2
-{
-    typedef typename mpl::eval_if<C, mpl::identity<T>, F>::type type;
-};
-
 // This metafunction selects the appropriate arg_from_python converter
 // type for an argument of type T.
 template <class T>
 struct select_arg_from_python
 {
-    typedef typename if_2<
-        is_object_manager<T>
-      , object_manager_value_arg_from_python<T>
-      , if_2<
-            is_reference_to_object_manager<T>
-          , object_manager_ref_arg_from_python<T>
-          , if_2<
-                is_pointer<T>
-              , pointer_arg_from_python<T>
-              , if_2<
-                    mpl::and_<
-                        indirect_traits::is_reference_to_pointer<T>
-                      , indirect_traits::is_reference_to_const<T>
-                      , mpl::not_<indirect_traits::is_reference_to_volatile<T> >
-                        >
-                  , pointer_cref_arg_from_python<T>
-                  , if_2<
-                        mpl::or_<
-                            indirect_traits::is_reference_to_non_const<T>
-                          , indirect_traits::is_reference_to_volatile<T>
-                        >
-                      , reference_arg_from_python<T>
-                      , mpl::if_<
-                            boost::python::is_back_reference<T>
-                          , back_reference_arg_from_python<T>
-                          , arg_rvalue_from_python<T>
+    using T_without_ref = cpp14::remove_reference_t<T>;
+    
+    using type = cpp14::conditional_t<
+        is_object_manager<T>::value,
+        object_manager_value_arg_from_python<T>,
+    
+        cpp14::conditional_t<
+            is_reference_to_object_manager<T>::value,
+            object_manager_ref_arg_from_python<T>,
+    
+            cpp14::conditional_t<
+                is_pointer<T>::value,
+                pointer_arg_from_python<T>,
+    
+                cpp14::conditional_t<
+                    (std::is_reference<T>::value &&
+                     std::is_pointer<T_without_ref>::value &&
+                     std::is_const<T_without_ref>::value &&
+                     !std::is_volatile<T_without_ref>::value),
+                    pointer_cref_arg_from_python<T>,
+    
+                    cpp14::conditional_t<
+                        (std::is_reference<T>::value &&
+                         (!std::is_const<T_without_ref>::value ||
+                          std::is_volatile<T_without_ref>::value)),
+                        reference_arg_from_python<T>,
+    
+                        cpp14::conditional_t<
+                            boost::python::is_back_reference<T>::value,
+                            back_reference_arg_from_python<T>,
+                            arg_rvalue_from_python<T>
                         >
                     >
                 >
             >
         >
-    >::type type;
+    >;
 };
+    
+template <class T>
+using select_arg_from_python_t = typename select_arg_from_python<T>::type;
 
 // ==================
 

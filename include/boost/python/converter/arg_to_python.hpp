@@ -22,16 +22,8 @@
 
 # include <boost/python/base_type_traits.hpp>
 
-# include <boost/python/detail/indirect_traits.hpp>
 # include <boost/python/detail/string_literal.hpp>
 # include <boost/python/detail/value_is_shared_ptr.hpp>
-
-# include <boost/type_traits/cv_traits.hpp>
-# include <boost/type_traits/composite_traits.hpp>
-# include <boost/type_traits/function_traits.hpp>
-
-
-# include <boost/mpl/or.hpp>
 
 namespace boost { namespace python { namespace converter { 
 
@@ -105,57 +97,55 @@ namespace detail
       typedef typename unwrap_reference<T>::type unwrapped_referent;
       typedef typename unwrap_pointer<T>::type unwrapped_ptr;
 
-      typedef typename mpl::if_<
+      using type = cpp14::conditional_t<
           // Special handling for char const[N]; interpret them as char
           // const* for the sake of conversion
-          python::detail::is_string_literal<T const>
-        , arg_to_python<char const*>
+          python::detail::is_string_literal<T const>::value,
+          arg_to_python<char const*>,
 
-        , typename mpl::if_<
-              python::detail::value_is_shared_ptr<T>
-            , shared_ptr_arg_to_python<T>
+          cpp14::conditional_t<
+              python::detail::value_is_shared_ptr<T>::value,
+              shared_ptr_arg_to_python<T>,
       
-            , typename mpl::if_<
-                mpl::or_<
-                    is_function<T>
-                  , indirect_traits::is_pointer_to_function<T>
-                  , is_member_function_pointer<T>
-                >
-                , function_arg_to_python<T>
+              cpp14::conditional_t<
+                  (std::is_function<T>::value ||
+                   std::is_function<cpp14::remove_pointer_t<T>>::value ||
+                   std::is_member_function_pointer<T>::value),
+                  function_arg_to_python<T>,
 
-                , typename mpl::if_<
-                      is_object_manager<T>
-                    , object_manager_arg_to_python<T>
+                  cpp14::conditional_t<
+                      is_object_manager<T>::value,
+                      object_manager_arg_to_python<T>,
 
-                    , typename mpl::if_<
-                          is_pointer<T>
-                        , pointer_deep_arg_to_python<T>
+                      cpp14::conditional_t<
+                          std::is_pointer<T>::value,
+                          pointer_deep_arg_to_python<T>,
 
-                        , typename mpl::if_<
-                              is_pointer_wrapper<T>
-                            , pointer_shallow_arg_to_python<unwrapped_ptr>
+                          cpp14::conditional_t<
+                              is_pointer_wrapper<T>::value,
+                              pointer_shallow_arg_to_python<unwrapped_ptr>,
 
-                            , typename mpl::if_<
-                                  is_reference_wrapper<T>
-                                , reference_arg_to_python<unwrapped_referent>
-                                , value_arg_to_python<T>
-                              >::type
-                          >::type
-                      >::type
-                  >::type
-              >::type
-          >::type
-      >::type
-      
-      type;
+                              cpp14::conditional_t<
+                                  is_reference_wrapper<T>::value,
+                                  reference_arg_to_python<unwrapped_referent>,
+                                  value_arg_to_python<T>
+                              >
+                          >
+                      >
+                  >
+              >
+          >
+      >;
   };
+
+  template <class T>
+  using select_arg_to_python_t = typename select_arg_to_python<T>::type;
 }
 
 template <class T>
-struct arg_to_python
-    : detail::select_arg_to_python<T>::type
+struct arg_to_python : detail::select_arg_to_python_t<T>
 {
-    typedef typename detail::select_arg_to_python<T>::type base;
+    using base = detail::select_arg_to_python_t<T>;
  public: // member functions
     // Throw an exception if the conversion can't succeed
     arg_to_python(T const& x);
