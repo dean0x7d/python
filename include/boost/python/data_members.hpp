@@ -16,22 +16,8 @@
 
 # include <boost/python/converter/builtin_converters.hpp>
 
-# include <boost/python/detail/indirect_traits.hpp>
 # include <boost/python/detail/not_specified.hpp>
 # include <boost/python/detail/value_arg.hpp>
-
-# include <boost/type_traits/add_const.hpp>
-# include <boost/type_traits/add_reference.hpp>
-# include <boost/type_traits/is_member_pointer.hpp>
-
-# if BOOST_WORKAROUND(__MWERKS__, BOOST_TESTED_AT(0x3003))
-#  include <boost/type_traits/remove_cv.hpp>
-# endif 
-
-# include <boost/mpl/eval_if.hpp>
-# include <boost/mpl/if.hpp>
-
-# include <boost/detail/workaround.hpp>
 
 namespace boost { namespace python { 
 
@@ -58,7 +44,7 @@ namespace detail
           return c.*m_which;
       }
 
-      void operator()(Class& c, typename value_arg<Data>::type d) const
+      void operator()(Class& c, value_arg_t<Data> d) const
       {
           c.*m_which = d;
       }
@@ -79,7 +65,7 @@ namespace detail
           return *m_which;
       }
 
-      void operator()(typename value_arg<Data>::type d) const
+      void operator()(value_arg_t<Data> d) const
       {
           *m_which = d;
       }
@@ -99,19 +85,10 @@ namespace detail
   // copy.  See default_member_getter_policy for rationale.
   // 
   template <class T>
-  struct default_getter_by_ref
-      : mpl::and_<
-          mpl::bool_<
-              to_python_value<
-                  typename value_arg<T>::type
-              >::uses_registry
-          >
-        , indirect_traits::is_reference_to_class<
-              typename value_arg<T>::type
-          >
-       >
-  {
-  };
+  using default_getter_by_ref = std::integral_constant<bool,
+      to_python_value<value_arg_t<T>>::uses_registry &&
+      std::is_class<cpp14::remove_reference_t<value_arg_t<T>>>::value
+  >;
 
   // Metafunction computing the default CallPolicy to use for reading
   // data members
@@ -122,44 +99,28 @@ namespace detail
   //    x.y.z =  1
   // and get the right result.
   template <class T>
-  struct default_member_getter_policy
-    : mpl::if_<
-          default_getter_by_ref<T>
-        , return_internal_reference<>
-        , return_value_policy<return_by_value>
-      >
-  {};
+  using default_member_getter_policy_t = cpp14::conditional_t<
+      default_getter_by_ref<T>::value,
+      return_internal_reference<>,
+      return_value_policy<return_by_value>
+  >;
 
   // Metafunction computing the default CallPolicy to use for reading
   // non-member data.
   template <class T>
-  struct default_datum_getter_policy
-    : mpl::if_<
-          default_getter_by_ref<T>
-        , return_value_policy<reference_existing_object>
-        , return_value_policy<return_by_value>
-      >
-  {};
+  using default_datum_getter_policy_t = cpp14::conditional_t<
+      default_getter_by_ref<T>::value,
+      return_value_policy<reference_existing_object>,
+      return_value_policy<return_by_value>
+  >;
 
   //
   // make_getter helper function family -- These helpers to
-  // boost::python::make_getter are used to dispatch behavior.  The
-  // third argument is a workaround for a CWPro8 partial ordering bug
-  // with pointers to data members.  It should be convertible to
-  // mpl::true_ iff the first argument is a pointer-to-member, and
-  // mpl::false_ otherwise.  The fourth argument is for compilers
-  // which don't support partial ordering at all and should always be
-  // passed 0L.
-  //
-
-#if BOOST_WORKAROUND(__EDG_VERSION__, <= 238)
-  template <class D, class P>
-  inline object make_getter(D& d, P& p, mpl::false_, ...);
-#endif
+  // boost::python::make_getter are used to dispatch behavior.
 
   // Handle non-member pointers with policies
   template <class D, class Policies>
-  inline object make_getter(D* d, Policies const& policies, mpl::false_, int)
+  inline object make_getter(D* d, Policies const& policies)
   {
       return python::make_function(
           detail::datum<D>(d), policies, detail::type_list<D&>()
@@ -168,21 +129,16 @@ namespace detail
   
   // Handle non-member pointers without policies
   template <class D>
-  inline object make_getter(D* d, not_specified, mpl::false_, long)
+  inline object make_getter(D* d, not_specified)
   {
-      typedef typename default_datum_getter_policy<D>::type policies;
-      return detail::make_getter(d, policies(), mpl::false_(), 0);
+      return detail::make_getter(d, default_datum_getter_policy_t<D>());
   }
 
   // Handle pointers-to-members with policies
   template <class C, class D, class Policies>
-  inline object make_getter(D C::*pm, Policies const& policies, mpl::true_, int)
+  inline object make_getter(D C::*pm, Policies const& policies)
   {
-#if BOOST_WORKAROUND(__MWERKS__, BOOST_TESTED_AT(0x3003))
-      typedef typename remove_cv<C>::type Class;
-#else
       typedef C Class;
-#endif 
       return python::make_function(
           detail::member<D,Class>(pm)
         , policies
@@ -192,31 +148,26 @@ namespace detail
       
   // Handle pointers-to-members without policies
   template <class C, class D>
-  inline object make_getter(D C::*pm, not_specified, mpl::true_, long)
+  inline object make_getter(D C::*pm, not_specified)
   {
-      typedef typename default_member_getter_policy<D>::type policies;
-      return detail::make_getter(pm, policies(), mpl::true_(), 0);
+      return detail::make_getter(pm, default_member_getter_policy_t<D>());
   }
 
   // Handle references
   template <class D, class P>
-  inline object make_getter(D& d, P& p, mpl::false_, ...)
+  inline object make_getter(D& d, P&& p)
   {
       // Just dispatch to the handler for pointer types.
-      return detail::make_getter(&d, p, mpl::false_(), 0L);
+      return detail::make_getter(&d, p);
   }
 
   //
   // make_setter helper function family -- These helpers to
-  // boost::python::make_setter are used to dispatch behavior.  The
-  // third argument is for compilers which don't support partial
-  // ordering at all and should always be passed 0.
-  //
-
+  // boost::python::make_setter are used to dispatch behavior.
   
   // Handle non-member pointers
   template <class D, class Policies>
-  inline object make_setter(D* p, Policies const& policies, mpl::false_, int)
+  inline object make_setter(D* p, Policies const& policies)
   {
       return python::make_function(
           detail::datum<D>(p), policies, detail::type_list<void,D const&>()
@@ -225,7 +176,7 @@ namespace detail
 
   // Handle pointers-to-members
   template <class C, class D, class Policies>
-  inline object make_setter(D C::*pm, Policies const& policies, mpl::true_, int)
+  inline object make_setter(D C::*pm, Policies const& policies)
   {
       return python::make_function(
           detail::member<D,C>(pm)
@@ -236,9 +187,9 @@ namespace detail
 
   // Handle references
   template <class D, class Policies>
-  inline object make_setter(D& x, Policies const& policies, mpl::false_, ...)
+  inline object make_setter(D& x, Policies const& policies)
   {
-      return detail::make_setter(&x, policies, mpl::false_(), 0L);
+      return detail::make_setter(&x, policies);
   }
 }
 
@@ -252,32 +203,26 @@ namespace detail
 template <class D, class Policies>
 inline object make_getter(D& d, Policies const& policies)
 {
-    return detail::make_getter(d, policies, is_member_pointer<D>(), 0L);
+    return detail::make_getter(d, policies);
 }
 
 template <class D, class Policies>
 inline object make_getter(D const& d, Policies const& policies)
 {
-    return detail::make_getter(d, policies, is_member_pointer<D>(), 0L);
+    return detail::make_getter(d, policies);
 }
 
 template <class D>
 inline object make_getter(D& x)
 {
-    detail::not_specified policy
-        = detail::not_specified(); // suppress a SunPro warning
-    return detail::make_getter(x, policy, is_member_pointer<D>(), 0L);
+    return detail::make_getter(x, detail::not_specified());
 }
 
-#  if !BOOST_WORKAROUND(__EDG_VERSION__, <= 238)
 template <class D>
 inline object make_getter(D const& d)
 {
-    detail::not_specified policy
-        = detail::not_specified(); // Suppress a SunPro warning
-    return detail::make_getter(d, policy, is_member_pointer<D>(), 0L);
+    return detail::make_getter(d, detail::not_specified());
 }
-#  endif
 
 //
 // make_setter function family -- build a callable object which
@@ -289,28 +234,20 @@ inline object make_getter(D const& d)
 template <class D, class Policies>
 inline object make_setter(D& x, Policies const& policies)
 {
-    return detail::make_setter(x, policies, is_member_pointer<D>(), 0);
+    return detail::make_setter(x, policies);
 }
 
 template <class D, class Policies>
 inline object make_setter(D const& x, Policies const& policies)
 {
-    return detail::make_setter(x, policies, is_member_pointer<D>(), 0);
+    return detail::make_setter(x, policies);
 }
 
 template <class D>
 inline object make_setter(D& x)
 {
-    return detail::make_setter(x, default_call_policies(), is_member_pointer<D>(), 0);
+    return detail::make_setter(x, default_call_policies());
 }
-
-# if BOOST_WORKAROUND(__EDG_VERSION__, <= 238)
-template <class D>
-inline object make_setter(D const& x)
-{
-    return detail::make_setter(x, default_call_policies(), is_member_pointer<D>(), 0);
-}
-# endif
 
 }} // namespace boost::python
 
