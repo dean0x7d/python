@@ -25,7 +25,7 @@ object make_keyword_range_function(
   , keyword_range const& kw)
 {
     return detail::make_function_aux(
-        f, policies, detail::get_signature(f), kw, mpl::int_<0>());
+        f, policies, detail::get_signature(f), kw, std::integral_constant<int, 0>());
 }
 
 template <class F, class Policies, class Signature>
@@ -36,7 +36,7 @@ object make_keyword_range_function(
   , Signature const& sig)
 {
     return detail::make_function_aux(
-        f, policies, sig, kw, mpl::int_<0>());
+        f, policies, sig, kw, std::integral_constant<int, 0>());
 }
 // }
 

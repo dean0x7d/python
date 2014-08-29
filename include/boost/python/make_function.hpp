@@ -13,8 +13,6 @@
 
 # include <boost/python/object/function_object.hpp>
 
-# include <boost/mpl/int.hpp>
-
 namespace boost { namespace python {
 
 namespace detail
@@ -40,7 +38,7 @@ namespace detail
   // As above, except that it accepts argument keywords. NumKeywords
   // is used only for a compile-time assertion to make sure the user
   // doesn't pass more keywords than the function can accept. To
-  // disable all checking, pass mpl::int_<0> for NumKeywords.
+  // disable all checking, pass std::integral_constant<int, 0> for NumKeywords.
   template <class F, class CallPolicies, class Sig, class NumKeywords>
   object make_function_aux(
       F f
@@ -71,7 +69,7 @@ namespace detail
         , policies
         , detail::get_signature(f)
         , kw.range()
-        , mpl::int_<Keywords::size>()
+        , std::integral_constant<int, Keywords::size>()
       );
   }
 
@@ -93,7 +91,6 @@ namespace detail
 //   pointer as a Python object, using optional CallPolicies,
 //   Keywords, and/or Signature.
 //
-//   @group {
 template <class F>
 object make_function(F f)
 {
@@ -139,10 +136,9 @@ object make_function(
         , policies
         , sig
         , kw.range()
-        , mpl::int_<Keywords::size>()
+        , std::integral_constant<int, Keywords::size>()
       );
 }
-// }
 
 }} 
 
