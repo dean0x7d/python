@@ -201,9 +201,7 @@ bpl-test crossmod_opaque
 
 # --- unit tests of library components ---
 
-[ compile indirect_traits_test.cpp ]
 [ run destroy_test.cpp ]
-[ py-run pointer_type_id_test.cpp ]
 [ py-run bases.cpp ]
 [ run if_else.cpp ]
 [ py-run pointee.cpp ]
