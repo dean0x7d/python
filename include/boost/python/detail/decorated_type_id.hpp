@@ -6,8 +6,7 @@
 # define DECORATED_TYPE_ID_DWA2002517_HPP
 
 # include <boost/python/type_id.hpp>
-# include <boost/python/detail/indirect_traits.hpp>
-# include <boost/type_traits/cv_traits.hpp>
+# include <boost/python/cpp14/type_traits.hpp>
 
 namespace boost { namespace python { namespace detail { 
 
@@ -32,18 +31,18 @@ struct decorated_type_info : totally_ordered<decorated_type_info>
 };
 
 template <class T>
-inline decorated_type_info decorated_type_id(boost::type<T>* = 0)
+inline decorated_type_info decorated_type_id()
 {
     return decorated_type_info(
-        type_id<T>()
-        , decorated_type_info::decoration(
-            (is_const<T>::value || indirect_traits::is_reference_to_const<T>::value
-             ? decorated_type_info::const_ : 0)
-            | (is_volatile<T>::value || indirect_traits::is_reference_to_volatile<T>::value
+        type_id<T>(),
+        decorated_type_info::decoration(
+            (std::is_const<cpp14::remove_reference_t<T>>::value 
+                ? decorated_type_info::const_ : 0)
+            | (std::is_volatile<cpp14::remove_reference_t<T>>::value
                ? decorated_type_info::volatile_ : 0)
-            | (is_reference<T>::value ? decorated_type_info::reference : 0)
-            )
-        );
+            | (std::is_reference<T>::value ? decorated_type_info::reference : 0)
+        )
+    );
 }
 
 inline decorated_type_info::decorated_type_info(type_info base_t, decoration decoration)

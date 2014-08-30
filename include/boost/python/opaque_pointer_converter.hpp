@@ -17,10 +17,6 @@
 # include <boost/python/type_id.hpp>
 # include <boost/python/errors.hpp>
 
-# include <boost/type_traits/remove_pointer.hpp>
-# include <boost/type_traits/is_pointer.hpp>
-# include <boost/type_traits/is_void.hpp>
-
 # include <boost/implicit_cast.hpp>
 
 // opaque --

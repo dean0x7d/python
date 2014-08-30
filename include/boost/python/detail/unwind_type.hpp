@@ -5,8 +5,7 @@
 #ifndef UNWIND_TYPE_DWA200222_HPP
 # define UNWIND_TYPE_DWA200222_HPP
 
-# include <boost/python/detail/indirect_traits.hpp>
-# include <boost/type_traits/object_traits.hpp>
+# include <boost/python/cpp14/type_traits.hpp>
 
 namespace boost { namespace python { namespace detail {
 
@@ -81,13 +80,9 @@ struct unwind_helper<false>
 
 template <class Generator, class U>
 inline typename Generator::result_type
-#ifndef _MSC_VER
 unwind_type(U const& p, Generator*)
-#else
-unwind_type(U const& p, Generator* = 0)
-#endif
 {
-    return unwind_helper<is_pointer<U>::value>::execute(p, (Generator*)0);
+    return unwind_helper<std::is_pointer<U>::value>::execute(p, (Generator*)0);
 }
 
 enum { direct_ = 0, pointer_ = 1, reference_ = 2, reference_to_pointer_ = 3 };
@@ -146,19 +141,17 @@ struct unwind_helper2<reference_to_pointer_>
 // why bother?
 template <class Generator, class U>
 inline typename Generator::result_type
-#ifndef _MSC_VER
 unwind_type(boost::type<U>*, Generator*)
-#else
-unwind_type(boost::type<U>*p =0, Generator* =0)
-#endif
 {
-    BOOST_STATIC_CONSTANT(int, indirection
-        = (boost::is_pointer<U>::value ? pointer_ : 0)
-                             + (indirect_traits::is_reference_to_pointer<U>::value
-                             ? reference_to_pointer_
-                             : boost::is_reference<U>::value
-                             ? reference_
-                             : 0));
+    constexpr auto indirection = 
+        (std::is_pointer<U>::value ? pointer_ : 0)
+        + 
+        (std::is_reference<U>::value && std::is_pointer<cpp14::remove_reference_t<U>>::value
+            ? reference_to_pointer_
+            : std::is_reference<U>::value 
+            ? reference_ 
+            : 0
+        );
 
     return unwind_helper2<indirection>::execute((U(*)())0,(Generator*)0);
 }

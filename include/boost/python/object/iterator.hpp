@@ -21,10 +21,6 @@
 
 # include <boost/type.hpp>
 
-# include <boost/type_traits/is_same.hpp>
-# include <boost/type_traits/add_reference.hpp>
-# include <boost/type_traits/add_const.hpp>
-
 # include <boost/detail/iterator.hpp>
 
 namespace boost { namespace python { namespace objects {
@@ -191,9 +187,9 @@ inline object make_iterator_function(
   , boost::type<Target>* = 0
 )
 {
-    typedef typename Accessor1::result_type iterator;
-    typedef typename add_const<iterator>::type iterator_const;
-    typedef typename add_reference<iterator_const>::type iterator_cref;
+    using iterator = typename Accessor1::result_type;
+    using iterator_const = cpp14::add_const_t<iterator>;
+    using iterator_cref = cpp14::add_lvalue_reference_t<iterator_const>;
       
     return detail::make_iterator_function(
         get_start

@@ -28,10 +28,6 @@
 # include <boost/python/detail/string_literal.hpp>
 # include <boost/python/detail/def_helper_fwd.hpp>
 
-# include <boost/type_traits/is_same.hpp>
-# include <boost/type_traits/is_convertible.hpp>
-# include <boost/type_traits/remove_reference.hpp>
-
 namespace boost { namespace python { 
 
 namespace detail
@@ -160,9 +156,10 @@ namespace api
       {
           // It's too late to specify anything other than docstrings if
           // the callable object is already wrapped.
-          BOOST_STATIC_ASSERT(
-              (is_same<char const*,DocStringT>::value
-               || detail::is_string_literal<DocStringT const>::value));
+          static_assert(
+              std::is_same<char const*, DocStringT>::value ||
+              detail::is_string_literal<DocStringT const>::value, ""
+          );
         
           objects::add_to_namespace(cl, name, this->derived_visitor(), helper.doc());
       }
@@ -205,7 +202,7 @@ namespace api
   template <class T, class U>
   struct is_derived
     : std::is_convertible<
-          typename remove_reference<T>::type*
+          cpp14::remove_reference_t<T>*
         , U const*
       >
   {};

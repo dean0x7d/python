@@ -31,4 +31,7 @@ using add_pointer_t = typename std::add_pointer<T>::type;
 template<bool B, class T, class F>
 using conditional_t = typename std::conditional<B, T, F>::type;
 
+template<std::size_t Len, std::size_t Align>
+using aligned_storage_t = typename std::aligned_storage<Len, Align>::type;
+
 }

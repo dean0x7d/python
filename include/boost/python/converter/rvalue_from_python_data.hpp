@@ -8,9 +8,6 @@
 # include <boost/python/converter/constructor_function.hpp>
 # include <boost/python/detail/referent_storage.hpp>
 # include <boost/python/detail/destroy.hpp>
-# include <boost/static_assert.hpp>
-# include <boost/type_traits/add_reference.hpp>
-# include <boost/type_traits/add_cv.hpp>
 # include <cstddef>
 
 // Data management for potential rvalue conversions from Python to C++
@@ -78,7 +75,7 @@ struct rvalue_from_python_storage
 
     // Storage for the result, in case an rvalue must be constructed
     typename python::detail::referent_storage<
-        typename add_reference<T>::type
+        cpp14::add_lvalue_reference_t<T>
     >::type storage;
 };
 
@@ -91,13 +88,8 @@ struct rvalue_from_python_storage
 template <class T>
 struct rvalue_from_python_data : rvalue_from_python_storage<T>
 {
-# if (!defined(__MWERKS__) || __MWERKS__ >= 0x3000) \
-        && (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= 245) \
-        && (!defined(__DECCXX_VER) || __DECCXX_VER > 60590014) \
-        && !defined(BOOST_PYTHON_SYNOPSIS) /* Synopsis' OpenCXX has trouble parsing this */
-    // This must always be a POD struct with m_data its first member.
-    BOOST_STATIC_ASSERT(BOOST_PYTHON_OFFSETOF(rvalue_from_python_storage<T>,stage1) == 0);
-# endif
+    static_assert(std::is_pod<rvalue_from_python_storage<T>>::value, 
+        "This must always be a POD struct");
     
     // The usual constructor 
     rvalue_from_python_data(rvalue_from_python_stage1_data const&);
@@ -110,7 +102,7 @@ struct rvalue_from_python_data : rvalue_from_python_storage<T>
     // Destroys any object constructed in the storage.
     ~rvalue_from_python_data();
  private:
-    typedef typename add_reference<typename add_cv<T>::type>::type ref_type;
+    typedef cpp14::add_lvalue_reference_t<cpp14::add_cv_t<T>> ref_type;
 };
 
 //

@@ -177,9 +177,10 @@ struct caller<F, CallPolicies, type_list<Result, Args...>>
         using result_converter = select_result_converter_t<CallPolicies, rtype>;
         
         static const signature_element ret = {
-            (boost::is_void<rtype>::value ? "void" : type_id<rtype>().name())
-            , &detail::converter_target_type<result_converter>::get_pytype
-            , boost::detail::indirect_traits::is_reference_to_non_const<rtype>::value 
+            std::is_same<void, rtype>::value ? "void" : type_id<rtype>().name(),
+            &detail::converter_target_type<result_converter>::get_pytype,
+            std::is_reference<rtype>::value && 
+            !std::is_const<cpp14::remove_reference_t<rtype>>::value 
         };
         py_func_sig_info res = {sig, &ret };
 #else

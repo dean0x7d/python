@@ -8,7 +8,6 @@
 
 # include <boost/python/type_id.hpp>
 # include <boost/python/detail/type_list.hpp>
-# include <boost/python/detail/indirect_traits.hpp>
 # include <boost/python/converter/pytype_function.hpp>
 
 namespace boost { namespace python { namespace detail { 
@@ -38,11 +37,13 @@ struct signature<type_list<Args...>>
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
             { type_id<Args>().name(),
               &converter::expected_pytype_for_arg<Args>::get_pytype,
-              indirect_traits::is_reference_to_non_const<Args>::value }...,
+              std::is_reference<Args>::value && 
+              !std::is_const<cpp14::remove_reference_t<Args>>::value }...,
 #else
             { type_id<Args>().name(),
               0, 
-              indirect_traits::is_reference_to_non_const<Args>::value }...,
+              std::is_reference<Args>::value && 
+              !std::is_const<cpp14::remove_reference_t<Args>>::value }...,
 #endif
             {0, 0, 0}
         };

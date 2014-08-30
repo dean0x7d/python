@@ -6,7 +6,7 @@
 # define INSTANCE_DWA200295_HPP
 
 # include <boost/python/detail/prefix.hpp>
-# include <boost/type_traits/alignment_traits.hpp>
+# include <boost/python/cpp14/type_traits.hpp>
 # include <cstddef>
 
 namespace boost { namespace python
@@ -25,25 +25,14 @@ struct instance
     PyObject* weakrefs; 
     instance_holder* objects;
 
-    typedef typename type_with_alignment<
-        ::boost::alignment_of<Data>::value
-    >::type align_t;
-          
-    union
-    {
-        align_t align;
-        char bytes[sizeof(Data)];
-    } storage;
+    cpp14::aligned_storage_t<sizeof(Data), alignof(Data)> storage;          
 };
 
 template <class Data>
 struct additional_instance_size
 {
-    typedef instance<Data> instance_data;
-    typedef instance<char> instance_char;
-    BOOST_STATIC_CONSTANT(
-        std::size_t, value = sizeof(instance_data)
-                           - BOOST_PYTHON_OFFSETOF(instance_char,storage));
+    static constexpr auto value = 
+        sizeof(instance<Data>) - offsetof(instance<char>, storage);
 };
 
 }}} // namespace boost::python::object

@@ -6,7 +6,6 @@
 # define MANAGE_NEW_OBJECT_DWA200222_HPP
 
 # include <boost/python/detail/prefix.hpp>
-# include <boost/python/detail/indirect_traits.hpp>
 # include <boost/python/to_python_indirect.hpp>
 
 namespace boost { namespace python { 

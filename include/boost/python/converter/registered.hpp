@@ -7,12 +7,8 @@
 # include <boost/python/type_id.hpp>
 # include <boost/python/converter/registry.hpp>
 # include <boost/python/converter/registrations.hpp>
-# include <boost/type_traits/transform_traits.hpp>
-# include <boost/type_traits/cv_traits.hpp>
-# include <boost/type_traits/is_void.hpp>
-# include <boost/detail/workaround.hpp>
-# include <boost/python/type_id.hpp>
 # include <boost/type.hpp>
+# include <boost/python/cpp14/type_traits.hpp>
 
 namespace boost {
 
@@ -37,22 +33,16 @@ namespace detail
 template <class T>
 struct registered
   : detail::registered_base<
-        typename add_reference<
-            typename add_cv<T>::type
-        >::type
+        cpp14::add_lvalue_reference_t<
+            cpp14::add_cv_t<T>
+        >
     >
 {
 };
 
-# if !BOOST_WORKAROUND(BOOST_MSVC, BOOST_TESTED_AT(1310))
-// collapses a few more types to the same static instance.  MSVC7.1
-// fails to strip cv-qualification from array types in typeid.  For
-// some reason we can't use this collapse there or array converters
-// will not be found.
+// collapses a few more types to the same static instance.
 template <class T>
-struct registered<T&>
-  : registered<T> {};
-# endif
+struct registered<T&> : registered<T> {};
 
 //
 // implementations

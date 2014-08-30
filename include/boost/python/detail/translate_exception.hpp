@@ -8,9 +8,7 @@
 # include <boost/python/detail/exception_handler.hpp>
 
 # include <boost/call_traits.hpp>
-# include <boost/type_traits/add_const.hpp>
-# include <boost/type_traits/add_reference.hpp>
-# include <boost/type_traits/remove_reference.hpp>
+# include <boost/python/cpp14/type_traits.hpp>
 
 # include <boost/function/function0.hpp>
 
@@ -23,20 +21,12 @@ namespace boost { namespace python { namespace detail {
 template <class ExceptionType, class Translate>
 struct translate_exception
 {
-// workaround for broken gcc that ships with SuSE 9.0 and SuSE 9.1
-# if defined(__linux__) && defined(__GNUC__) \
-    && BOOST_WORKAROUND(__GNUC__, == 3) \
-    && BOOST_WORKAROUND(__GNUC_MINOR__, == 3) \
-    && (BOOST_WORKAROUND(__GNUC_PATCHLEVEL__, == 1) \
-        || BOOST_WORKAROUND(__GNUC_PATCHLEVEL__, == 3))
-    typedef typename remove_reference<
-        typename add_const<ExceptionType>::type
-    >::type exception_non_ref;
-# else
-    typedef typename add_reference<
-        typename add_const<ExceptionType>::type
-    >::type exception_cref;
-# endif
+    using exception_cref = 
+        cpp14::add_lvalue_reference_t<
+            cpp14::add_const_t<
+                ExceptionType
+            >
+        >;
     
     inline bool operator()(
         exception_handler const& handler
@@ -47,16 +37,7 @@ struct translate_exception
         {
             return handler(f);
         }
-// workaround for broken gcc that ships with SuSE 9.0 and SuSE 9.1
-# if defined(__linux__) && defined(__GNUC__) \
-    && BOOST_WORKAROUND(__GNUC__, == 3) \
-    && BOOST_WORKAROUND(__GNUC_MINOR__, == 3) \
-    && (BOOST_WORKAROUND(__GNUC_PATCHLEVEL__, == 1) \
-        || BOOST_WORKAROUND(__GNUC_PATCHLEVEL__, == 3))
-        catch(exception_non_ref& e)
-# else
         catch(exception_cref e)
-# endif
         {
             translate(e);
             return true;

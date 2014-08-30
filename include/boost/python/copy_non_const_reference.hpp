@@ -6,7 +6,6 @@
 # define COPY_NON_CONST_REFERENCE_DWA2002131_HPP
 
 # include <boost/python/detail/prefix.hpp>
-# include <boost/python/detail/indirect_traits.hpp>
 # include <boost/python/to_python_value.hpp>
 
 namespace boost { namespace python { 

@@ -5,8 +5,6 @@
 #ifndef VOID_PTR_DWA200239_HPP
 # define VOID_PTR_DWA200239_HPP
 
-# include <boost/type_traits/remove_cv.hpp>
-
 namespace boost { namespace python { namespace detail { 
 
 template <class U>
@@ -25,9 +23,7 @@ inline void write_void_ptr(void const volatile* storage, void* ptr, T*)
 template <class U>
 inline void write_void_ptr_reference(void const volatile* storage, void* ptr, U&(*)())
 {
-    // stripping CV qualification suppresses warnings on older EDGs
-    typedef typename remove_cv<U>::type u_stripped; 
-    write_void_ptr(storage, ptr, u_stripped(0));
+    write_void_ptr(storage, ptr, U(nullptr));
 }
 
 }}} // namespace boost::python::detail

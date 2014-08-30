@@ -7,9 +7,8 @@
 
 # include <boost/config.hpp>
 
-#  include <boost/type_traits/remove_reference.hpp>
-#  include <boost/type_traits/remove_cv.hpp>
 #  include <boost/python/detail/is_xxx.hpp>
+# include <boost/python/cpp14/type_traits.hpp>
 
 #  define BOOST_PYTHON_VALUE_IS_XXX_DEF(name, qualified_name, nargs)    \
 template <class X_>                                                     \
@@ -17,9 +16,9 @@ struct value_is_##name                                                  \
 {                                                                       \
     BOOST_PYTHON_IS_XXX_DEF(name,qualified_name,nargs)                  \
     BOOST_STATIC_CONSTANT(bool, value = is_##name<                      \
-                               typename remove_cv<                      \
-                                  typename remove_reference<X_>::type   \
-                               >::type                                  \
+                               cpp14::remove_cv_t<                      \
+                                  cpp14::remove_reference_t<X_>         \
+                               >                                        \
                            >::value);                                   \
     typedef std::integral_constant<bool, value> type;                   \
                                                                         \
