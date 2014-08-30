@@ -5,7 +5,6 @@
 #ifndef REGISTERED_POINTEE_DWA2002710_HPP
 # define REGISTERED_POINTEE_DWA2002710_HPP
 # include <boost/python/converter/registered.hpp>
-# include <boost/python/converter/pointer_type_id.hpp>
 # include <boost/python/converter/registry.hpp>
 # include <boost/type_traits/transform_traits.hpp>
 # include <boost/type_traits/cv_traits.hpp>
