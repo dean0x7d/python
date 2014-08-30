@@ -203,7 +203,6 @@ bpl-test crossmod_opaque
 
 [ run destroy_test.cpp ]
 [ py-run bases.cpp ]
-[ run if_else.cpp ]
 [ py-run pointee.cpp ]
 [ run result.cpp ]
 
