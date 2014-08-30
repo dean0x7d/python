@@ -16,52 +16,25 @@
 
 namespace boost { namespace python { 
 
-#if 0 //get_pytype member detection
-namespace detail
-{
-    typedef char yes_type;
-    typedef struct {char a[2]; } no_type;
-    template<PyTypeObject const * (*f)()> struct test_get_pytype1 { };
-    template<PyTypeObject * (*f)()>          struct test_get_pytype2 { };
-
-    template<class T> yes_type tester(test_get_pytype1<&T::get_pytype>*);
-
-    template<class T> yes_type tester(test_get_pytype2<&T::get_pytype>*);
-
-    template<class T> no_type tester(...);
-
-    template<class T>
-    struct test_get_pytype_base  
-    {
-        BOOST_STATIC_CONSTANT(bool, value= (sizeof(detail::tester<T>(0)) == sizeof(yes_type)));
-    };
-
-    template<class T>
-    struct test_get_pytype : boost::mpl::bool_<test_get_pytype_base<T>::value> 
-    {
-    };
-
-}
-#endif
-
 template < class T, class Conversion, bool has_get_pytype=false >
 struct to_python_converter 
 {
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    typedef boost::mpl::bool_<has_get_pytype> HasGetPytype;
+    using HasGetPytype = std::integral_constant<bool, has_get_pytype>;
 
-    static PyTypeObject const* get_pytype_1(boost::mpl::true_ *)
+    static PyTypeObject const* get_pytype_1(std::true_type)
     {
         return Conversion::get_pytype();
     }
 
-    static PyTypeObject const* get_pytype_1(boost::mpl::false_ *)
+    static PyTypeObject const* get_pytype_1(std::false_type)
     {
-        return 0;
+        return nullptr;
     }
+    
     static PyTypeObject const* get_pytype_impl()
     {
-        return get_pytype_1((HasGetPytype*)0);
+        return get_pytype_1(HasGetPytype());
     }
 #endif
     
@@ -75,10 +48,8 @@ struct to_python_converter
 template <class T, class Conversion ,bool has_get_pytype>
 to_python_converter<T,Conversion, has_get_pytype>::to_python_converter()
 {
-    typedef converter::as_to_python_function<
-        T, Conversion
-        > normalized;
-            
+    using normalized = converter::as_to_python_function<T, Conversion>;
+
     converter::registry::insert(
         &normalized::convert
         , type_id<T>()

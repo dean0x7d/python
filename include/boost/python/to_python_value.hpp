@@ -20,12 +20,6 @@
 # include <boost/python/detail/value_is_shared_ptr.hpp>
 # include <boost/python/detail/value_arg.hpp>
 
-# include <boost/type_traits/transform_traits.hpp>
-
-# include <boost/mpl/if.hpp>
-# include <boost/mpl/or.hpp>
-# include <boost/type_traits/is_const.hpp>
-
 namespace boost { namespace python { 
 
 namespace detail
@@ -61,17 +55,17 @@ struct object_manager_get_pytype<true>
     
       PyObject* operator()(argument_type) const;
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-      typedef boost::mpl::bool_<is_handle<T>::value> is_t_handle;
-      typedef boost::detail::indirect_traits::is_reference_to_const<T> is_t_const;
       PyTypeObject const* get_pytype() const {
-          return get_pytype_aux((is_t_handle*)0);
+          return get_pytype_aux(is_handle<T>());
       }
 
-      inline static PyTypeObject const* get_pytype_aux(mpl::true_*) {return converter::object_manager_traits<T>::get_pytype();}
+      inline static PyTypeObject const* get_pytype_aux(std::true_type) {
+          return converter::object_manager_traits<T>::get_pytype();
+      }
       
-      inline static PyTypeObject const* get_pytype_aux(mpl::false_* ) 
-      {
-          return object_manager_get_pytype<is_t_const::value>::get((T(*)())0);
+      inline static PyTypeObject const* get_pytype_aux(std::false_type) {
+          constexpr bool is_t_const = std::is_const<cpp14::remove_reference_t<T>>::value;
+          return object_manager_get_pytype<is_t_const>::get((T(*)())0);
       }
       
 #endif 
@@ -79,7 +73,7 @@ struct object_manager_get_pytype<true>
       // This information helps make_getter() decide whether to try to
       // return an internal reference or not. I don't like it much,
       // but it will have to serve for now.
-      BOOST_STATIC_CONSTANT(bool, uses_registry = false);
+      static constexpr bool uses_registry = false;
   };
 
   
@@ -96,7 +90,7 @@ struct object_manager_get_pytype<true>
       // This information helps make_getter() decide whether to try to
       // return an internal reference or not. I don't like it much,
       // but it will have to serve for now.
-      BOOST_STATIC_CONSTANT(bool, uses_registry = true);
+      static constexpr bool uses_registry = true;
   };
 
   template <class T>
@@ -111,7 +105,7 @@ struct object_manager_get_pytype<true>
       // This information helps make_getter() decide whether to try to
       // return an internal reference or not. I don't like it much,
       // but it will have to serve for now.
-      BOOST_STATIC_CONSTANT(bool, uses_registry = false);
+      static constexpr bool uses_registry = false;
   private:
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
       template <class U>
@@ -123,21 +117,17 @@ struct object_manager_get_pytype<true>
 }
 
 template <class T>
-struct to_python_value
-    : mpl::if_<
-          detail::value_is_shared_ptr<T>
-        , detail::shared_ptr_to_python_value<T>
-        , typename mpl::if_<
-              mpl::or_<
-                  converter::is_object_manager<T>
-                , converter::is_reference_to_object_manager<T>
-              >
-            , detail::object_manager_to_python_value<T>
-            , detail::registry_to_python_value<T>
-          >::type
-      >::type
-{
-};
+struct to_python_value : cpp14::conditional_t<
+    detail::value_is_shared_ptr<T>::value,
+    detail::shared_ptr_to_python_value<T>,
+    cpp14::conditional_t<
+        (converter::is_object_manager<T>::value ||
+         converter::is_reference_to_object_manager<T>::value),
+        detail::object_manager_to_python_value<T>,
+        detail::registry_to_python_value<T>
+    >
+> {};
+    
 
 //
 // implementation 

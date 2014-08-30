@@ -18,16 +18,7 @@
 
 # include <boost/python/refcount.hpp>
 
-# include <boost/type_traits/is_pointer.hpp>
-# include <boost/type_traits/is_polymorphic.hpp>
-
-# include <boost/mpl/bool.hpp>
-
-# if defined(__ICL) && __ICL < 600 
-#  include <boost/shared_ptr.hpp>
-# else 
-#  include <memory>
-# endif
+# include <memory>
 
 namespace boost { namespace python {
 
@@ -38,7 +29,7 @@ struct to_python_indirect
     inline PyObject*
     operator()(U const& ref) const
     {
-        return this->execute(const_cast<U&>(ref), is_pointer<U>());
+        return this->execute(const_cast<U&>(ref), std::is_pointer<U>());
     }
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
     inline PyTypeObject const*
@@ -49,20 +40,20 @@ struct to_python_indirect
 #endif
  private:
     template <class U>
-    inline PyObject* execute(U* ptr, mpl::true_) const
+    inline PyObject* execute(U* ptr, std::true_type) const
     {
         // No special NULL treatment for references
         if (ptr == 0)
             return python::detail::none();
         else
-            return this->execute(*ptr, mpl::false_());
+            return this->execute(*ptr, std::false_type());
     }
     
     template <class U>
-    inline PyObject* execute(U const& x, mpl::false_) const
+    inline PyObject* execute(U const& x, std::false_type) const
     {
         U* const p = &const_cast<U&>(x);
-        if (is_polymorphic<U>::value)
+        if (std::is_polymorphic<U>::value)
         {
             if (PyObject* o = detail::wrapper_base_::owner(p))
                 return incref(o);
@@ -81,15 +72,8 @@ namespace detail
       template <class T>
       static PyObject* execute(T* p)
       {
-          // can't use auto_ptr with Intel 5 and VC6 Dinkum library
-          // for some reason. We get link errors against the auto_ptr
-          // copy constructor.
-# if defined(__ICL) && __ICL < 600 
-          typedef boost::shared_ptr<T> smart_pointer;
-# else 
-          typedef std::auto_ptr<T> smart_pointer;
-# endif
-          typedef objects::pointer_holder<smart_pointer, T> holder_t;
+          using smart_pointer = std::auto_ptr<T>;
+          using holder_t = objects::pointer_holder<smart_pointer, T>;
 
           smart_pointer ptr(const_cast<T*>(p));
           return objects::make_ptr_instance<T, holder_t>::execute(ptr);

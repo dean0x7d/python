@@ -156,18 +156,10 @@ typedef handle<PyTypeObject> type_handle;
 // Compile-time introspection
 //
 template<typename T>
-class is_handle
-{
- public:
-    BOOST_STATIC_CONSTANT(bool, value = false); 
-};
+struct is_handle : std::false_type {};
 
 template<typename T>
-class is_handle<handle<T> >
-{
- public:
-    BOOST_STATIC_CONSTANT(bool, value = true);
-};
+struct is_handle<handle<T>> : std::true_type {};
 
 //
 // implementations

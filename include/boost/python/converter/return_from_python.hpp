@@ -14,9 +14,6 @@
 # include <boost/python/detail/void_return.hpp>
 # include <boost/python/errors.hpp>
 # include <boost/python/handle.hpp>
-# include <boost/type_traits/has_trivial_copy.hpp>
-# include <boost/mpl/and.hpp>
-# include <boost/mpl/bool.hpp>
 
 namespace boost { namespace python { namespace converter { 
 
@@ -55,38 +52,26 @@ namespace detail
       typedef T result_type;
       result_type operator()(PyObject*) const;
   };
-  
-  template <class T>
-  struct select_return_from_python
-  {
-      BOOST_STATIC_CONSTANT(
-          bool, obj_mgr = is_object_manager<T>::value);
-
-      BOOST_STATIC_CONSTANT(
-          bool, ptr = is_pointer<T>::value);
     
-      BOOST_STATIC_CONSTANT(
-          bool, ref = is_reference<T>::value);
-
-      typedef typename mpl::if_c<
-          obj_mgr
-          , return_object_manager_from_python<T>
-          , typename mpl::if_c<
-              ptr
-              , return_pointer_from_python<T>
-              , typename mpl::if_c<
-                  ref
-                  , return_reference_from_python<T>
-                  , return_rvalue_from_python<T>
-                >::type
-            >::type
-         >::type type;
-  };
+  template <class T>
+  using select_return_from_python_t = cpp14::conditional_t<
+      is_object_manager<T>::value,
+      return_object_manager_from_python<T>,
+      cpp14::conditional_t<
+          std::is_pointer<T>::value,
+          return_pointer_from_python<T>,
+          cpp14::conditional_t<
+              std::is_reference<T>::value,
+              return_reference_from_python<T>,
+              return_rvalue_from_python<T>
+          >
+      >
+  >;
 }
 
 template <class T>
 struct return_from_python
-    : detail::select_return_from_python<T>::type
+    : detail::select_return_from_python_t<T>
 {
 };
 
