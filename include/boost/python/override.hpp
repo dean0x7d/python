@@ -37,19 +37,6 @@ namespace detail
           converter::return_from_python<T> converter;
           return converter(m_obj.release());
       }
-
-#  if BOOST_WORKAROUND(_MSC_FULL_VER, BOOST_TESTED_AT(140050215))
-      template <class T>
-      operator T*()
-      {
-          converter::return_from_python<T*> converter;
-          return converter(m_obj.release());
-      }
-#  endif 
-      
-#  if BOOST_WORKAROUND(BOOST_MSVC, BOOST_TESTED_AT(1400)) || BOOST_WORKAROUND(BOOST_INTEL_WIN, >= 900)
-      // No operator T&
-#  else
       
       template <class T>
       operator T&() const
@@ -57,7 +44,6 @@ namespace detail
           converter::return_from_python<T&> converter;
           return converter(const_cast<handle<>&>(m_obj).release());
       }
-#  endif 
 
       template <class T>
       T as(type<T>* = 0)

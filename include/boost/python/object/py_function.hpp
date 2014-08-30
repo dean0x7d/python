@@ -6,7 +6,6 @@
 # define PY_FUNCTION_DWA200286_HPP
 
 # include <boost/python/detail/signature.hpp>
-# include <boost/detail/workaround.hpp>
 # include <memory>
 
 namespace boost { namespace python { namespace objects {

@@ -6,9 +6,6 @@
 //  The author gratefully acknowleges the support of Dragon Systems, Inc., in
 //  producing this work.
 
-//  Revision History:
-//  04 Mar 01  Some fixes so it will compile with Intel C++ (Dave Abrahams)
-
 #ifndef CONFIG_DWA052200_H_
 # define CONFIG_DWA052200_H_
 
@@ -35,19 +32,6 @@
 #  pragma warning (disable : 4800) //'int' : forcing value to bool 'true' or 'false'
 #  pragma warning (disable : 4275) // non dll-interface class
 
-# elif defined(__ICL) && __ICL < 600 // Intel C++ 5
-
-#  pragma warning(disable: 985) // identifier was truncated in debug information
-
-# endif
-
-// The STLport puts all of the standard 'C' library names in std (as far as the
-// user is concerned), but without it you need a fix if you're using MSVC or
-// Intel C++
-# if defined(BOOST_NO_STDC_NAMESPACE)
-#  define BOOST_CSTD_
-# else
-#  define BOOST_CSTD_ std
 # endif
 
 /*****************************************************************************
@@ -101,14 +85,6 @@
 
 #ifndef BOOST_PYTHON_DECL_EXCEPTION
 #  define BOOST_PYTHON_DECL_EXCEPTION BOOST_PYTHON_DECL
-#endif
-
-#if BOOST_WORKAROUND(__DECCXX_VER, BOOST_TESTED_AT(60590042))
-// Replace broken Tru64/cxx offsetof macro
-# define BOOST_PYTHON_OFFSETOF(s_name, s_member) \
-        ((size_t)__INTADDR__(&(((s_name *)0)->s_member)))
-#else
-# define BOOST_PYTHON_OFFSETOF offsetof
 #endif
 
 //  enable automatic library variant selection  ------------------------------// 

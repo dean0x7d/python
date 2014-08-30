@@ -48,11 +48,6 @@
 #endif
 
 # include <pyconfig.h>
-# if defined(_SGI_COMPILER_VERSION) && _SGI_COMPILER_VERSION >= 740
-#  undef _POSIX_C_SOURCE
-#  undef _XOPEN_SOURCE
-#  undef HAVE_STDINT_H // undo Python 2.5.1 define
-# endif
 
 //
 // Python's LongObject.h helpfully #defines ULONGLONG_MAX for us,
@@ -84,21 +79,7 @@
 //
 #if defined(_WIN32) || defined(__CYGWIN__)
 # if defined(__GNUC__) && defined(__CYGWIN__)
-
 #  define SIZEOF_LONG 4
-
-# elif defined(__MWERKS__)
-
-#  ifndef _MSC_VER
-#   define PY_MSC_VER_DEFINED_FROM_WRAP_PYTHON_H 1
-#   define _MSC_VER 900
-#  endif
-
-#  undef hypot // undo the evil #define left by Python.
-
-# elif defined(__BORLANDC__)
-#  undef HAVE_HYPOT
-#  define HAVE_HYPOT 1
 # endif
 
 #endif // _WIN32
@@ -120,10 +101,6 @@
 # undef BOOST_PYTHON_ULONGLONG_MAX_UNDEFINED
 #endif
 
-#ifdef PY_MSC_VER_DEFINED_FROM_WRAP_PYTHON_H
-# undef _MSC_VER
-#endif
-
 #ifdef DEBUG_UNDEFINED_FROM_WRAP_PYTHON_H
 # undef DEBUG_UNDEFINED_FROM_WRAP_PYTHON_H
 # define _DEBUG
@@ -133,9 +110,7 @@
 # endif
 #endif
 
-#ifdef __MWERKS__
-# pragma warn_possunwant off
-#elif _MSC_VER
+#ifdef _MSC_VER
 # pragma warning(disable:4786)
 #endif
 

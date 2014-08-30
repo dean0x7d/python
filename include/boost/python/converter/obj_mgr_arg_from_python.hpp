@@ -78,13 +78,7 @@ inline T object_manager_value_arg_from_python<T>::operator()() const
 template <class Ref>
 inline object_manager_ref_arg_from_python<Ref>::object_manager_ref_arg_from_python(PyObject* x)
 {
-# if defined(__EDG_VERSION__) && __EDG_VERSION__ <= 243
-    // needed for warning suppression
-    python::detail::borrowed_reference x_ = python::detail::borrowed_reference(x);
-    python::detail::construct_referent<Ref>(&m_result.bytes, x_);
-# else 
     python::detail::construct_referent<Ref>(&m_result.bytes, (python::detail::borrowed_reference)x);
-# endif 
 }
 
 template <class Ref>

@@ -13,8 +13,6 @@
 # include <boost/python/converter/constructor_function.hpp>
 # include <boost/python/converter/to_python_function_type.hpp>
 
-# include <boost/detail/workaround.hpp>
-
 namespace boost { namespace python { namespace converter { 
 
 struct lvalue_from_python_chain
@@ -69,11 +67,6 @@ struct BOOST_PYTHON_DECL registration
     // True iff this type is a shared_ptr.  Needed for special rvalue
     // from_python handling.
     const bool is_shared_ptr;
-
-# if BOOST_WORKAROUND(__MWERKS__, BOOST_TESTED_AT(0x3003))
- private:
-    void operator=(registration); // This is not defined, and just keeps MWCW happy.
-# endif 
 };
 
 //

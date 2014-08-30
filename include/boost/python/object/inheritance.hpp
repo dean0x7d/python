@@ -94,9 +94,7 @@ struct implicit_cast_generator
 
 template <class Source, class Target>
 inline void register_conversion(
-    bool is_downcast = std::is_base_of<Target, Source>::value
-    // These parameters shouldn't be used; they're an MSVC bug workaround
-    , Source* = 0, Target* = 0)
+    bool is_downcast = std::is_base_of<Target, Source>::value)
 {
     using generator = cpp14::conditional_t<
         std::is_base_of<Target, Source>::value,
