@@ -13,7 +13,6 @@
 # include <boost/python/detail/force_instantiate.hpp>
 # include <boost/python/to_python_value.hpp>
 # include <boost/python/detail/value_arg.hpp>
-# include <boost/mpl/assert.hpp>
 
 namespace boost { namespace python {
 
@@ -30,9 +29,7 @@ struct return_opaque_pointer
 {
     template <class R>
     struct apply
-    {
-        BOOST_MPL_ASSERT_MSG( is_pointer<R>::value, RETURN_OPAQUE_POINTER_EXPECTS_A_POINTER_TYPE, (R));
-        
+    {        
         struct type :  
           boost::python::to_python_value<
               detail::value_arg_t<R>
@@ -40,6 +37,9 @@ struct return_opaque_pointer
         {
             type() { detail::opaque_pointee(R()); }
         };
+        
+        static_assert(std::is_pointer<R>::value, 
+                      "return_opaque_pointer expects a pointer type");
     };
 };
 

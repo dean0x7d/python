@@ -101,10 +101,10 @@ namespace detail
 
   //  Expansions of ::
   //
-  //      template <typename OverloadsT, typename NameSpaceT>
+  //      template <int N, typename OverloadsT, typename NameSpaceT>
   //      inline void
   //      define_stub_function(
-  //          char const* name, OverloadsT s, NameSpaceT& name_space, mpl::int_<N>)
+  //          char const* name, OverloadsT s, NameSpaceT& name_space)
   //      {
   //          name_space.def(name, &OverloadsT::func_N);
   //      }
@@ -220,9 +220,9 @@ namespace detail
   //  specifies the return type, the class (for member functions,
   //  and the arguments. Here are some SigT examples:
   //
-  //      int foo(int)        mpl::vector<int, int>
-  //      void bar(int, int)  mpl::vector<void, int, int>
-  //      void C::foo(int)    mpl::vector<void, C, int>
+  //      int foo(int)        type_list<int, int>
+  //      void bar(int, int)  type_list<void, int, int>
+  //      void C::foo(int)    type_list<void, C, int>
   //
   template <class OverloadsT, class NameSpaceT, class SigT>
   inline void
@@ -236,11 +236,11 @@ namespace detail
       typedef typename OverloadsT::void_return_type void_return_type;
       typedef typename OverloadsT::non_void_return_type non_void_return_type;
 
-      typedef typename mpl::if_c<
-          boost::is_same<void, return_type>::value
-          , void_return_type
-          , non_void_return_type
-      >::type stubs_type;
+      using stubs_type = cpp14::conditional_t<
+          std::is_same<void, return_type>::value,
+          void_return_type,
+          non_void_return_type
+      >;
 
       static_assert(stubs_type::max_args <= SigT::size,
                     "Too many arguments.");

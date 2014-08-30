@@ -6,7 +6,6 @@
 # define VALUE_IS_XXX_DWA2003224_HPP
 
 # include <boost/config.hpp>
-# include <boost/mpl/bool.hpp>
 
 #  include <boost/type_traits/remove_reference.hpp>
 #  include <boost/type_traits/remove_cv.hpp>
@@ -22,7 +21,7 @@ struct value_is_##name                                                  \
                                   typename remove_reference<X_>::type   \
                                >::type                                  \
                            >::value);                                   \
-    typedef mpl::bool_<value> type;                                    \
+    typedef std::integral_constant<bool, value> type;                   \
                                                                         \
 };                                                              
 

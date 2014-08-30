@@ -6,27 +6,25 @@
 
 # include <boost/python/detail/prefix.hpp>
 # include <boost/python/detail/is_wrapper.hpp>
-# include <boost/mpl/eval_if.hpp>
-# include <boost/mpl/identity.hpp>
 
 namespace boost { namespace python { namespace detail { 
 
-template <class T>
-struct unwrap_wrapper_helper
-{
-    typedef typename T::_wrapper_wrapped_type_ type;
+template <class T, bool is_wrapper = false>
+struct unwrap_wrapper_impl {
+    using type = T;
 };
 
 template <class T>
-struct unwrap_wrapper_
-  : mpl::eval_if<is_wrapper<T>,unwrap_wrapper_helper<T>,mpl::identity<T> >
-{};
+struct unwrap_wrapper_impl<T, true> {
+    using type = typename T::_wrapper_wrapped_type_;
+};
 
 template <class T>
-typename unwrap_wrapper_<T>::type*
-unwrap_wrapper(T*)
-{
-    return 0;
+using unwrap_wrapper_t = typename unwrap_wrapper_impl<T, is_wrapper<T>::value>::type;
+
+template <class T>
+unwrap_wrapper_t<T>* unwrap_wrapper(T*) {
+    return nullptr;
 }
 
 }}} // namespace boost::python::detail

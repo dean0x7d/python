@@ -8,10 +8,6 @@
 # include <boost/python/handle.hpp>
 # include <boost/python/cast.hpp>
 # include <boost/python/converter/pyobject_traits.hpp>
-# include <boost/type_traits/object_traits.hpp>
-# include <boost/mpl/if.hpp>
-# include <boost/python/detail/indirect_traits.hpp>
-# include <boost/mpl/bool.hpp>
 
 // Facilities for dealing with types which always manage Python
 // objects. Some examples are object, list, str, et. al. Different
@@ -82,7 +78,7 @@ struct handle_object_manager_traits
   typedef pyobject_traits<typename T::element_type> base;
   
  public:
-  BOOST_STATIC_CONSTANT(bool, is_specialized = true);
+  static constexpr bool is_specialized = true;
 
   // Initialize with a null_ok pointer for efficiency, bypassing the
   // null check since the source is always non-null.
@@ -95,20 +91,16 @@ struct handle_object_manager_traits
 template <class T>
 struct default_object_manager_traits
 {
-    BOOST_STATIC_CONSTANT(
-        bool, is_specialized = python::detail::is_borrowed_ptr<T>::value
-        );
+    static constexpr bool is_specialized = 
+        python::detail::is_borrowed_ptr<T>::value;
 };
 
 template <class T>
-struct object_manager_traits
-    : mpl::if_c<
-         is_handle<T>::value
-       , handle_object_manager_traits<T>
-       , default_object_manager_traits<T>
-    >::type
-{
-};
+struct object_manager_traits : cpp14::conditional_t<
+    is_handle<T>::value,
+    handle_object_manager_traits<T>,
+    default_object_manager_traits<T>
+> {};
 
 //
 // Traits for detecting whether a type is an object manager or a
@@ -116,40 +108,15 @@ struct object_manager_traits
 // 
 
 template <class T>
-struct is_object_manager
-    : mpl::bool_<object_manager_traits<T>::is_specialized>
-{
-};
+using is_object_manager = std::integral_constant<bool, 
+    object_manager_traits<T>::is_specialized
+>;
 
 template <class T>
-struct is_reference_to_object_manager
-    : mpl::false_
-{
-};
-
-template <class T>
-struct is_reference_to_object_manager<T&>
-    : is_object_manager<T>
-{
-};
-
-template <class T>
-struct is_reference_to_object_manager<T const&>
-    : is_object_manager<T>
-{
-};
-
-template <class T>
-struct is_reference_to_object_manager<T volatile&>
-    : is_object_manager<T>
-{
-};
-
-template <class T>
-struct is_reference_to_object_manager<T const volatile&>
-    : is_object_manager<T>
-{
-};
+using is_reference_to_object_manager = std::integral_constant<bool,
+    std::is_reference<T>::value &&
+    is_object_manager<cpp14::remove_cv_t<cpp14::remove_reference_t<T>>>::value
+>;
 
 }}} // namespace boost::python::converter
 

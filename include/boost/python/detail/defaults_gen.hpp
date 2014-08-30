@@ -300,17 +300,11 @@ namespace detail
 //          template <typename SigT>
 //          struct gen
 //          {
-//              typedef typename ::boost::mpl::begin<SigT>::type    rt_iter;
 //              typedef typename rt_iter::type                      RT;
-//              typedef typename rt_iter::next                      iter0;
 //              typedef typename iter0::type                        T0;
-//              typedef typename iter0::next                        iter1;
 //              typedef typename iter1::type                        T1;
-//              typedef typename iter1::next                        iter2;
 //              typedef typename iter2::type                        T2;
-//              typedef typename iter2::next                        iter3;
 //              typedef typename iter3::type                        T3;
-//              typedef typename iter3::next                        iter4;
 //
 //              static RT func_0(T0 arg0)
 //              { return foo(arg0); }

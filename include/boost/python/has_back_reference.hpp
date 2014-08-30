@@ -6,18 +6,15 @@
 # define HAS_BACK_REFERENCE_DWA2002323_HPP
 
 # include <boost/python/detail/prefix.hpp>
-# include <boost/mpl/bool.hpp>
 
 namespace boost { namespace python { 
 
 // traits class which users can specialize to indicate that a class
 // contains a back-reference to its owning PyObject*
 template <class T>
-struct has_back_reference
-  : mpl::false_
-{
+struct has_back_reference {
+    static constexpr bool value = false;
 };
-
 
 }} // namespace boost::python
 

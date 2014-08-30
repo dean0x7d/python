@@ -11,11 +11,6 @@
 //  Copyright (C) 1999, 2000 Jaakko Jarvi (jaakko.jarvi@cs.utu.fi)
 //  Copyright (C) 2001 Peter Dimov
 
-# pragma once
-
-# include <boost/config.hpp>
-# include <boost/mpl/bool.hpp>
-
 namespace boost { namespace python {
 
 template<class Ptr> class pointer_wrapper
@@ -38,13 +33,13 @@ inline pointer_wrapper<T> ptr(T t)
 
 template<typename T>
 class is_pointer_wrapper
-    : public mpl::false_
+    : public std::false_type
 {
 };
 
 template<typename T>
 class is_pointer_wrapper<pointer_wrapper<T> >
-    : public mpl::true_
+    : public std::true_type
 {
 };
 

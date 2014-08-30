@@ -5,7 +5,6 @@
 # define IS_WRAPPER_DWA2004723_HPP
 
 # include <boost/python/detail/prefix.hpp>
-# include <boost/mpl/bool.hpp>
 
 namespace boost { namespace python {
 
@@ -20,9 +19,10 @@ namespace detail
 
   // A metafunction returning true iff T is [derived from] wrapper<U> 
   template <class T>
-  struct is_wrapper
-    : mpl::bool_<(sizeof(detail::is_wrapper_helper((T*)0)) == 1)>
-  {};
+  struct is_wrapper {
+      static constexpr bool value = 
+          sizeof(is_wrapper_helper((T*)nullptr)) == sizeof(char);
+  };
 
 }}} // namespace boost::python::detail
 

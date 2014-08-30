@@ -6,11 +6,7 @@
 # define INHERITANCE_DWA200216_HPP
 
 # include <boost/python/type_id.hpp>
-# include <boost/shared_ptr.hpp>
-# include <boost/mpl/if.hpp>
-# include <boost/type_traits/is_polymorphic.hpp>
-# include <boost/type_traits/is_base_and_derived.hpp>
-# include <boost/detail/workaround.hpp>
+# include <boost/python/cpp14/type_traits.hpp>
 
 namespace boost { namespace python { namespace objects {
 
@@ -54,22 +50,17 @@ struct non_polymorphic_id_generator
     }
 };
 
-// Now the generalized selector
-template <class T>
-struct dynamic_id_generator
-  : mpl::if_<
-        boost::is_polymorphic<T>
-        , boost::python::objects::polymorphic_id_generator<T>
-        , boost::python::objects::non_polymorphic_id_generator<T>
-    >
-{};
-
 // Register the dynamic id function for T with the type-conversion
 // system.
 template <class T>
 void register_dynamic_id(T* = 0)
 {
-    typedef typename dynamic_id_generator<T>::type generator;
+    using generator = cpp14::conditional_t<
+        std::is_polymorphic<T>::value,
+        boost::python::objects::polymorphic_id_generator<T>,
+        boost::python::objects::non_polymorphic_id_generator<T>
+    >;
+    
     register_dynamic_id_aux(
         python::type_id<T>(), &generator::execute);
 }
@@ -102,22 +93,16 @@ struct implicit_cast_generator
 };
 
 template <class Source, class Target>
-struct cast_generator
-  : mpl::if_<
-        is_base_and_derived<Target,Source>
-      , implicit_cast_generator<Source,Target>
-      , dynamic_cast_generator<Source,Target>
-    >
-{
-};
-
-template <class Source, class Target>
 inline void register_conversion(
-    bool is_downcast = ::boost::is_base_and_derived<Source,Target>::value
+    bool is_downcast = std::is_base_of<Target, Source>::value
     // These parameters shouldn't be used; they're an MSVC bug workaround
     , Source* = 0, Target* = 0)
 {
-    typedef typename cast_generator<Source,Target>::type generator;
+    using generator = cpp14::conditional_t<
+        std::is_base_of<Target, Source>::value,
+        implicit_cast_generator<Source, Target>,
+        dynamic_cast_generator<Source, Target>
+    >;
 
     add_cast(
         python::type_id<Source>()

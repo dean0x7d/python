@@ -23,10 +23,6 @@
 
 # include <boost/implicit_cast.hpp>
 
-# include <boost/mpl/eval_if.hpp>
-# include <boost/mpl/identity.hpp>
-# include <boost/mpl/assert.hpp>
-
 // opaque --
 //
 // registers to- and from- python conversions for a type Pointee.

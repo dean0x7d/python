@@ -5,14 +5,9 @@
 #ifndef FORWARD_DWA20011215_HPP
 # define FORWARD_DWA20011215_HPP
 
-# include <boost/mpl/if.hpp>
-# include <boost/type_traits/is_scalar.hpp>
-# include <boost/type_traits/add_const.hpp>
-# include <boost/type_traits/add_reference.hpp>
 # include <boost/ref.hpp>
 # include <boost/python/detail/value_arg.hpp>
 # include <boost/python/detail/copy_ctor_mutates_rhs.hpp>
-# include <boost/mpl/or.hpp>
 
 namespace boost { namespace python { namespace objects { 
 
@@ -22,7 +17,7 @@ namespace boost { namespace python { namespace objects {
 template <class T>
 struct reference_to_value
 {
-    typedef typename add_reference<typename add_const<T>::type>::type reference;
+    using reference = cpp14::add_lvalue_reference_t<cpp14::add_const_t<T>>;
     
     reference_to_value(reference x) : m_value(x) {}
     reference get() const { return m_value; }
@@ -33,15 +28,12 @@ struct reference_to_value
 // A little metaprogram which selects the type to pass through an
 // intermediate forwarding function when the destination argument type
 // is T.
-template <class T>
-struct forward
-    : mpl::if_<
-          mpl::or_<python::detail::copy_ctor_mutates_rhs<T>, is_scalar<T> >
-        , T
-        , reference_to_value<T>
-      >
-{
-};
+template<class T>
+using forward = cpp14::conditional_t<
+    python::detail::copy_ctor_mutates_rhs<T>::value || std::is_scalar<T>::value,
+    T,
+    reference_to_value<T>
+>;
 
 template<typename T>
 struct unforward
@@ -63,7 +55,7 @@ struct unforward_cref
 
 template<typename T>
 struct unforward_cref<reference_to_value<T> >
-  : add_reference<typename add_const<T>::type>
+  : cpp14::add_lvalue_reference_t<cpp14::add_const_t<T>>
 {
 };
 

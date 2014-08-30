@@ -17,8 +17,6 @@
 # include <boost/python/object/class_detail.hpp>
 # include <boost/python/object/function_object.hpp>
 
-# include <boost/mpl/if.hpp>
-
 # include <boost/python/detail/raw_pyobject.hpp>
 
 # include <boost/type.hpp>
@@ -48,13 +46,11 @@ struct iterator_range
 
     struct next
     {
-        typedef typename mpl::if_<
-            is_reference<
-                typename traits_t::reference
-            >
-          , typename traits_t::reference
-          , typename traits_t::value_type
-        >::type result_type;
+        using result_type = cpp14::conditional_t<
+            is_reference<typename traits_t::reference>::value,
+            typename traits_t::reference,
+            typename traits_t::value_type
+        >;
         
         result_type
         operator()(iterator_range<NextPolicies,Iterator>& self)
@@ -63,11 +59,6 @@ struct iterator_range
                 stop_iteration_error();
             return *self.m_start++;
         }
-
-# if BOOST_WORKAROUND(__MWERKS__, BOOST_TESTED_AT(0x3003))
-        // CWPro8 has a codegen problem when this is an empty class
-        int garbage;
-# endif 
     };
     
     typedef next next_fn;

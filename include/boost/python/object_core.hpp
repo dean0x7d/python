@@ -204,7 +204,7 @@ namespace api
 
   template <class T, class U>
   struct is_derived
-    : is_convertible<
+    : std::is_convertible<
           typename remove_reference<T>::type*
         , U const*
       >
@@ -276,14 +276,14 @@ namespace api
   struct object_initializer_impl
   {
       static PyObject*
-      get(object const& x, mpl::true_)
+      get(object const& x, std::true_type)
       {
           return python::incref(x.ptr());
       }
       
       template <class T>
       static PyObject*
-      get(T const& x, mpl::false_)
+      get(T const& x, std::false_type)
       {
           return python::incref(converter::arg_to_python<T>(x).get());
       }
@@ -294,7 +294,7 @@ namespace api
   {
       template <class Policies>
       static PyObject* 
-      get(proxy<Policies> const& x, mpl::false_)
+      get(proxy<Policies> const& x, std::false_type)
       {
           return python::incref(x.operator object().ptr());
       }

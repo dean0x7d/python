@@ -6,8 +6,6 @@
 
 # include <boost/python/type_id.hpp>
 
-# include <boost/mpl/bool.hpp>
-
 namespace boost { namespace python {
 
 template <class T> class wrapper;

@@ -12,8 +12,6 @@
 # include <boost/python/detail/operator_id.hpp>
 # include <boost/python/detail/not_specified.hpp>
 # include <boost/python/back_reference.hpp>
-# include <boost/mpl/if.hpp>
-# include <boost/mpl/eval_if.hpp>
 # include <boost/python/self.hpp>
 # include <boost/python/other.hpp>
 # include <boost/lexical_cast.hpp>
@@ -129,25 +127,19 @@ namespace detail
       template <class ClassT>
       void visit(ClassT& cl) const
       {
-          typedef typename mpl::eval_if<
-              is_same<L,self_t>
-            , mpl::if_<
-                  is_same<R,self_t>
-                , binary_op<id>
-                , binary_op_l<
-                      id
-                    , BOOST_DEDUCED_TYPENAME unwrap_other<R>::type
-                  >
+          using generator = cpp14::conditional_t<
+              std::is_same<L, self_t>::value,
+              cpp14::conditional_t<
+                  std::is_same<R, self_t>::value,
+                  binary_op<id>,
+                  binary_op_l<id, typename unwrap_other<R>::type>
+              >,
+              cpp14::conditional_t<
+                  std::is_same<L, not_specified>::value,
+                  unary_op<id>,
+                  binary_op_r<id, typename unwrap_other<L>::type>
               >
-            , mpl::if_<
-                  is_same<L,not_specified>
-                , unary_op<id>
-                , binary_op_r<
-                      id
-                    , BOOST_DEDUCED_TYPENAME unwrap_other<L>::type
-                  >
-              >
-          >::type generator;
+          >;
       
           cl.def(
               generator::name()
@@ -170,8 +162,8 @@ namespace detail                                            \
       template <class L, class R>                           \
       struct apply                                          \
       {                                                     \
-          typedef typename unwrap_wrapper_<L>::type lhs;    \
-          typedef typename unwrap_wrapper_<R>::type rhs;    \
+          typedef unwrap_wrapper_t<L> lhs;                  \
+          typedef unwrap_wrapper_t<R> rhs;                  \
           static PyObject* execute(lhs& l, rhs const& r)    \
           {                                                 \
               return detail::convert_result(expr);          \
@@ -186,8 +178,8 @@ namespace detail                                            \
       template <class L, class R>                           \
       struct apply                                          \
       {                                                     \
-          typedef typename unwrap_wrapper_<L>::type lhs;    \
-          typedef typename unwrap_wrapper_<R>::type rhs;    \
+          typedef unwrap_wrapper_t<L> lhs;                  \
+          typedef unwrap_wrapper_t<R> rhs;                  \
           static PyObject* execute(rhs& r, lhs const& l)    \
           {                                                 \
               return detail::convert_result(expr);          \
@@ -280,8 +272,8 @@ namespace detail                                                \
       template <class L, class R>                               \
       struct apply                                              \
       {                                                         \
-          typedef typename unwrap_wrapper_<L>::type lhs;        \
-          typedef typename unwrap_wrapper_<R>::type rhs;        \
+          typedef unwrap_wrapper_t<L> lhs;                      \
+          typedef unwrap_wrapper_t<R> rhs;                      \
           static PyObject*                                      \
           execute(back_reference<lhs&> l, rhs const& r)         \
           {                                                     \
@@ -322,7 +314,7 @@ namespace detail                                                \
       template <class T>                                        \
       struct apply                                              \
       {                                                         \
-          typedef typename unwrap_wrapper_<T>::type self_t;     \
+          typedef unwrap_wrapper_t<T> self_t;                   \
           static PyObject* execute(self_t& x)                   \
           {                                                     \
               return detail::convert_result(op(x));             \

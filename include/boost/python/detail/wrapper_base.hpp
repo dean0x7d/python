@@ -5,8 +5,6 @@
 # define WRAPPER_BASE_DWA2004722_HPP
 
 # include <boost/python/detail/prefix.hpp>
-# include <boost/type_traits/is_polymorphic.hpp>
-# include <boost/mpl/bool.hpp>
 
 namespace boost { namespace python {
 
@@ -21,20 +19,20 @@ namespace detail
     inline PyObject* get_owner(wrapper_base const volatile& w);
 
     inline PyObject*
-    owner_impl(void const volatile* /*x*/, mpl::false_)
+    owner_impl(void const volatile* /*x*/, std::false_type)
     {
         return 0;
     }
     
     template <class T>
     inline PyObject*
-    owner_impl(T const volatile* x, mpl::true_);
+    owner_impl(T const volatile* x, std::true_type);
     
     template <class T>
     inline PyObject*
     owner(T const volatile* x)
     {
-        return wrapper_base_::owner_impl(x,is_polymorphic<T>());
+        return wrapper_base_::owner_impl(x, std::is_polymorphic<T>());
     }
   }
   
@@ -59,7 +57,7 @@ namespace detail
   {
     template <class T>
     inline PyObject*
-    owner_impl(T const volatile* x, mpl::true_)
+    owner_impl(T const volatile* x, std::true_type)
     {
         if (wrapper_base const volatile* w = dynamic_cast<wrapper_base const volatile*>(x))
         {

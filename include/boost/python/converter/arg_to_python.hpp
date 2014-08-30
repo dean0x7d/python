@@ -27,8 +27,6 @@
 
 namespace boost { namespace python { namespace converter { 
 
-template <class T> struct is_object_manager;
-
 namespace detail
 {
   template <class T>
