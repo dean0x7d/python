@@ -12,25 +12,12 @@
 # include <boost/python/converter/pytype_function.hpp>
 #endif
 
-# include <boost/type_traits/add_reference.hpp>
-# include <boost/type_traits/add_const.hpp>
-
-# include <boost/static_assert.hpp>
 # include <boost/python/refcount.hpp>
-
-# include <cstddef>
 
 namespace boost { namespace python { 
 
 namespace detail
 {
-  template <std::size_t>
-  struct return_arg_pos_argument_must_be_positive
-# if defined(__GNUC__) || defined(__EDG__)
-  {}
-# endif
-  ;
-
   struct return_none
   {
       template <class T> struct apply
@@ -47,7 +34,9 @@ namespace detail
                   return none();
               }
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-              PyTypeObject const *get_pytype() const { return converter::expected_pytype_for_arg<T>::get_pytype() ; }
+              PyTypeObject const *get_pytype() const {
+                  return converter::expected_pytype_for_arg<T>::get_pytype();
+              }
 #endif
           };
       };
@@ -60,27 +49,16 @@ template <
 > 
 struct return_arg : Base
 {
- private:
-    BOOST_STATIC_CONSTANT(bool, legal = arg_pos > 0);
-
- public:
-    typedef typename mpl::if_c<
-        legal
-        , detail::return_none
-        , detail::return_arg_pos_argument_must_be_positive<arg_pos>
+    using result_converter = detail::return_none;
+    static_assert(arg_pos > 0, "return_arg pos must be positive");
         // we could default to the base result_converter in case or
         // arg_pos==0 since return arg 0 means return result, but I
         // think it is better to issue an error instead, cause it can
         // lead to confusions
-    >::type result_converter;
 
     template <class ArgumentPackage>
     static PyObject* postcall(ArgumentPackage const& args, PyObject* result)
     {
-        // In case of arg_pos == 0 we could simply return Base::postcall,
-        // but this is redundant
-        BOOST_STATIC_ASSERT(arg_pos > 0);
-
         result = Base::postcall(args,result);
         if (!result)
             return 0;
@@ -94,11 +72,8 @@ struct return_arg : Base
     };
 };
 
-template <
-    class Base = default_call_policies
-    >
-struct return_self 
-  : return_arg<1,Base>
+template <class Base = default_call_policies>
+struct return_self : return_arg<1,Base>
 {};
 
 }} // namespace boost::python

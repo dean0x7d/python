@@ -7,33 +7,21 @@
 
 # include <boost/python/detail/prefix.hpp>
 # include <boost/python/detail/indirect_traits.hpp>
-# include <boost/mpl/if.hpp>
 # include <boost/python/to_python_value.hpp>
 
 namespace boost { namespace python { 
-
-namespace detail
-{
-  template <class R>
-  struct copy_non_const_reference_expects_a_non_const_reference_return_type
-# if defined(__GNUC__) || defined(__EDG__)
-  {}
-# endif
-  ;
-}
-
-template <class T> struct to_python_value;
 
 struct copy_non_const_reference
 {
     template <class T>
     struct apply
     {
-        typedef typename mpl::if_c<
-            indirect_traits::is_reference_to_non_const<T>::value
-            , to_python_value<T>
-            , detail::copy_non_const_reference_expects_a_non_const_reference_return_type<T>
-        >::type type;
+        using type = to_python_value<T>;
+        static_assert(
+            std::is_reference<T>::value &&
+            !std::is_const<cpp14::remove_reference_t<T>>::value, 
+            "copy_non_const_reference expects a non const reference return type"
+        );
     };
 };
 

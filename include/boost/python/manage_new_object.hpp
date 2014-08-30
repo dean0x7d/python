@@ -7,32 +7,18 @@
 
 # include <boost/python/detail/prefix.hpp>
 # include <boost/python/detail/indirect_traits.hpp>
-# include <boost/mpl/if.hpp>
 # include <boost/python/to_python_indirect.hpp>
-# include <boost/type_traits/composite_traits.hpp>
 
 namespace boost { namespace python { 
-
-namespace detail
-{
-  template <class R>
-  struct manage_new_object_requires_a_pointer_return_type
-# if defined(__GNUC__) || defined(__EDG__)
-  {}
-# endif
-  ;
-}
 
 struct manage_new_object
 {
     template <class T>
     struct apply
-    {
-        typedef typename mpl::if_c<
-            boost::is_pointer<T>::value
-            , to_python_indirect<T, detail::make_owning_holder>
-            , detail::manage_new_object_requires_a_pointer_return_type<T>
-        >::type type;
+    {        
+        using type = to_python_indirect<T, detail::make_owning_holder>;
+        static_assert(std::is_pointer<T>::value,
+            "manage_new_object requires a pointer return type");
     };
 };
 

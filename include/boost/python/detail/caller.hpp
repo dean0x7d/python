@@ -36,12 +36,21 @@ typedef int void_result_to_python;
 // Given a model of CallPolicies and a C++ result type, this
 // metafunction selects the appropriate converter to use for
 // converting the result to python.
+template <class Policies, class Result, bool is_void = true>
+struct select_result_converter {
+    using type = void_result_to_python;
+};
+
 template <class Policies, class Result>
-using select_result_converter_t = cpp14::conditional_t<
-    std::is_same<Result, void>::value,
-    void_result_to_python,
-    typename Policies::result_converter::template apply<Result>::type
->;
+struct select_result_converter<Policies, Result, false> {
+    using type = typename Policies::result_converter::template apply<Result>::type;
+};
+
+template <class Policies, class Result>
+using select_result_converter_t = typename select_result_converter<
+    Policies, Result, std::is_same<Result, void>::value
+>::type;
+
 
 template <class ResultConverter, class ArgPackage>
 inline ResultConverter create_result_converter(ArgPackage const& args, std::true_type) {
