@@ -5,7 +5,6 @@
 #ifndef UNWIND_TYPE_DWA200222_HPP
 # define UNWIND_TYPE_DWA200222_HPP
 
-# include <boost/python/detail/cv_category.hpp>
 # include <boost/python/detail/indirect_traits.hpp>
 # include <boost/type_traits/object_traits.hpp>
 
@@ -25,28 +24,28 @@ unwind_type(boost::type<U>*p = 0, Generator* = 0);
 
 template <class Generator, class U>
 inline typename Generator::result_type
-unwind_type_cv(U* p, cv_unqualified, Generator* = 0)
+unwind_type_cv(U* p, Generator* = 0)
 {
     return Generator::execute(p);
 }
 
 template <class Generator, class U>
 inline typename Generator::result_type
-unwind_type_cv(U const* p, const_, Generator* = 0)
+unwind_type_cv(U const* p, Generator* = 0)
 {
     return unwind_type(const_cast<U*>(p), (Generator*)0);
 }
 
 template <class Generator, class U>
 inline typename Generator::result_type
-unwind_type_cv(U volatile* p, volatile_, Generator* = 0)
+unwind_type_cv(U volatile* p, Generator* = 0)
 {
     return unwind_type(const_cast<U*>(p), (Generator*)0);
 }
 
 template <class Generator, class U>
 inline typename Generator::result_type
-unwind_type_cv(U const volatile* p, const_volatile_, Generator* = 0)
+unwind_type_cv(U const volatile* p, Generator* = 0)
 {
     return unwind_type(const_cast<U*>(p), (Generator*)0);
 }
@@ -55,8 +54,7 @@ template <class Generator, class U>
 inline typename Generator::result_type
 unwind_ptr_type(U* p, Generator* = 0)
 {
-    typedef typename cv_category<U>::type tag;
-    return unwind_type_cv<Generator>(p, tag());
+    return unwind_type_cv<Generator>(p);
 }
 
 template <bool is_ptr>
