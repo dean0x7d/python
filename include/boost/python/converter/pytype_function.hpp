@@ -7,8 +7,6 @@
 
 # include <boost/python/detail/prefix.hpp>
 # include <boost/python/converter/registered.hpp>
-# include <boost/python/detail/unwind_type.hpp>
-
 
 namespace boost { namespace python {
 
@@ -29,25 +27,15 @@ typedef PyTypeObject const* (*pytype_function)();
 
 namespace detail
 {
-struct unwind_type_id_helper{
-    typedef python::type_info result_type;
-    template <class U>
-    static result_type execute(U* ){
-        return python::type_id<U>();
+    template <class T>
+    inline python::type_info unwind_type_id_()
+    {
+        return python::type_id<
+            cpp14::remove_pointer_t<
+                cpp14::remove_reference_t<T>
+            >
+        >();
     }
-};
-
-template <class T>
-inline python::type_info unwind_type_id_()
-{
-    return boost::python::detail::unwind_type<unwind_type_id_helper, T> ();
-}
-
-template <>
-inline python::type_info unwind_type_id_<void>()
-{
-    return type_id<void>();
-}
 }
 
 
