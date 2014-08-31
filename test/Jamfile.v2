@@ -204,7 +204,6 @@ bpl-test crossmod_opaque
 [ run destroy_test.cpp ]
 [ py-run bases.cpp ]
 [ py-run pointee.cpp ]
-[ run result.cpp ]
 
 [ compile string_literal.cpp ]
 [ py-compile borrowed.cpp ]

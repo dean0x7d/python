@@ -12,7 +12,6 @@
 #include <boost/python/converter/registry.hpp>
 #include <boost/python/object/find_instance.hpp>
 #include <boost/python/object/pickle_support.hpp>
-#include <boost/python/detail/map_entry.hpp>
 #include <boost/python/object.hpp>
 #include <boost/python/object_protocol.hpp>
 #include <boost/detail/binary_search.hpp>

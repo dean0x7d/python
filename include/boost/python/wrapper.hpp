@@ -7,7 +7,6 @@
 # include <boost/python/detail/wrapper_base.hpp>
 # include <boost/python/override.hpp>
 # include <boost/python/converter/registered.hpp>
-# include <boost/python/detail/sfinae.hpp>
 
 namespace boost { namespace python { 
 
