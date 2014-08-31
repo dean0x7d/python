@@ -55,12 +55,12 @@ int test_main(int, char * [])
 
     assert_holder<Base,not_specified,value_holder<Base> >();
 
-    assert_holder<BR,not_specified,value_holder_back_reference<BR,BR> >();
-    assert_holder<Base,Base,value_holder_back_reference<Base,Base> >();
-    assert_holder<BR,BR,value_holder_back_reference<BR,BR> >();
+    assert_holder<BR,not_specified,value_holder<BR,BR,true> >();
+    assert_holder<Base,Base,value_holder<Base,Base,true> >();
+    assert_holder<BR,BR,value_holder<BR,BR,true> >();
 
     assert_holder<Base,Derived
-        ,value_holder_back_reference<Base,Derived> >();
+        ,value_holder<Base,Derived,true> >();
 
     assert_holder<Base,std::auto_ptr<Base>
         ,pointer_holder<std::auto_ptr<Base>,Base> >();

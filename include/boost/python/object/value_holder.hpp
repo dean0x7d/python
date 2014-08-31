@@ -19,7 +19,7 @@
 
 namespace boost { namespace python { namespace objects { 
 
-template <class Value>
+template <class Value, class Held = Value, bool has_back_reference = false>
 struct value_holder : instance_holder
 {
     typedef Value held_type;
@@ -52,14 +52,14 @@ struct value_holder : instance_holder
 };
 
 template <class Value, class Held>
-struct value_holder_back_reference : instance_holder
+struct value_holder<Value, Held, true> : instance_holder
 {
     typedef Held held_type;
     typedef Value value_type;
     
     // Forward construction to the held object
     template <class... As>
-    value_holder_back_reference(PyObject* p, As&&... as)
+    value_holder(PyObject* p, As&&... as)
     : m_held(p, objects::do_unforward(std::forward<As>(as),0)...) {}
 
 private: // required holder implementation
@@ -70,8 +70,8 @@ private: // required holder implementation
 };
 
 
-template <class Value>
-void* value_holder<Value>::holds(type_info dst_t, bool /*null_ptr_only*/)
+template <class Value, class Held, bool has_back_reference>
+void* value_holder<Value, Held, has_back_reference>::holds(type_info dst_t, bool /*null_ptr_only*/)
 {
     if (void* wrapped = holds_wrapped(dst_t, boost::addressof(m_held), boost::addressof(m_held)))
         return wrapped;
@@ -82,8 +82,7 @@ void* value_holder<Value>::holds(type_info dst_t, bool /*null_ptr_only*/)
 }
 
 template <class Value, class Held>
-void* value_holder_back_reference<Value,Held>::holds(
-    type_info dst_t, bool /*null_ptr_only*/)
+void* value_holder<Value,Held,true>::holds(type_info dst_t, bool /*null_ptr_only*/)
 {
     type_info src_t = python::type_id<Value>();
     Value* x = &m_held;

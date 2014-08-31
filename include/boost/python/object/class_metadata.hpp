@@ -182,15 +182,11 @@ struct class_metadata
 
     // Select the holder.
     using holder = cpp14::conditional_t<
-        use_back_reference::value,
+        use_value_holder::value,
+        value_holder<T, wrapped, use_back_reference::value>,
         cpp14::conditional_t<
-            use_value_holder::value,
-            value_holder_back_reference<T, wrapped>,
-            pointer_holder_back_reference<held_type, T>
-        >,
-        cpp14::conditional_t<
-            use_value_holder::value,
-            value_holder<T>,
+            use_back_reference::value,
+            pointer_holder_back_reference<held_type, T>,
             pointer_holder<held_type, wrapped>
         >
     >;
