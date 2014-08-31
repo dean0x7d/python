@@ -78,7 +78,7 @@ namespace
   }
 } // namespace
     
-object demand_array_function()
+BOOST_PYTHON_DECL object demand_array_function()
 {
     load(true);
     return object(array_function);
