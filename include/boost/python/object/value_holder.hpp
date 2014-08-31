@@ -6,8 +6,6 @@
 # ifndef VALUE_HOLDER_DWA20011215_HPP
 #  define VALUE_HOLDER_DWA20011215_HPP 
 
-#  include <boost/python/object/value_holder_fwd.hpp>
-
 #  include <boost/python/instance_holder.hpp>
 #  include <boost/python/type_id.hpp>
 #  include <boost/python/wrapper.hpp>
