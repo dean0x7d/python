@@ -155,7 +155,7 @@ namespace detail
 
   // Handle references
   template <class D, class P>
-  inline object make_getter(D& d, P&& p)
+  inline object make_getter(D& d, P const& p)
   {
       // Just dispatch to the handler for pointer types.
       return detail::make_getter(&d, p);

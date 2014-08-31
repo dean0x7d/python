@@ -38,12 +38,25 @@ namespace detail
           return converter(m_obj.release());
       }
       
+#  ifdef _MSC_VER
+	  template <class T>
+	  operator T*()
+	  {
+		  converter::return_from_python<T*> converter;
+		  return converter(m_obj.release());
+	  }
+#  endif 
+
+#  if _MSC_VER
+	  // No operator T&
+#  else
       template <class T>
       operator T&() const
       {
           converter::return_from_python<T&> converter;
           return converter(const_cast<handle<>&>(m_obj).release());
       }
+#endif
 
       template <class T>
       T as(type<T>* = 0)

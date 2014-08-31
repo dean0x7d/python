@@ -25,6 +25,10 @@ struct py_func_sig_info
     signature_element const *ret;
 };
 
+template<class T>
+using is_reference_to_non_const = std::integral_constant<bool,
+	std::is_reference<T>::value && !std::is_const<cpp14::remove_reference_t<T>>::value
+>;
 
 template<class Sig> struct signature;
 
@@ -37,13 +41,11 @@ struct signature<type_list<Args...>>
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
             { type_id<Args>().name(),
               &converter::expected_pytype_for_arg<Args>::get_pytype,
-              std::is_reference<Args>::value && 
-              !std::is_const<cpp14::remove_reference_t<Args>>::value }...,
+			  is_reference_to_non_const<Args>::value }...,
 #else
             { type_id<Args>().name(),
               0, 
-              std::is_reference<Args>::value && 
-              !std::is_const<cpp14::remove_reference_t<Args>>::value }...,
+			  is_reference_to_non_const<Args>::value }...,
 #endif
             {0, 0, 0}
         };

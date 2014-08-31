@@ -120,7 +120,8 @@ struct caller<F, CallPolicies, type_list<Result, Args...>>
     template <std::size_t... Is>
     bool check_converters(argument_package pack, cpp14::index_sequence<Is...>)
     {
-        bool chk[] = { arg_from_python<Args>(get<Is>(pack)).convertible()... };
+        // The 'true' at the end is not needed, but it keeps VS14 CTP3 happy
+        bool chk[] = { arg_from_python<Args>(get<Is>(pack)).convertible()..., true };
         for (auto is_convertible : chk) {
             if (!is_convertible)
                 return false;

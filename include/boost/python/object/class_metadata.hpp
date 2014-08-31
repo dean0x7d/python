@@ -160,18 +160,22 @@ struct class_metadata
     //
     // Holder computation.
     //
+    // Workaround note: Using alias templates (e.g. conditional_t 
+    // instead of conditional) in the following section causes
+    // problems with abstract classes on VS14 CTP3. The full
+    // typename ::type form keeps it happy.
     
     // Compute the actual type that will be held in the Holder.
-    using held_type = cpp14::conditional_t<
-        std::is_same<held_type_arg, python::detail::not_specified>::value, T, held_type_arg
-    >;
+	using held_type = typename std::conditional<
+	    std::is_same<held_type_arg, python::detail::not_specified>::value, T, held_type_arg
+	>::type;
 
     // Determine if the object will be held by value
     using use_value_holder = std::is_convertible<held_type*, T*>;
     
     // Compute the "wrapped type", that is, if held_type is a smart
     // pointer, we're talking about the pointee.
-    using wrapped = pointee_t<held_type, !use_value_holder::value>;
+    using wrapped = typename pointee<held_type, !use_value_holder::value>::type;
 
     // Determine whether to use a "back-reference holder"
     using use_back_reference = std::integral_constant<bool,
@@ -181,7 +185,7 @@ struct class_metadata
     >;
 
     // Select the holder.
-    using holder = cpp14::conditional_t<
+    using holder = typename std::conditional<
         use_value_holder::value,
         value_holder<T, wrapped, use_back_reference::value>,
         cpp14::conditional_t<
@@ -189,7 +193,7 @@ struct class_metadata
             pointer_holder_back_reference<held_type, T>,
             pointer_holder<held_type, wrapped>
         >
-    >;
+    >::type;
     
     inline static void register_() // Register the runtime metadata.
     {

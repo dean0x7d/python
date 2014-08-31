@@ -31,6 +31,8 @@
 # include <boost/python/detail/unwrap_type_id.hpp>
 # include <boost/python/detail/unwrap_wrapper.hpp>
 
+# include <array>
+
 namespace boost { namespace python {
 
 template <class DerivedVisitor> class def_visitor;
@@ -64,11 +66,13 @@ class class_ : public objects::class_base
     struct id_vector_impl<Derived, bases<Bases...>>
     {
         id_vector_impl()
-        : ids{ detail::unwrap_type_id((Derived*)0, (Derived*)0), type_id<Bases>()... }
+		: id_array({{ detail::unwrap_type_id((Derived*)0, (Derived*)0), type_id<Bases>()... }})
         {}
         
         static constexpr auto size = sizeof...(Bases) + 1;
-        type_info ids[size];
+        // This could be a [] array, but std::array is needed for VS14 CTP3
+		std::array<type_info, size> id_array;
+		type_info const* const ids = id_array.data();
     };
     using id_vector = id_vector_impl<W, typename metadata::bases>;
 
