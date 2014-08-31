@@ -70,11 +70,6 @@ namespace api
   typedef proxy<const_slice_policies> const_object_slice;
   typedef proxy<slice_policies> object_slice;
 
-  //
-  // is_proxy -- proxy type detection
-  //
-  BOOST_PYTHON_IS_XXX_DEF(proxy, boost::python::api::proxy, 1)
-
   template <class T> struct object_initializer;
   
   class object;
@@ -310,7 +305,7 @@ namespace api
 
   template <class T>
   struct object_initializer : object_initializer_impl<
-      is_proxy<T>::value
+      detail::is_<boost::python::api::proxy, T>::value
     , converter::is_object_manager<T>::value
   >
   {};

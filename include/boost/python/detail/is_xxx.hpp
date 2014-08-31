@@ -5,9 +5,21 @@
 #ifndef IS_XXX_DWA2003224_HPP
 # define IS_XXX_DWA2003224_HPP
 
-# include <boost/detail/is_xxx.hpp>
+namespace boost { namespace python { namespace detail { 
 
-#  define BOOST_PYTHON_IS_XXX_DEF(name, qualified_name, nargs) \
-    BOOST_DETAIL_IS_XXX_DEF(name, qualified_name, nargs)
+//
+//  Test for any kind of template type. 
+//
+//  E.g.: "is_<shared_ptr, T>::value" will return true
+//        if "T == shared_ptr<U>" where U is anything.
+//
+
+template<template<class...> class Class, class T>
+struct is_ : std::false_type {};
+
+template<template<class...> class Class, class... Args>
+struct is_<Class, Class<Args...>> : std::true_type {};
+
+}}} // namespace boost::python::detail
 
 #endif // IS_XXX_DWA2003224_HPP

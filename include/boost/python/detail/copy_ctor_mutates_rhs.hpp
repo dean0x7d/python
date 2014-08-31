@@ -5,15 +5,16 @@
 #ifndef COPY_CTOR_MUTATES_RHS_DWA2003219_HPP
 # define COPY_CTOR_MUTATES_RHS_DWA2003219_HPP
 
-#include <boost/python/detail/is_auto_ptr.hpp>
+# include <memory>
+# include <type_traits>
 
 namespace boost { namespace python { namespace detail { 
 
-template <class T>
-struct copy_ctor_mutates_rhs
-    : is_auto_ptr<T>
-{
-};
+template<class T>
+struct copy_ctor_mutates_rhs : std::false_type {};
+
+template<class T>
+struct copy_ctor_mutates_rhs<std::auto_ptr<T>> : std::true_type {};
 
 }}} // namespace boost::python::detail
 
