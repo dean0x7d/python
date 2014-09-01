@@ -4,8 +4,8 @@
 """
 >>> from args_ext import *
 
->>> raw(3, 4, foo = 'bar', baz = 42)
-((3, 4), {'foo': 'bar', 'baz': 42})
+>>> raw(3, 4, foo = 'bar', baz = 42) == ((3, 4), {'foo': 'bar', 'baz': 42})
+True
 
    Prove that we can handle empty keywords and non-keywords
    
@@ -122,8 +122,8 @@
 1
 
 >>> y = Y(value = 33)
->>> y.raw(this = 1, that = 'the other')[1]
-{'this': 1, 'that': 'the other'}
+>>> y.raw(this = 1, that = 'the other')[1] == {'this': 1, 'that': 'the other'}
+True
 
 """
 def run(args = None):

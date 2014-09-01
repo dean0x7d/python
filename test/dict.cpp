@@ -68,7 +68,9 @@ void test_templates(object print)
     tmp[1.5] = 13;
     print(tmp.get(1.5));
     print(tmp.get(44));
-    print(tmp);
+    list l = tmp.items();
+    l.sort();
+    print(l);
     print(tmp.get(2,"default"));
     print(tmp.setdefault(3,"default"));
 

@@ -12,8 +12,9 @@
 >>> f = Foo(1, 2, 'a', bar = 3, baz = 4)
 >>> f.args
 (1, 2, 'a')
->>> f.kw.items()
-[('bar', 3), ('baz', 4)]
+>>> compare = lambda a, b: set(a) == set(b)
+>>> compare(f.kw.items(), [('bar', 3), ('baz', 4)])
+True
 """
 def run(args = None):
     import sys

@@ -58,16 +58,6 @@ void eval_test()
 
 void exec_test()
 {
-  // Register the module with the interpreter
-  if (PyImport_AppendInittab(const_cast<char*>("embedded_hello"),
-#if PY_VERSION_HEX >= 0x03000000 
-                             PyInit_embedded_hello 
-#else 
-                             initembedded_hello 
-#endif 
-                             ) == -1) 
-    throw std::runtime_error("Failed to add embedded_hello to the interpreter's "
-                 "builtin modules");
   // Retrieve the main module
   python::object main = python::import("__main__");
   
@@ -148,10 +138,27 @@ void check_pyerr(bool pyerr_expected=false)
   }
 }
 
+void register_module()
+{
+  if (PyImport_AppendInittab(const_cast<char*>("embedded_hello"),
+#if PY_VERSION_HEX >= 0x03000000 
+                             PyInit_embedded_hello 
+#else 
+                             initembedded_hello 
+#endif 
+                             ) == -1) 
+    throw std::runtime_error("Failed to add embedded_hello to the interpreter's "
+                 "builtin modules");
+}
+
 int main(int argc, char **argv)
 {
   BOOST_TEST(argc == 2 || argc == 3);
   std::string script = argv[1];
+
+  // Register the module with the interpreter
+  register_module();
+
   // Initialize the interpreter
   Py_Initialize();
 
