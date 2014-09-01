@@ -11,8 +11,6 @@
 # include <boost/python/extract.hpp>
 # include <boost/python/handle.hpp>
 
-#  include <boost/type.hpp>
-
 namespace boost { namespace python {
 
 class override;
@@ -59,14 +57,14 @@ namespace detail
 #endif
 
       template <class T>
-      T as(type<T>* = 0)
+      T as()
       {
           converter::return_from_python<T> converter;
           return converter(m_obj.release());
       }
 
       template <class T>
-      T unchecked(type<T>* = 0)
+      T unchecked()
       {
           return extract<T>(m_obj.get())();
       }

@@ -19,8 +19,6 @@
 
 # include <boost/python/detail/raw_pyobject.hpp>
 
-# include <boost/type.hpp>
-
 # include <boost/detail/iterator.hpp>
 
 namespace boost { namespace python { namespace objects {
@@ -141,8 +139,6 @@ namespace detail
     , Accessor2 const& get_finish
     , NextPolicies const& /*next_policies*/
     , Iterator const& (*)()
-    , boost::type<Target>*
-    , int
   )
   {
       return make_function(
@@ -158,16 +154,13 @@ namespace detail
     , Accessor2 const& get_finish
     , NextPolicies const& next_policies
     , Iterator& (*)()
-    , boost::type<Target>*
-    , ...)
+  )
   {
-      return make_iterator_function(
+      return make_iterator_function<Target>(
           get_start
         , get_finish
         , next_policies
         , (Iterator const&(*)())0
-        , (boost::type<Target>*)0
-        , 0
       );
   }
 
@@ -184,20 +177,17 @@ inline object make_iterator_function(
     Accessor1 const& get_start
   , Accessor2 const& get_finish
   , NextPolicies const& next_policies
-  , boost::type<Target>* = 0
 )
 {
     using iterator = typename Accessor1::result_type;
     using iterator_const = cpp14::add_const_t<iterator>;
     using iterator_cref = cpp14::add_lvalue_reference_t<iterator_const>;
       
-    return detail::make_iterator_function(
+    return detail::make_iterator_function<Target>(
         get_start
       , get_finish
       , next_policies
       , (iterator_cref(*)())0
-      , (boost::type<Target>*)0
-      , 0
     );
 }
 

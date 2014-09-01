@@ -7,7 +7,6 @@
 
 # include <boost/python/detail/prefix.hpp>
 
-# include <boost/type.hpp>
 # include <boost/operators.hpp>
 # include <typeinfo>
 # include <cstring>

@@ -8,14 +8,13 @@
 # include <boost/python/detail/prefix.hpp>
 
 # include <boost/bind.hpp>
-# include <boost/type.hpp>
 # include <boost/python/detail/translate_exception.hpp>
 # include <boost/python/detail/exception_handler.hpp>
 
 namespace boost { namespace python { 
 
 template <class ExceptionType, class Translate>
-void register_exception_translator(Translate translate, boost::type<ExceptionType>* = 0)
+void register_exception_translator(Translate translate)
 {
     detail::register_exception_handler(
         boost::bind<bool>(detail::translate_exception<ExceptionType,Translate>(), _1, _2, translate)

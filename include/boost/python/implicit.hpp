@@ -6,7 +6,6 @@
 # define IMPLICIT_DWA2002325_HPP
 
 # include <boost/python/detail/prefix.hpp>
-# include <boost/type.hpp>
 # include <boost/python/converter/implicit.hpp>
 # include <boost/python/converter/registry.hpp>
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
@@ -17,7 +16,7 @@
 namespace boost { namespace python { 
 
 template <class Source, class Target>
-void implicitly_convertible(boost::type<Source>* = 0, boost::type<Target>* = 0)
+void implicitly_convertible()
 {
     typedef converter::implicit<Source,Target> functions;
     
