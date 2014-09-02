@@ -10,8 +10,6 @@
 # include <boost/call_traits.hpp>
 # include <boost/python/cpp14/type_traits.hpp>
 
-# include <boost/function/function0.hpp>
-
 namespace boost { namespace python { namespace detail { 
 
 // A ternary function object used to translate C++ exceptions of type
@@ -30,7 +28,7 @@ struct translate_exception
     
     inline bool operator()(
         exception_handler const& handler
-      , function0<void> const& f
+      , std::function<void()> const& f
       , typename call_traits<Translate>::param_type translate) const
     {
         try

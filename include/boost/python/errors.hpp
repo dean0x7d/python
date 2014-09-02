@@ -10,7 +10,7 @@
 # define ERRORS_DWA052500_H_
 
 # include <boost/python/detail/prefix.hpp>
-# include <boost/function/function0.hpp>
+# include <functional>
 
 namespace boost { namespace python {
 
@@ -21,12 +21,12 @@ struct BOOST_PYTHON_DECL_EXCEPTION error_already_set
 
 // Handles exceptions caught just before returning to Python code.
 // Returns true iff an exception was caught.
-BOOST_PYTHON_DECL bool handle_exception_impl(function0<void>);
+BOOST_PYTHON_DECL bool handle_exception_impl(std::function<void()>);
 
 template <class T>
-bool handle_exception(T f)
+bool handle_exception(T&& f)
 {
-    return handle_exception_impl(function0<void>(boost::ref(f)));
+    return handle_exception_impl(std::forward<T>(f));
 }
 
 namespace detail { inline void rethrow() { throw; } }
@@ -41,7 +41,7 @@ BOOST_PYTHON_DECL void throw_error_already_set();
 template <class T>
 inline T* expect_non_null(T* x)
 {
-    if (x == 0)
+    if (x == nullptr)
         throw_error_already_set();
     return x;
 }

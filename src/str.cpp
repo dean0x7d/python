@@ -4,6 +4,7 @@
 #include <boost/python/str.hpp>
 #include <boost/python/extract.hpp>
 #include <boost/python/ssize_t.hpp>
+#include <boost/preprocessor/repetition/enum_params.hpp>
 
 namespace boost { namespace python { namespace detail {
 

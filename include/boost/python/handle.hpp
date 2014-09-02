@@ -14,6 +14,7 @@
 # include <boost/python/refcount.hpp>
 # include <boost/python/tag.hpp>
 # include <boost/python/detail/raw_pyobject.hpp>
+# include <boost/get_pointer.hpp>
 
 namespace boost { namespace python { 
 

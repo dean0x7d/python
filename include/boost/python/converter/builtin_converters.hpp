@@ -11,7 +11,6 @@
 # include <boost/implicit_cast.hpp>
 # include <string>
 # include <complex>
-# include <boost/limits.hpp>
 
 // Since all we can use to decide how to convert an object to_python
 // is its C++ type, there can be only one such converter for each

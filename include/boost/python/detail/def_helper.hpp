@@ -117,7 +117,7 @@ namespace detail
       // methods.
       using default_implementation_t = get_by_predicate_t<std::is_member_function_pointer, all_t>;
       static constexpr bool has_default_implementation = 
-              !is_same<default_implementation_t, void(not_specified::*)()>::value;
+              !std::is_same<default_implementation_t, void(not_specified::*)()>::value;
       
    public: // Extractor functions which pull the appropriate value out
            // of the tuple

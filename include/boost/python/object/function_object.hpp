@@ -5,7 +5,6 @@
 #ifndef FUNCTION_OBJECT_DWA2002725_HPP
 # define FUNCTION_OBJECT_DWA2002725_HPP
 # include <boost/python/detail/prefix.hpp>
-# include <boost/function/function2.hpp>
 # include <boost/python/object_core.hpp>
 # include <boost/python/args_fwd.hpp>
 # include <boost/python/object/py_function.hpp>

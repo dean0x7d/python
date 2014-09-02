@@ -151,7 +151,7 @@ struct select_arg_from_python
             object_manager_ref_arg_from_python<T>,
     
             cpp14::conditional_t<
-                is_pointer<T>::value,
+                std::is_pointer<T>::value,
                 pointer_arg_from_python<T>,
     
                 cpp14::conditional_t<

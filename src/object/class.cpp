@@ -14,7 +14,6 @@
 #include <boost/python/object/pickle_support.hpp>
 #include <boost/python/object.hpp>
 #include <boost/python/object_protocol.hpp>
-#include <boost/detail/binary_search.hpp>
 #include <boost/python/self.hpp>
 #include <boost/python/dict.hpp>
 #include <boost/python/str.hpp>

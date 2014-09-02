@@ -20,7 +20,7 @@ BOOST_PYTHON_DECL bool handle_exception_impl(function0<void>)
 int result;
 
 #define ASSERT_SAME(T1,T2) \
-       if (!is_same< T1, T2 >::value) { \
+       if (!std::is_same< T1, T2 >::value) { \
              std::cout << "*********************\n"; \
              std::cout << python::type_id< T1 >() << " != " << python::type_id< T2 >() << "\n"; \
              std::cout << "*********************\n"; \

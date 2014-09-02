@@ -98,7 +98,7 @@ namespace detail
   struct is_reference_to_keywords
   {
       using key_t = cpp14::remove_cv_t<cpp14::remove_reference_t<T>>;
-      static constexpr bool value = is_reference<T>::value && is_keywords<key_t>::value;
+      static constexpr bool value = std::is_reference<T>::value && is_keywords<key_t>::value;
       
       using type = std::integral_constant<bool, value>;
   };
