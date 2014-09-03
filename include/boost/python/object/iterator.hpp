@@ -179,7 +179,7 @@ inline object make_iterator_function(
   , NextPolicies const& next_policies
 )
 {
-    using iterator = typename Accessor1::result_type;
+    using iterator = cpp14::result_of_t<Accessor1(Target&)>;
     using iterator_const = cpp14::add_const_t<iterator>;
     using iterator_cref = cpp14::add_lvalue_reference_t<iterator_const>;
       

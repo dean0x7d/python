@@ -34,4 +34,7 @@ using conditional_t = typename std::conditional<B, T, F>::type;
 template<std::size_t Len, std::size_t Align>
 using aligned_storage_t = typename std::aligned_storage<Len, Align>::type;
 
+template< class T >
+using result_of_t = typename std::result_of<T>::type;
+
 }

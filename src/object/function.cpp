@@ -20,8 +20,6 @@
 #include <boost/python/detail/signature.hpp>
 #include <boost/python/detail/none.hpp>
 
-#include <boost/bind.hpp>
-
 #include <algorithm>
 #include <cstring>
 
@@ -563,30 +561,6 @@ BOOST_PYTHON_DECL void add_to_namespace(
 }
 
 
-namespace
-{
-  struct bind_return
-  {
-      bind_return(PyObject*& result, function const* f, PyObject* args, PyObject* keywords)
-          : m_result(result)
-            , m_f(f)
-            , m_args(args)
-            , m_keywords(keywords)
-      {}
-
-      void operator()() const
-      {
-          m_result = m_f->call(m_args, m_keywords);
-      }
-      
-   private:
-      PyObject*& m_result;
-      function const* m_f;
-      PyObject* m_args;
-      PyObject* m_keywords;
-  };
-}
-
 extern "C"
 {
     // Stolen from Python's funcobject.c
@@ -616,8 +590,10 @@ extern "C"
     static PyObject *
     function_call(PyObject *func, PyObject *args, PyObject *kw)
     {
-        PyObject* result = 0;
-        handle_exception(bind_return(result, static_cast<function*>(func), args, kw));
+        PyObject* result = nullptr;
+        handle_exception([&]() {
+            result = static_cast<function*>(func)->call(args, kw);
+        });
         return result;
     }
 

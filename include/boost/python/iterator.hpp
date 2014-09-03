@@ -11,8 +11,7 @@
 # include <boost/python/object/iterator.hpp>
 # include <boost/python/object_core.hpp>
 
-# include <boost/bind.hpp>
-# include <boost/bind/protect.hpp>
+# include <functional>
 
 namespace boost { namespace python { 
 
@@ -29,9 +28,10 @@ namespace detail
     , Target&(*)()
   )
   {
+      using namespace std::placeholders;
       return objects::make_iterator_function<Target>(
-          boost::protect(boost::bind(get_start, _1))
-        , boost::protect(boost::bind(get_finish, _1))
+          std::bind(get_start, _1)
+        , std::bind(get_finish, _1)
         , next_policies
       );
   }

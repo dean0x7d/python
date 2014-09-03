@@ -7,18 +7,30 @@
 
 # include <boost/python/detail/prefix.hpp>
 
-# include <boost/bind.hpp>
-# include <boost/python/detail/translate_exception.hpp>
 # include <boost/python/detail/exception_handler.hpp>
 
 namespace boost { namespace python { 
 
+// Used to translate C++ exceptions of type ExceptionType 
+// into Python exceptions by invoking an object of type Translate.
 template <class ExceptionType, class Translate>
 void register_exception_translator(Translate translate)
 {
-    detail::register_exception_handler(
-        boost::bind<bool>(detail::translate_exception<ExceptionType,Translate>(), _1, _2, translate)
-        );
+    detail::register_exception_handler([translate](
+        detail::exception_handler const& handler, 
+        std::function<void()> const& f
+    ) -> bool
+    {
+        try
+        {
+            return handler(f);
+        }
+        catch(ExceptionType const& e)
+        {
+            translate(e);
+            return true;
+        }
+    });
 }
 
 }} // namespace boost::python

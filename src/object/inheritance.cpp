@@ -11,7 +11,6 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/reverse_graph.hpp>
 #include <boost/property_map/property_map.hpp>
-#include <boost/bind.hpp>
 #include <boost/integer_traits.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
@@ -170,28 +169,15 @@ namespace
       return x;
   }
 
-  template <class Tuple>
-  struct select1st
-  {
-      typedef typename tuples::element<0, Tuple>::type result_type;
-      
-      result_type const& operator()(Tuple const& x) const
-      {
-          return tuples::get<0>(x);
-      }
-  };
-  
   // map a type to a position in the index
   inline type_index_t::iterator type_position(class_id type)
   {
-      typedef index_entry entry;
-      
-      return std::lower_bound(
-          type_index().begin(), type_index().end()
-          , boost::make_tuple(type, vertex_t(), dynamic_id_function(0))
-          , boost::bind<bool>(std::less<class_id>()
-               , boost::bind<class_id>(select1st<entry>(), _1)
-               , boost::bind<class_id>(select1st<entry>(), _2)));
+    return std::find_if(
+        type_index().begin(), type_index().end(), 
+        [&type](index_entry const& entry) {
+            return tuples::get<0>(entry) >= type;
+        }
+    );
   }
 
   inline index_entry* seek_type(class_id type)
@@ -459,7 +445,7 @@ BOOST_PYTHON_DECL void add_cast(
     {
         c.erase(std::remove_if(
                     c.begin(), c.end(),
-                    mem_fn(&cache_element::unreachable))
+                    std::mem_fn(&cache_element::unreachable))
                 , c.end());
 
         // If any new cache entries get added, we'll have to do this

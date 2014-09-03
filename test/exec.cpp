@@ -168,7 +168,7 @@ int main(int argc, char **argv)
   else if(python::handle_exception(exec_test)) {
     check_pyerr();
   }
-  else if (python::handle_exception(boost::bind(exec_file_test, script))) {
+  else if (python::handle_exception(std::bind(exec_file_test, script))) {
     check_pyerr();
   }
   
