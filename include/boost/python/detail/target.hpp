@@ -8,22 +8,45 @@
 
 namespace boost { namespace python { namespace detail {
 
-template <class R>
-void(* target(R (*)()) )() { return nullptr; }
-template <class R, class A0, class... As>
-A0(* target(R (*)(A0, As...)) )() { return nullptr; }
+template<class F>
+struct target;
 
-template <class R, class T, class... As>
-T& (* target(R (T::*)(As...)) )() { return nullptr; }
-template <class R, class T, class... As>
-T& (* target(R (T::*)(As...) const) )() { return nullptr; }
-template <class R, class T, class... As>
-T& (* target(R (T::*)(As...) volatile) )() { return nullptr; }
-template <class R, class T, class... As>
-T& (* target(R (T::*)(As...) const volatile) )() { return nullptr; }
+template<class Return>
+struct target<Return()> {
+    using type = void;
+};
 
-template <class R, class T>
-T& (* target(R (T::*)) )() { return 0; }
+template<class Return, class A0, class... Args>
+struct target<Return (*)(A0, Args...)> {
+    using type = A0&;
+};
+
+template<class Return, class Class, class... Args>
+struct target<Return (Class::*)(Args...)> {
+    using type = Class&;
+};
+template<class Return, class Class, class... Args>
+struct target<Return (Class::*)(Args...) const> {
+    using type = Class&;
+};
+template<class Return, class Class, class... Args>
+struct target<Return (Class::*)(Args...) volatile> {
+    using type = Class&;
+};
+template<class Return, class Class, class... Args>
+struct target<Return (Class::*)(Args...) const volatile> {
+    using type = Class&;
+};
+
+template<class Return, class Class>
+struct target<Return (Class::*)> {
+    using type = Class&;
+};
+
+// If F is a function pointer, return the type of the first parameter.
+// If F is a member pointer, return the class type.
+template<class F>
+using target_t = typename target<F>::type;
 
 }}} // namespace boost::python::detail
 

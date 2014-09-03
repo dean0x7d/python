@@ -20,19 +20,13 @@ namespace detail
   // Adds an additional layer of binding to
   // objects::make_iterator(...), which allows us to pass member
   // function and member data pointers.
-  template <class Target, class Accessor1, class Accessor2, class NextPolicies>
-  inline object make_iterator(
-      Accessor1 get_start
-    , Accessor2 get_finish
-    , NextPolicies next_policies
-    , Target&(*)()
-  )
+  template <class NextPolicies, class Target, class Accessor1, class Accessor2>
+  inline object make_iterator(Accessor1 get_start, Accessor2 get_finish)
   {
       using namespace std::placeholders;
-      return objects::make_iterator_function<Target>(
-          std::bind(get_start, _1)
-        , std::bind(get_finish, _1)
-        , next_policies
+      return objects::make_iterator_function<NextPolicies, Target>(
+          std::bind(get_start, _1),
+          std::bind(get_finish, _1)
       );
   }
 
@@ -78,28 +72,27 @@ struct iterators
 template <class Accessor1, class Accessor2>
 object range(Accessor1 start, Accessor2 finish)
 {
-    return detail::make_iterator(
-        start, finish
-      , objects::default_iterator_call_policies()
-      , detail::target(start)
-    );
+    return detail::make_iterator<
+        objects::default_iterator_call_policies, detail::target_t<Accessor1>
+    >(start, finish);
 }
 
 // Create an iterator-building function which uses the given accessors
 // and next() policies. Deduce the Target type.
 template <class NextPolicies, class Accessor1, class Accessor2>
-object range(Accessor1 start, Accessor2 finish, NextPolicies* = 0)
+object range(Accessor1 start, Accessor2 finish)
 {
-    return detail::make_iterator(start, finish, NextPolicies(), detail::target(start));
+    return detail::make_iterator<
+        NextPolicies, detail::target_t<Accessor1>
+    >(start, finish);
 }
 
 // Create an iterator-building function which uses the given accessors
 // and next() policies, operating on the given Target type
 template <class NextPolicies, class Target, class Accessor1, class Accessor2>
-object range(Accessor1 start, Accessor2 finish, NextPolicies* = 0)
+object range(Accessor1 start, Accessor2 finish)
 {
-    // typedef typename add_reference<Target>::type target;
-    return detail::make_iterator(start, finish, NextPolicies(), (Target&(*)())0);
+    return detail::make_iterator<NextPolicies, Target&>(start, finish);
 }
 
 // A Python callable object which produces an iterator traversing

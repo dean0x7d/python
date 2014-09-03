@@ -133,11 +133,10 @@ namespace detail
       Accessor2 m_get_finish;
   };
 
-  template <class Target, class Iterator, class NextPolicies, class Accessor1, class Accessor2>
+  template <class NextPolicies, class Target, class Iterator, class Accessor1, class Accessor2>
   inline object make_iterator_function(
       Accessor1 const& get_start
     , Accessor2 const& get_finish
-    , NextPolicies const& /*next_policies*/
     , Iterator const& (*)()
   )
   {
@@ -148,18 +147,16 @@ namespace detail
       );
   }
 
-  template <class Target, class Iterator, class NextPolicies, class Accessor1, class Accessor2>
+  template <class NextPolicies, class Target, class Iterator, class Accessor1, class Accessor2>
   inline object make_iterator_function(
       Accessor1 const& get_start
     , Accessor2 const& get_finish
-    , NextPolicies const& next_policies
     , Iterator& (*)()
   )
   {
-      return make_iterator_function<Target>(
+      return make_iterator_function<NextPolicies, Target>(
           get_start
         , get_finish
-        , next_policies
         , (Iterator const&(*)())0
       );
   }
@@ -172,21 +169,16 @@ namespace detail
 // (where x is an instance of Target) to produce begin and end
 // iterators for the range, and an instance of NextPolicies is used as
 // CallPolicies for the Python iterator's next() function. 
-template <class Target, class NextPolicies, class Accessor1, class Accessor2>
-inline object make_iterator_function(
-    Accessor1 const& get_start
-  , Accessor2 const& get_finish
-  , NextPolicies const& next_policies
-)
+template <class NextPolicies, class Target, class Accessor1, class Accessor2>
+inline object make_iterator_function(Accessor1 const& get_start, Accessor2 const& get_finish)
 {
     using iterator = cpp14::result_of_t<Accessor1(Target&)>;
     using iterator_const = cpp14::add_const_t<iterator>;
     using iterator_cref = cpp14::add_lvalue_reference_t<iterator_const>;
       
-    return detail::make_iterator_function<Target>(
+    return detail::make_iterator_function<NextPolicies, Target>(
         get_start
       , get_finish
-      , next_policies
       , (iterator_cref(*)())0
     );
 }
