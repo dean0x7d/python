@@ -14,6 +14,7 @@
 #include <boost/python/object.hpp>
 #define BOOST_ENABLE_ASSERT_HANDLER
 #include <boost/assert.hpp>
+#include <boost/static_assert.hpp>
 
 using namespace boost::python;
 BOOST_STATIC_ASSERT(converter::is_object_manager<handle<> >::value);

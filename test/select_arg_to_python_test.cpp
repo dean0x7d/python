@@ -5,6 +5,7 @@
 #include <boost/python/type_id.hpp>
 #include <boost/python/handle.hpp>
 #include <boost/python/object.hpp>
+#include <boost/static_assert.hpp>
 #include <iostream>
 
 // gcc 2.95.x and MIPSpro 7.3.1.3 linker seem to demand this definition

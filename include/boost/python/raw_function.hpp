@@ -11,7 +11,6 @@
 # include <boost/python/dict.hpp>
 # include <boost/python/object/py_function.hpp>
 
-# include <boost/limits.hpp>
 # include <cstddef>
 
 namespace boost { namespace python { 
