@@ -19,7 +19,6 @@
 # include <boost/python/detail/copy_ctor_mutates_rhs.hpp>
 # include <boost/python/detail/void_ptr.hpp>
 # include <boost/python/detail/void_return.hpp>
-# include <boost/call_traits.hpp>
 
 namespace boost { namespace python {
 
@@ -67,7 +66,7 @@ namespace converter
       using result_type = cpp14::conditional_t<
           python::detail::copy_ctor_mutates_rhs<T>::value,
           T&,
-          typename call_traits<T>::param_type
+          T const&
       >;
 
       extract_rvalue(PyObject*);
@@ -96,10 +95,10 @@ namespace converter
       is_object_manager<T>::value,
       extract_object_manager<T>,
       cpp14::conditional_t<
-          is_pointer<T>::value,
+          std::is_pointer<T>::value,
           extract_pointer<T>,
           cpp14::conditional_t<
-              is_reference<T>::value,
+              std::is_reference<T>::value,
               extract_reference<T>,
               extract_rvalue<T>
           >

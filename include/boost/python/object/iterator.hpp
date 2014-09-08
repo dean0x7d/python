@@ -41,7 +41,7 @@ struct iterator_range
     struct next
     {
         using result_type = cpp14::conditional_t<
-            is_reference<typename traits_t::reference>::value,
+            std::is_reference<typename traits_t::reference>::value,
             typename traits_t::reference,
             typename traits_t::value_type
         >;
