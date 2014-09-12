@@ -7,45 +7,32 @@
 // accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 
-# pragma once
-
-# include <boost/config.hpp>
-
 namespace boost { namespace python {
 
-template<class T> struct other
-{ 
-    typedef T type;
+template<class T> struct other {
+    using type = T;
 };
 
 namespace detail
 {
   template<typename T>
-  class is_other
-  {
-   public:
-      BOOST_STATIC_CONSTANT(bool, value = false); 
+  struct is_other {
+      static constexpr bool value = false;
   };
 
   template<typename T>
-  class is_other<other<T> >
-  {
-   public:
-      BOOST_STATIC_CONSTANT(bool, value = true);
+  struct is_other<other<T>> {
+      static constexpr bool value = true;
   };
 
   template<typename T>
-  class unwrap_other
-  {
-   public:
-      typedef T type;
+  struct unwrap_other {
+      using type = T;
   };
 
   template<typename T>
-  class unwrap_other<other<T> >
-  {
-   public:
-      typedef T type;
+  struct unwrap_other<other<T>> {
+      using type = T;
   };
 }
 
