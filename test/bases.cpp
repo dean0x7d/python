@@ -3,15 +3,16 @@
 // accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 #include <boost/python/bases.hpp>
+#include <boost/python/object/class_metadata.hpp>
 #include <type_traits>
 
 struct A;
 struct B;
 
-template <class X, class Y, class Z>
-using choose_bases_t = boost::python::detail::select_bases_t<X, 
-                          boost::python::detail::select_bases_t<Y,
-                              boost::python::detail::select_bases_t<Z>>>;
+template <class... Ts>
+using choose_bases_t = boost::python::objects::select_t<
+  boost::python::detail::specifies_bases, boost::python::bases<>, Ts...
+>;
 
 int main()
 {
@@ -30,16 +31,13 @@ int main()
     static_assert(!boost::python::detail::specifies_bases<
                   int[5] >::value, "");
 
-    using collected1 = boost::python::detail::select_bases_t<int,
-                           boost::python::detail::select_bases_t<char*>>;
-
+    using collected1 = choose_bases_t<int, char*>;
     static_assert(std::is_same<collected1,boost::python::bases<> >::value, "");
+
     static_assert(std::is_same<choose_bases_t<int,char*,long>, boost::python::bases<> >::value, "");
     
-    using collected2 = boost::python::detail::select_bases_t<int,
-                           boost::python::detail::select_bases_t<boost::python::bases<A,B>,
-                               boost::python::detail::select_bases_t<A>>>;
-
+    using collected2 = choose_bases_t<int, boost::python::bases<A,B>, A>;
     static_assert(std::is_same<collected2,boost::python::bases<A,B> >::value, "");
+
     static_assert(std::is_same<choose_bases_t<int,boost::python::bases<A,B>,long>, boost::python::bases<A,B> >::value, "");
 }

@@ -7,7 +7,7 @@
 
 # include <boost/python/detail/prefix.hpp>
 # include <boost/python/detail/type_list.hpp>
-# include <boost/python/cpp14/type_traits.hpp>
+# include <type_traits>
 
 namespace boost { namespace python { 
 
@@ -22,9 +22,6 @@ namespace boost { namespace python {
     
     template <class... Bases>
     struct specifies_bases<bases<Bases...>> : std::true_type {};
-
-    template <class T, class Prev = bases<>>
-    using select_bases_t = cpp14::conditional_t<specifies_bases<T>::value, T, Prev>;
   }
 
 }} // namespace boost::python
