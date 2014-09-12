@@ -10,20 +10,6 @@
 # define CONFIG_DWA052200_H_
 
 # include <boost/config.hpp>
-# include <boost/detail/workaround.hpp>
-
-# ifdef BOOST_NO_OPERATORS_IN_NAMESPACE
-   // A gcc bug forces some symbols into the global namespace
-#  define BOOST_PYTHON_BEGIN_CONVERSION_NAMESPACE
-#  define BOOST_PYTHON_END_CONVERSION_NAMESPACE
-#  define BOOST_PYTHON_CONVERSION
-#  define BOOST_PYTHON_IMPORT_CONVERSION(x) using ::x
-# else
-#  define BOOST_PYTHON_BEGIN_CONVERSION_NAMESPACE namespace boost { namespace python {
-#  define BOOST_PYTHON_END_CONVERSION_NAMESPACE }} // namespace boost::python
-#  define BOOST_PYTHON_CONVERSION boost::python
-#  define BOOST_PYTHON_IMPORT_CONVERSION(x) void never_defined() // so we can follow the macro with a ';'
-# endif
 
 # if defined(BOOST_MSVC)
 
@@ -49,9 +35,7 @@
 
 #if defined(BOOST_PYTHON_DYNAMIC_LIB)
 
-#  if !defined(_WIN32) && !defined(__CYGWIN__)                                  \
-    && !defined(BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY)                         \
-    && BOOST_WORKAROUND(__GNUC__, >= 3) && (__GNUC_MINOR__ >=5 || __GNUC__ > 3)
+#  ifdef __GNUC__
 #    define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
 #  endif 
 
