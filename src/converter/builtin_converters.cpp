@@ -5,22 +5,16 @@
 
 #include <boost/python/handle.hpp>
 #include <boost/python/type_id.hpp>
-#include <boost/python/errors.hpp>
-#include <boost/python/refcount.hpp>
 
-#include <boost/python/detail/config.hpp>
 #include <boost/python/detail/wrap_python.hpp>
 
 #include <boost/python/converter/builtin_converters.hpp>
 #include <boost/python/converter/rvalue_from_python_data.hpp>
 #include <boost/python/converter/registry.hpp>
-#include <boost/python/converter/registrations.hpp>
 #include <boost/python/converter/shared_ptr_deleter.hpp>
 #include <boost/python/converter/pytype_function.hpp>
 
 #include <boost/cast.hpp>
-#include <string>
-#include <complex>
 
 namespace boost { namespace python { namespace converter {
 
