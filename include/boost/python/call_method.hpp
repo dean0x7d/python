@@ -13,8 +13,7 @@
 namespace boost { namespace python {
 
 template <typename R, typename... Args>
-typename detail::returnable<R>::type 
-    call_method(PyObject* self, char const* name, Args const&... args)
+R call_method(PyObject* self, char const* name, Args const&... args)
 {
 #if PY_VERSION_HEX >= 0x03000000
     handle<> method_name(PyUnicode_FromString(name));

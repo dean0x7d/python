@@ -18,7 +18,6 @@
 
 # include <boost/python/detail/copy_ctor_mutates_rhs.hpp>
 # include <boost/python/detail/void_ptr.hpp>
-# include <boost/python/detail/void_return.hpp>
 
 namespace boost { namespace python {
 

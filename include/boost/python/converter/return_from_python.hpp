@@ -11,7 +11,6 @@
 # include <boost/python/converter/registered_pointee.hpp>
 # include <boost/python/converter/object_manager.hpp>
 # include <boost/python/detail/void_ptr.hpp>
-# include <boost/python/detail/void_return.hpp>
 # include <boost/python/errors.hpp>
 # include <boost/python/handle.hpp>
 
@@ -77,14 +76,10 @@ struct return_from_python
 template <>
 struct return_from_python<void>
 {
-    typedef python::detail::returnable<void>::type result_type;
-    
+    using result_type = void;
     result_type operator()(PyObject* x) const
     {
         (void_result_from_python)(x);
-# ifdef BOOST_NO_VOID_RETURNS
-        return result_type();
-# endif 
     }
 };
 

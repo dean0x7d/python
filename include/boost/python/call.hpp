@@ -14,8 +14,7 @@
 namespace boost { namespace python {
 
 template<typename R, typename... Args>
-typename detail::returnable<R>::type 
-    call(PyObject* callable, Args const&... args)
+R call(PyObject* callable, Args const&... args)
 {
     PyObject* const result = PyObject_CallFunctionObjArgs(
         callable, 
