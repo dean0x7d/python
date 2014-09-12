@@ -9,9 +9,7 @@
 
 # include <boost/python/object_core.hpp>
 # include <boost/python/call.hpp>
-# include <boost/iterator/detail/enable_if.hpp>
-
-# include <boost/iterator/detail/config_def.hpp>
+# include <boost/python/cpp14/type_traits.hpp>
 
 namespace boost { namespace python { namespace api {
 
@@ -26,25 +24,15 @@ template <class X> X* make_ptr();
 template <class L, class R = L>
 struct is_object_operators
 {
-    enum {
-        value 
-        = (sizeof(api::is_object_operators_helper(api::make_ptr<L>()))
-           + sizeof(api::is_object_operators_helper(api::make_ptr<R>()))
-           < 4
-        )
-    };
+    static constexpr bool value =
+            sizeof(api::is_object_operators_helper(api::make_ptr<L>()))
+            + sizeof(api::is_object_operators_helper(api::make_ptr<R>()))
+            < 4;
     using type = std::integral_constant<bool, value>;
 };
 
-# if !defined(BOOST_NO_SFINAE) && !defined(BOOST_NO_IS_CONVERTIBLE)
 template <class L, class R, class T>
-struct enable_binary
-  : boost::iterators::enable_if<is_object_operators<L,R>, T>
-{};
-#  define BOOST_PYTHON_BINARY_RETURN(T) typename enable_binary<L,R,T>::type
-# else
-#  define BOOST_PYTHON_BINARY_RETURN(T) T
-# endif
+using enable_binary_t = cpp14::enable_if_t<is_object_operators<L,R>::value, T>;
 
 template <class U>
 object object_operators<U>::operator()() const
@@ -76,9 +64,9 @@ object_operators<U>::operator!() const
 
 # define BOOST_PYTHON_COMPARE_OP(op, opid)                              \
 template <class L, class R>                                             \
-BOOST_PYTHON_BINARY_RETURN(object) operator op(L const& l, R const& r)    \
+enable_binary_t<L, R, object> operator op(L const& l, R const& r)       \
 {                                                                       \
-    return PyObject_RichCompare(                                    \
+    return PyObject_RichCompare(                                        \
         object(l).ptr(), object(r).ptr(), opid);                        \
 }
 # undef BOOST_PYTHON_COMPARE_OP
@@ -86,7 +74,7 @@ BOOST_PYTHON_BINARY_RETURN(object) operator op(L const& l, R const& r)    \
 # define BOOST_PYTHON_BINARY_OPERATOR(op)                               \
 BOOST_PYTHON_DECL object operator op(object const& l, object const& r); \
 template <class L, class R>                                             \
-BOOST_PYTHON_BINARY_RETURN(object) operator op(L const& l, R const& r)  \
+enable_binary_t<L, R, object> operator op(L const& l, R const& r)       \
 {                                                                       \
     return object(l) op object(r);                                      \
 }
@@ -129,7 +117,5 @@ BOOST_PYTHON_INPLACE_OPERATOR(|=)
 # undef BOOST_PYTHON_INPLACE_OPERATOR
 
 }}} // namespace boost::python
-
-#include <boost/iterator/detail/config_undef.hpp>
 
 #endif // OBJECT_OPERATORS_DWA2002617_HPP

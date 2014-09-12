@@ -7,9 +7,7 @@
 # define INDEXING_SUITE_DETAIL_JDG20036_HPP
 
 # include <boost/python/extract.hpp>
-# include <boost/scoped_ptr.hpp>
 # include <boost/get_pointer.hpp>
-# include <boost/detail/binary_search.hpp>
 # include <boost/numeric/conversion/cast.hpp>
 # include <vector>
 # include <map>
@@ -63,7 +61,7 @@ namespace boost { namespace python { namespace detail {
         first_proxy(index_type i)
         {
             // Return the first proxy with index <= i
-            return boost::detail::lower_bound(
+            return std::lower_bound(
                 proxies.begin(), proxies.end(), 
                 i, compare_proxy_index<Proxy>());
         }
@@ -444,7 +442,7 @@ namespace boost { namespace python { namespace detail {
             
         container_element& operator=(container_element const& ce);
 
-        scoped_ptr<element_type> ptr;
+        std::unique_ptr<element_type> ptr;
         object container;
         Index index;
     };
