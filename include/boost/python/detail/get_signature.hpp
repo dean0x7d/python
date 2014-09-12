@@ -1,6 +1,6 @@
 #ifndef BOOST_PYTHON_FN_CC
 #error Do not include this file
-#endif
+#else
 
 // as 'get_signature(RT(*)(Ts...), void*)' is the same
 // function as 'get_signature(RT(__cdecl *)(Ts...), void*)',
@@ -44,3 +44,5 @@ get_signature(RT(BOOST_PYTHON_FN_CC ClassT::*)(Ts...) const volatile, Target* = 
 {
     return {};
 }
+
+#endif // BOOST_PYTHON_FN_CC
