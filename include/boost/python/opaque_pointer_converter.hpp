@@ -1,4 +1,4 @@
-// Copyright Gottfried Ganßauge 2003..2006.
+// Copyright Gottfried Ganï¬‚auge 2003..2006.
 // Distributed under the Boost Software License, Version 1.0. (See
 // accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
@@ -16,8 +16,6 @@
 # include <boost/python/detail/none.hpp>
 # include <boost/python/type_id.hpp>
 # include <boost/python/errors.hpp>
-
-# include <boost/implicit_cast.hpp>
 
 // opaque --
 //
@@ -55,7 +53,7 @@ private:
     static void* extract(PyObject* op)
     {
         return PyObject_TypeCheck(op, &type_object)
-            ? static_cast<python_instance*>(implicit_cast<void*>(op))->x
+            ? reinterpret_cast<python_instance*>(op)->x
             : 0
             ;
     }
@@ -70,7 +68,7 @@ private:
         if ( python_instance *o = PyObject_New(python_instance, &type_object) )
         {
             o->x = x;
-            return static_cast<PyObject*>(implicit_cast<void*>(o));
+            return reinterpret_cast<PyObject*>(o);
         }
         else
         {
