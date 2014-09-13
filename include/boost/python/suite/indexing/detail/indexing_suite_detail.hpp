@@ -7,7 +7,6 @@
 # define INDEXING_SUITE_DETAIL_JDG20036_HPP
 
 # include <boost/python/extract.hpp>
-# include <boost/get_pointer.hpp>
 # include <boost/numeric/conversion/cast.hpp>
 # include <vector>
 # include <map>
@@ -731,25 +730,7 @@ namespace boost { namespace python { namespace detail {
         }  
     };
 
-#ifdef BOOST_NO_ARGUMENT_DEPENDENT_LOOKUP
 }} // namespace python::detail
-#endif
-
-    template <class Container, class Index, class Policies>
-    inline typename Policies::data_type* 
-    get_pointer(
-        python::detail::container_element<Container, Index, Policies> const& p)
-    {
-        // Get the pointer of a container_element smart pointer
-        return p.get();
-    }
-
-#ifndef BOOST_NO_ARGUMENT_DEPENDENT_LOOKUP
-    // Don't hide these other get_pointer overloads
-    using boost::python::get_pointer;
-    using boost::get_pointer;
-}} // namespace python::detail
-#endif
 
 } // namespace boost
 

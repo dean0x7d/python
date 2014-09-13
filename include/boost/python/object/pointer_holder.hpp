@@ -6,7 +6,7 @@
 #ifndef POINTER_HOLDER_DWA20011215_HPP
 # define POINTER_HOLDER_DWA20011215_HPP 
 
-# include <boost/get_pointer.hpp>
+# include <boost/python/detail/get_pointer.hpp>
 
 #  include <boost/python/instance_holder.hpp>
 #  include <boost/python/object/inheritance_query.hpp>

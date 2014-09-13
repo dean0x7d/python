@@ -7,7 +7,7 @@
 
 # include <boost/python/object/make_instance.hpp>
 # include <boost/python/converter/registry.hpp>
-# include <boost/get_pointer.hpp>
+# include <boost/python/detail/get_pointer.hpp>
 # include <typeinfo>
 
 namespace boost { namespace python { namespace objects { 
