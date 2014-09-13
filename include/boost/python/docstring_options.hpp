@@ -11,9 +11,12 @@ namespace boost { namespace python {
 
 // Note: the static data members are defined in object/function.cpp
 
-class BOOST_PYTHON_DECL docstring_options : boost::noncopyable
+class BOOST_PYTHON_DECL docstring_options
 {
   public:
+      docstring_options(docstring_options const&) = delete;
+      docstring_options& operator=(docstring_options const&) = delete;
+
       docstring_options(bool show_all=true)
       {
           previous_show_user_defined_ = show_user_defined_;

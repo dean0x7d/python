@@ -7,18 +7,18 @@
 
 # include <boost/python/detail/prefix.hpp>
 
-# include <boost/noncopyable.hpp>
 # include <boost/python/type_id.hpp>
-# include <cstddef>
 
 namespace boost { namespace python { 
 
 // Base class for all holders
-struct BOOST_PYTHON_DECL instance_holder : private noncopyable
+struct BOOST_PYTHON_DECL instance_holder
 {
  public:
     instance_holder();
     virtual ~instance_holder();
+    instance_holder(instance_holder const&) = delete;
+    instance_holder& operator=(instance_holder const&) = delete;
     
     // return the next holder in a chain
     instance_holder* next() const;
@@ -46,9 +46,6 @@ struct BOOST_PYTHON_DECL instance_holder : private noncopyable
  private:
     instance_holder* m_next;
 };
-
-// This macro is needed for implementation of derived holders
-# define BOOST_PYTHON_UNFORWARD(N,ignored) (typename unforward<A##N>::type)(a##N)
 
 //
 // implementation
