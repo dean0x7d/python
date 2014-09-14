@@ -6,13 +6,10 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 ///////////////////////////////////////////////////////////////////////////////
-#if !defined(BOOST_PP_IS_ITERATING)
-
 #ifndef DEFAULTS_DEF_JDG20020811_HPP
 #define DEFAULTS_DEF_JDG20020811_HPP
 
 #include <boost/python/detail/defaults_gen.hpp>
-#include <boost/preprocessor/iterate.hpp>
 #include <boost/python/class_fwd.hpp>
 #include <boost/python/scope.hpp>
 #include <boost/python/detail/scope.hpp>
@@ -95,38 +92,6 @@ namespace detail
   }
   // }
 
-
-  //  Expansions of ::
-  //
-  //      template <int N, typename OverloadsT, typename NameSpaceT>
-  //      inline void
-  //      define_stub_function(
-  //          char const* name, OverloadsT s, NameSpaceT& name_space)
-  //      {
-  //          name_space.def(name, &OverloadsT::func_N);
-  //      }
-  //
-  //  where N runs from 0 to BOOST_PYTHON_MAX_ARITY.
-  //
-  //  The set of overloaded functions (define_stub_function) expects:
-  //
-  //      1. char const* name:        function name that will be visible to python
-  //      2. OverloadsT:              a function overloads struct (see defaults_gen.hpp)
-  //      3. NameSpaceT& name_space:  a python::class_ or python::module instance
-  //      4. int_t<N>:                the Nth overloaded function (OverloadsT::func_N)
-  //                                  (see defaults_gen.hpp)
-  //      5. char const* name:        doc string
-  //
-  // @group define_stub_function<N> {
-  template <int N>
-  struct define_stub_function {};
-
-#define BOOST_PP_ITERATION_PARAMS_1                                             \
-    (3, (0, BOOST_PYTHON_MAX_ARITY, <boost/python/detail/defaults_def.hpp>))
-
-#include BOOST_PP_ITERATE()
-  
-  // }
   
   //  This helper template struct does the actual recursive
   //  definition.  There's a generic version
@@ -150,7 +115,7 @@ namespace detail
   //  define_stub_function<N>. The general case recursively calls
   //  define_with_defaults_helper<N-1>::def until it reaches the
   //  terminal case case define_with_defaults_helper<0>.
-  template <int N>
+  template <class Overloads, class Sig, int N>
   struct define_with_defaults_helper {
 
       template <class StubsT, class CallPolicies, class NameSpaceT>
@@ -164,18 +129,22 @@ namespace detail
           char const* doc)
       {
           //  define the NTH stub function of stubs
-          define_stub_function<N>::define(name, stubs, kw, policies, name_space, doc);
+          detail::name_space_def(name_space, name, &StubsT::func, kw, policies, doc, &name_space);
 
           if (kw.second > kw.first)
               --kw.second;
 
           //  call the next define_with_defaults_helper
-          define_with_defaults_helper<N-1>::def(name, stubs, kw, policies, name_space, doc);
+          using next_sig = detail::drop_t<Sig, 1>;
+          using next_stubs= typename StubsT::template gen<next_sig>;
+          define_with_defaults_helper<Overloads, next_sig, N-1>::def(
+              name, next_stubs(), kw, policies, name_space, doc
+          );
       }
   };
 
-  template <>
-  struct define_with_defaults_helper<0> {
+  template <class Overloads, class Sig>
+  struct define_with_defaults_helper<Overloads, Sig, 0> {
 
       template <class StubsT, class CallPolicies, class NameSpaceT>
       static void
@@ -188,8 +157,7 @@ namespace detail
           char const* doc)
       {
           //  define the Oth stub function of stubs
-          define_stub_function<0>::define(name, stubs, kw, policies, name_space, doc);
-          //  return
+          detail::name_space_def(name_space, name, &StubsT::func, kw, policies, doc, &name_space);
       }
   };
 
@@ -229,21 +197,13 @@ namespace detail
       NameSpaceT& name_space,
       SigT const&)
   {
-      typedef typename detail::front_t<SigT> return_type;
-      typedef typename OverloadsT::void_return_type void_return_type;
-      typedef typename OverloadsT::non_void_return_type non_void_return_type;
-
-      using stubs_type = cpp14::conditional_t<
-          std::is_same<void, return_type>::value,
-          void_return_type,
-          non_void_return_type
-      >;
+      using stubs_type = typename OverloadsT::type;
 
       static_assert(stubs_type::max_args <= SigT::size,
                     "Too many arguments.");
 
       typedef typename stubs_type::template gen<SigT> gen_type;
-      define_with_defaults_helper<stubs_type::n_funcs-1>::def(
+      define_with_defaults_helper<OverloadsT, SigT, stubs_type::n_funcs-1>::def(
           name
           , gen_type()
           , overloads.keywords()
@@ -257,31 +217,3 @@ namespace detail
 }} // namespace boost::python
 
 #endif // DEFAULTS_DEF_JDG20020811_HPP
-
-#else // defined(BOOST_PP_IS_ITERATING)
-// PP vertical iteration code
-
-
-template <>
-struct define_stub_function<BOOST_PP_ITERATION()> {
-    template <class StubsT, class CallPolicies, class NameSpaceT>
-    static void define(
-        char const* name
-        , StubsT const&
-        , keyword_range const& kw
-        , CallPolicies const& policies
-        , NameSpaceT& name_space
-        , char const* doc)
-    {
-        detail::name_space_def(
-            name_space
-            , name
-            , &StubsT::BOOST_PP_CAT(func_, BOOST_PP_ITERATION())
-            , kw
-            , policies
-            , doc
-            , &name_space);
-    }
-};
-
-#endif // !defined(BOOST_PP_IS_ITERATING)
