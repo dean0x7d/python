@@ -98,29 +98,29 @@ namespace detail
   };
 
   template<template<class> class Generator, int min, int max, bool is_class = false>
-  struct stubs : overloads_common<stubs<Generator, min, max, is_class>>
+  struct overloads : overloads_common<overloads<Generator, min, max, is_class>>
   {
-      using type = stubs<Generator, min, max, is_class>;
+      using type = overloads<Generator, min, max, is_class>;
       using base = overloads_common<type>;
       
       static constexpr int n_funcs = max - min + 1;
       static constexpr int max_args = n_funcs + is_class;
-      
+
       template<class Sig>
-      struct gen : Generator<Sig> {};
-      
-      stubs(char const *doc = 0)
+      using gen = Generator<Sig>;
+
+      overloads(char const *doc = 0)
           : base(doc) {}
       
       template<std::size_t N>
-      stubs(char const *doc, ::boost::python::detail::keywords<N> const &kw)
+      overloads(char const *doc, ::boost::python::detail::keywords<N> const &kw)
           : base(doc, kw.range())
       {
           static_assert(N <= max + is_class, "More keywords than function arguments");
       }
       
       template<std::size_t N>
-      stubs(::boost::python::detail::keywords<N> const &kw, char const *doc = 0)
+      overloads(::boost::python::detail::keywords<N> const &kw, char const *doc = 0)
           : base(doc, kw.range())
       {
           static_assert(N <= max + is_class, "More keywords than function arguments");
@@ -155,7 +155,7 @@ struct gen_##name<::boost::python::detail::type_list<Return, Args...>>          
     }                                                                                       \
 };                                                                                          \
                                                                                             \
-using name = ::boost::python::detail::stubs<gen_##name, min, max>;
+using name = ::boost::python::detail::overloads<gen_##name, min, max>;
 
 #define BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(name, function_name, min, max)               \
 template<class Sig> struct gen_##name;                                                      \
@@ -168,7 +168,7 @@ struct gen_##name<::boost::python::detail::type_list<Return, Class, Args...>>   
     }                                                                                       \
 };                                                                                          \
                                                                                             \
-using name = ::boost::python::detail::stubs<gen_##name, min, max, true>;
+using name = ::boost::python::detail::overloads<gen_##name, min, max, true>;
 
 ///////////////////////////////////////////////////////////////////////////////
 #endif // DEFAULTS_GEN_JDG20020807_HPP

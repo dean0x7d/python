@@ -116,48 +116,47 @@ namespace detail
   //  define_with_defaults_helper<N-1>::def until it reaches the
   //  terminal case case define_with_defaults_helper<0>.
   template <class Overloads, class Sig, int N>
-  struct define_with_defaults_helper {
-
-      template <class StubsT, class CallPolicies, class NameSpaceT>
+  struct define_with_defaults_helper
+  {
+      template <class CallPolicies, class NameSpaceT>
       static void
       def(
           char const* name,
-          StubsT stubs,
           keyword_range kw,
           CallPolicies const& policies,
           NameSpaceT& name_space,
           char const* doc)
       {
           //  define the NTH stub function of stubs
-          detail::name_space_def(name_space, name, &StubsT::func, kw, policies, doc, &name_space);
+          using gen = typename Overloads::template gen<Sig>;
+          detail::name_space_def(name_space, name, &gen::func, kw, policies, doc, &name_space);
 
           if (kw.second > kw.first)
               --kw.second;
 
           //  call the next define_with_defaults_helper
           using next_sig = detail::drop_t<Sig, 1>;
-          using next_stubs= typename StubsT::template gen<next_sig>;
           define_with_defaults_helper<Overloads, next_sig, N-1>::def(
-              name, next_stubs(), kw, policies, name_space, doc
+              name, kw, policies, name_space, doc
           );
       }
   };
 
   template <class Overloads, class Sig>
-  struct define_with_defaults_helper<Overloads, Sig, 0> {
-
-      template <class StubsT, class CallPolicies, class NameSpaceT>
+  struct define_with_defaults_helper<Overloads, Sig, 0>
+  {
+      template <class CallPolicies, class NameSpaceT>
       static void
       def(
           char const* name,
-          StubsT stubs,
           keyword_range const& kw,
           CallPolicies const& policies,
           NameSpaceT& name_space,
           char const* doc)
       {
           //  define the Oth stub function of stubs
-          detail::name_space_def(name_space, name, &StubsT::func, kw, policies, doc, &name_space);
+          using gen = typename Overloads::template gen<Sig>;
+          detail::name_space_def(name_space, name, &gen::func, kw, policies, doc, &name_space);
       }
   };
 
@@ -189,23 +188,18 @@ namespace detail
   //      void bar(int, int)  type_list<void, int, int>
   //      void C::foo(int)    type_list<void, C, int>
   //
-  template <class OverloadsT, class NameSpaceT, class SigT>
-  inline void
-  define_with_defaults(
+  template <class Overloads, class NameSpace, class Sig>
+  inline void define_with_defaults(
       char const* name,
-      OverloadsT const& overloads,
-      NameSpaceT& name_space,
-      SigT const&)
+      Overloads const& overloads,
+      NameSpace& name_space,
+      Sig const&)
   {
-      using stubs_type = typename OverloadsT::type;
+      using overloads_t = typename Overloads::type;
+      static_assert(overloads_t::max_args <= Sig::size, "Too many arguments.");
 
-      static_assert(stubs_type::max_args <= SigT::size,
-                    "Too many arguments.");
-
-      typedef typename stubs_type::template gen<SigT> gen_type;
-      define_with_defaults_helper<OverloadsT, SigT, stubs_type::n_funcs-1>::def(
+      define_with_defaults_helper<overloads_t, Sig, overloads_t::n_funcs-1>::def(
           name
-          , gen_type()
           , overloads.keywords()
           , overloads.call_policies()
           , name_space
