@@ -5,6 +5,7 @@
 # define WRAPPER_BASE_DWA2004722_HPP
 
 # include <boost/python/detail/prefix.hpp>
+# include <type_traits>
 
 namespace boost { namespace python {
 
