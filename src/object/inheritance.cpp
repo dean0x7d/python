@@ -5,15 +5,9 @@
 #include <boost/python/object/inheritance.hpp>
 #include <boost/python/type_id.hpp>
 #include <boost/graph/breadth_first_search.hpp>
-#if _MSC_FULL_VER >= 13102171 && _MSC_FULL_VER <= 13102179
-# include <boost/graph/reverse_graph.hpp>
-#endif 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/reverse_graph.hpp>
 #include <boost/property_map/property_map.hpp>
-#include <boost/integer_traits.hpp>
-#include <boost/tuple/tuple.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
 #include <queue>
 #include <vector>
 #include <functional>
@@ -47,32 +41,21 @@ namespace
   // Here we put together the low-level data structures of the
   // casting graph representation.
   //
-  typedef python::type_info class_id;
+  using class_id = python::type_info;
 
   // represents a graph of available casts
   
-#if 0
-  struct cast_graph
-      :
-#else
-        typedef
-#endif 
-        adjacency_list<vecS,vecS, bidirectionalS, no_property
-
+  using cast_graph = adjacency_list<vecS,vecS, bidirectionalS, no_property,
       // edge index property allows us to look up edges in the connectivity matrix
-      , property<edge_index_t,std::size_t
-  
+      property<edge_index_t, std::size_t,
                  // The function which casts a void* from the edge's source type
                  // to its destination type.
-                 , property<edge_cast_t,cast_function> > >
-#if 0
-  {};
-#else
-  cast_graph;
-#endif 
+                 property<edge_cast_t, cast_function>
+      >
+  >;
 
-  typedef cast_graph::vertex_descriptor vertex_t;
-  typedef cast_graph::edge_descriptor edge_t;
+  using vertex_t = cast_graph::vertex_descriptor;
+  using edge_t = cast_graph::edge_descriptor;
   
   struct smart_graph
   {
@@ -111,9 +94,6 @@ namespace
                               make_iterator_property_map(
                                   to_target
                                   , get(vertex_index, reverse_topology)
-# ifdef BOOST_NO_STD_ITERATOR_TRAITS
-                                  , *to_target
-# endif 
                                   )
                               , on_tree_edge()
                               ))));
@@ -151,16 +131,14 @@ namespace
   // Our index of class types
   //
   using boost::python::objects::dynamic_id_function;
-  typedef tuples::tuple<
-      class_id               // static type
-      , vertex_t             // corresponding vertex 
-      , dynamic_id_function  // dynamic_id if polymorphic, or 0
-      >
-  index_entry_interface;
-  typedef index_entry_interface::inherited index_entry;
+  using index_entry = std::tuple<
+      class_id,            // static type
+      vertex_t,            // corresponding vertex
+      dynamic_id_function  // dynamic_id if polymorphic, or 0
+  >;
   enum { ksrc_static_t, kvertex, kdynamic_id };
   
-  typedef std::vector<index_entry> type_index_t;
+  using type_index_t = std::vector<index_entry>;
 
   
   type_index_t& type_index()
@@ -175,7 +153,7 @@ namespace
     return std::find_if(
         type_index().begin(), type_index().end(), 
         [&type](index_entry const& entry) {
-            return tuples::get<0>(entry) >= type;
+            return std::get<ksrc_static_t>(entry) >= type;
         }
     );
   }
@@ -183,7 +161,7 @@ namespace
   inline index_entry* seek_type(class_id type)
   {
       type_index_t::iterator p = type_position(type);
-      if (p == type_index().end() || tuples::get<ksrc_static_t>(*p) != type)
+      if (p == type_index().end() || std::get<ksrc_static_t>(*p) != type)
           return 0;
       else
           return &*p;
@@ -194,22 +172,20 @@ namespace
   {
       type_index_t::iterator p = type_position(type);
 
-      if (p != type_index().end() && tuples::get<ksrc_static_t>(*p) == type)
+      if (p != type_index().end() && std::get<ksrc_static_t>(*p) == type)
           return p;
 
       vertex_t v = add_vertex(full_graph().topology());
       vertex_t v2 = add_vertex(up_graph().topology());
       unused_variable(v2);
       assert(v == v2);
-      return type_index().insert(p, boost::make_tuple(type, v, dynamic_id_function(0)));
+      return type_index().insert(p, std::make_tuple(type, v, dynamic_id_function(0)));
   }
 
   // Map a two types to a vertex in the graph, inserting if necessary
-  typedef std::pair<type_index_t::iterator, type_index_t::iterator>
-        type_index_iterator_pair;
+  using type_index_iterator_pair = std::pair<type_index_t::iterator, type_index_t::iterator>;
   
-  inline type_index_iterator_pair
-  demand_types(class_id t1, class_id t2)
+  inline type_index_iterator_pair demand_types(class_id t1, class_id t2)
   {
       // be sure there will be no reallocation
       type_index().reserve(type_index().size() + 2);
@@ -335,12 +311,12 @@ namespace
 
   struct cache_element
   {
-      typedef tuples::tuple<
-          class_id              // source static type
-          , class_id            // target type
-          , std::ptrdiff_t      // offset within source object
-          , class_id            // source dynamic type
-          >::inherited key_type;
+      using key_type = std::tuple<
+          class_id,           // source static type
+          class_id,           // target type
+          std::ptrdiff_t,     // offset within source object
+          class_id            // source dynamic type
+      >;
 
       cache_element(key_type const& k)
           : key(k)
@@ -350,8 +326,7 @@ namespace
       key_type key;
       std::ptrdiff_t offset;
 
-      BOOST_STATIC_CONSTANT(
-          std::ptrdiff_t, not_found = integer_traits<std::ptrdiff_t>::const_min);
+      static constexpr std::ptrdiff_t not_found = std::numeric_limits<std::ptrdiff_t>::min();
       
       bool operator<(cache_element const& rhs) const
       {
@@ -365,7 +340,7 @@ namespace
   };
   
   enum { kdst_t = ksrc_static_t + 1, koffset, ksrc_dynamic_t };
-  typedef std::vector<cache_element> cache_t;
+  using cache_t = std::vector<cache_element>;
 
   cache_t& cache()
   {
@@ -387,13 +362,13 @@ namespace
       // Look up the dynamic_id function and call it to get the dynamic
       // info
       boost::python::objects::dynamic_id_t dynamic_id = polymorphic
-          ? tuples::get<kdynamic_id>(*src_p)(p)
+          ? std::get<kdynamic_id>(*src_p)(p)
           : std::make_pair(p, src_t);
     
       // Look in the cache first for a quickie address translation
       std::ptrdiff_t offset = (char*)p - (char*)dynamic_id.first;
 
-      cache_element seek(boost::make_tuple(src_t, dst_t, offset, dynamic_id.second));
+      cache_element seek(std::make_tuple(src_t, dst_t, offset, dynamic_id.second));
       cache_t& c = cache();
       cache_t::iterator const cache_pos
           = std::lower_bound(c.begin(), c.end(), seek);
@@ -411,8 +386,8 @@ namespace
           ? full_graph() : up_graph();
     
       void* result = search(
-          g, p, tuples::get<kvertex>(*src_p)
-          , tuples::get<kvertex>(*dst_p));
+          g, p, std::get<kvertex>(*src_p)
+          , std::get<kvertex>(*dst_p));
 
       // update the cache
       c.insert(cache_pos, seek)->offset
@@ -454,8 +429,8 @@ BOOST_PYTHON_DECL void add_cast(
     }
     
     type_index_iterator_pair types = demand_types(src_t, dst_t);
-    vertex_t src = tuples::get<kvertex>(*types.first);
-    vertex_t dst = tuples::get<kvertex>(*types.second);
+    vertex_t src = std::get<kvertex>(*types.first);
+    vertex_t dst = std::get<kvertex>(*types.second);
 
     cast_graph* const g[2] = { &up_graph().topology(), &full_graph().topology() };
     
@@ -475,7 +450,7 @@ BOOST_PYTHON_DECL void add_cast(
 BOOST_PYTHON_DECL void register_dynamic_id_aux(
     class_id static_id, dynamic_id_function get_dynamic_id)
 {
-    tuples::get<kdynamic_id>(*demand_type(static_id)) = get_dynamic_id;
+    std::get<kdynamic_id>(*demand_type(static_id)) = get_dynamic_id;
 }
 
 }}} // namespace boost::python::objects
