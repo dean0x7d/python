@@ -9,7 +9,7 @@
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
 # include <boost/python/converter/pytype_function.hpp>
 #endif
-# include <boost/ref.hpp>
+# include <functional>
 
 namespace boost { namespace python { namespace objects { 
 
@@ -26,7 +26,7 @@ struct class_cref_wrapper
 {
     static PyObject* convert(Src const& x)
     {
-        return MakeInstance::execute(boost::ref(x));
+        return MakeInstance::execute(std::ref(x));
     }
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
     static PyTypeObject const *get_pytype() { return converter::registered_pytype_direct<Src>::get_pytype(); }

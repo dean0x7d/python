@@ -208,12 +208,12 @@ namespace api
   PyObject* object_base_initializer(T const& x)
   {
       typedef typename is_derived<
-          BOOST_DEDUCED_TYPENAME objects::unforward_cref<T>::type
+          typename objects::unforward_cref<T>::type
         , object
       >::type is_obj;
 
       return object_initializer<
-          BOOST_DEDUCED_TYPENAME unwrap_reference<T>::type
+          typename objects::unwrap_reference<T>::type
       >::get(
             x
           , is_obj()

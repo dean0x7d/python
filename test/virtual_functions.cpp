@@ -62,12 +62,12 @@ struct abstract_callback : abstract
 
     int f(Y const& y)
     {
-        return call_method<int>(self, "f", boost::ref(y));
+        return call_method<int>(self, "f", std::ref(y));
     }
 
     abstract& g(Y const& y)
     {
-        return call_method<abstract&>(self, "g", boost::ref(y));
+        return call_method<abstract&>(self, "g", std::ref(y));
     }
 
     PyObject* self;
@@ -85,7 +85,7 @@ struct concrete_callback : concrete
 
     int f(Y const& y)
     {
-        return call_method<int>(self, "f", boost::ref(y));
+        return call_method<int>(self, "f", std::ref(y));
     }
 
     int f_impl(Y const& y)

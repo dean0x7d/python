@@ -92,7 +92,7 @@ namespace detail
   template <class T>
   struct select_arg_to_python
   {
-      typedef typename unwrap_reference<T>::type unwrapped_referent;
+      typedef typename objects::unwrap_reference<T>::type unwrapped_referent;
       typedef typename unwrap_pointer<T>::type unwrapped_ptr;
 
       using type = cpp14::conditional_t<
@@ -124,7 +124,7 @@ namespace detail
                               pointer_shallow_arg_to_python<unwrapped_ptr>,
 
                               cpp14::conditional_t<
-                                  is_reference_wrapper<T>::value,
+                                  objects::is_reference_wrapper<T>::value,
                                   reference_arg_to_python<unwrapped_referent>,
                                   value_arg_to_python<T>
                               >

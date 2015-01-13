@@ -5,7 +5,7 @@
 #ifndef FORWARD_DWA20011215_HPP
 # define FORWARD_DWA20011215_HPP
 
-# include <boost/ref.hpp>
+# include <functional>
 # include <boost/python/detail/value_arg.hpp>
 # include <boost/python/detail/copy_ctor_mutates_rhs.hpp>
 
@@ -24,6 +24,26 @@ struct reference_to_value
  private:
     reference m_value;
 };
+
+template<typename T> 
+struct is_reference_wrapper {
+    static constexpr bool value = false;
+};
+
+template<typename T> struct is_reference_wrapper< std::reference_wrapper<T> > {
+    static constexpr bool value = true;
+};
+
+template<typename T> 
+struct unwrap_reference {
+    typedef T type;
+};
+
+template<typename T> 
+struct unwrap_reference< std::reference_wrapper<T> > {
+    typedef T type;
+};
+
 
 // A little metaprogram which selects the type to pass through an
 // intermediate forwarding function when the destination argument type
@@ -68,8 +88,8 @@ do_unforward(reference_to_value<T> const& x, int)
 }
 
 template <class T>
-typename reference_wrapper<T>::type&
-do_unforward(reference_wrapper<T> const& x, int)
+typename std::reference_wrapper<T>::type&
+do_unforward(std::reference_wrapper<T> const& x, int)
 {
     return x.get();
 }

@@ -16,10 +16,10 @@ namespace boost { namespace python { namespace objects {
 template <class T, class Holder, class Derived>
 struct make_instance_impl
 {
-    typedef objects::instance<Holder> instance_t;
-        
+    using instance_t = objects::instance<Holder>;
+
     template <class Arg>
-    static inline PyObject* execute(Arg& x)
+    static inline PyObject* execute(Arg&& x)
     {
         static_assert(std::is_class<T>::value || std::is_union<T>::value, "");
 
@@ -63,7 +63,7 @@ struct make_instance
         return converter::registered<T>::converters.get_class_object();
     }
     
-    static inline Holder* construct(void* storage, PyObject* instance, reference_wrapper<T const> x)
+    static inline Holder* construct(void* storage, PyObject* instance, std::reference_wrapper<T const> x)
     {
         return new (storage) Holder(instance, x);
     }

@@ -53,7 +53,7 @@ X apply_X_X(PyObject* f, X x)
 
 void apply_void_X_ref(PyObject* f, X& x)
 {
-    call<void>(f, boost::ref(x));
+    call<void>(f, std::ref(x));
 }
 
 X& apply_X_ref_handle(PyObject* f, handle<> obj)
@@ -68,7 +68,7 @@ X* apply_X_ptr_handle_cref(PyObject* f, handle<> const& obj)
 
 void apply_void_X_cref(PyObject* f, X const& x)
 {
-    call<void>(f, boost::cref(x));
+    call<void>(f, std::cref(x));
 }
 
 void apply_void_X_ptr(PyObject* f, X* x)
