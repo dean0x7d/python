@@ -19,8 +19,6 @@
 
 # include <boost/python/detail/raw_pyobject.hpp>
 
-# include <boost/detail/iterator.hpp>
-
 namespace boost { namespace python { namespace objects {
 
 // CallPolicies for the next() method of iterators. We don't want
@@ -36,7 +34,7 @@ struct iterator_range
 {
     iterator_range(object sequence, Iterator start, Iterator finish);
 
-    typedef boost::detail::iterator_traits<Iterator> traits_t;
+    using traits_t = std::iterator_traits<Iterator>;
 
     struct next
     {
