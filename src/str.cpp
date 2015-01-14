@@ -3,8 +3,6 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 #include <boost/python/str.hpp>
 #include <boost/python/extract.hpp>
-#include <boost/python/ssize_t.hpp>
-#include <boost/preprocessor/repetition/enum_params.hpp>
 
 namespace boost { namespace python { namespace detail {
 
@@ -18,7 +16,20 @@ detail::new_reference str_base::call(object const& arg_)
 #endif
         const_cast<char*>("(O)"), 
         arg_.ptr());
-} 
+}
+
+template<class... Args>
+str str_base::str_call(char const* name, Args... args) const
+{
+#if PY_VERSION_HEX >= 0x03000000
+    handle<> method_name(PyUnicode_FromString(name));
+#else
+          handle<> method_name(PyString_FromString(name));
+#endif
+    return str(new_reference(expect_non_null(
+        PyObject_CallMethodObjArgs(this->ptr(), method_name.get(), args.ptr()..., nullptr)
+    )));
+}
 
 str_base::str_base()
   : object(detail::new_reference(
@@ -83,23 +94,15 @@ str_base::str_base(object_cref other)
     : object(str_base::call(other))
 {}
 
-#define BOOST_PYTHON_FORMAT_OBJECT(z, n, data) "O"
-#define BOOST_PYTHON_OBJECT_PTR(z, n, data) , x##n .ptr()
-
-#define BOOST_PYTHON_DEFINE_STR_METHOD(name, arity)                             \
-str str_base:: name ( BOOST_PP_ENUM_PARAMS(arity, object_cref x) ) const        \
-{                                                                               \
-    return str(new_reference(                                                   \
-       expect_non_null(                                                         \
-           PyObject_CallMethod(                                                 \
-               this->ptr(), const_cast<char*>( #name ),                         \
-               const_cast<char*>(                                               \
-                 "(" BOOST_PP_REPEAT(arity, BOOST_PYTHON_FORMAT_OBJECT, _) ")") \
-               BOOST_PP_REPEAT_1(arity, BOOST_PYTHON_OBJECT_PTR, _)))));        \
+str str_base::capitalize() const
+{
+    return str_call("capitalize");
 }
 
-BOOST_PYTHON_DEFINE_STR_METHOD(capitalize, 0)
-BOOST_PYTHON_DEFINE_STR_METHOD(center, 1)
+str str_base::center(object_cref width) const
+{
+    return str_call("center", width);
+}
 
 long str_base::count(object_cref sub) const
 {
@@ -163,8 +166,15 @@ bool str_base::endswith(object_cref suffix) const
     return result;
 }
 
-BOOST_PYTHON_DEFINE_STR_METHOD(expandtabs, 0)
-BOOST_PYTHON_DEFINE_STR_METHOD(expandtabs, 1)
+str str_base::expandtabs() const
+{
+    return str_call("expandtabs");
+}
+
+str str_base::expandtabs(object_cref tabsize) const
+{
+    return str_call("expandtabs", tabsize);
+}
 
 long str_base::find(object_cref sub) const
 {
@@ -270,12 +280,35 @@ bool str_base::isupper() const
     return result;
 }
 
-BOOST_PYTHON_DEFINE_STR_METHOD(join, 1)
-BOOST_PYTHON_DEFINE_STR_METHOD(ljust, 1)
-BOOST_PYTHON_DEFINE_STR_METHOD(lower, 0)
-BOOST_PYTHON_DEFINE_STR_METHOD(lstrip, 0)
-BOOST_PYTHON_DEFINE_STR_METHOD(replace, 2)
-BOOST_PYTHON_DEFINE_STR_METHOD(replace, 3)
+str str_base::join(object_cref sequence) const
+{
+    return str_call("join", sequence);
+}
+
+str str_base::ljust(object_cref width) const
+{
+    return str_call("ljust", width);
+}
+
+str str_base::lower() const
+{
+    return str_call("lower");
+}
+
+str str_base::lstrip() const
+{
+    return str_call("lstrip");
+}
+
+str str_base::replace(object_cref old, object_cref new_) const
+{
+    return str_call("replace", old, new_);
+}
+
+str str_base::replace(object_cref old, object_cref new_, object_cref maxsplit) const
+{
+    return str_call("replace", old, new_, maxsplit);
+}
 
 long str_base::rfind(object_cref sub) const
 {
@@ -325,8 +358,15 @@ long str_base::rindex(object_cref sub, object_cref start, object_cref end) const
     return result;
 }
 
-BOOST_PYTHON_DEFINE_STR_METHOD(rjust, 1)
-BOOST_PYTHON_DEFINE_STR_METHOD(rstrip, 0)
+str str_base::rjust(object_cref width) const
+{
+    return str_call("rjust", width);
+}
+
+str str_base::rstrip() const
+{
+    return str_call("rstrip");
+}
 
 list str_base::split() const
 {
@@ -379,12 +419,35 @@ bool str_base::startswith(object_cref prefix, object_cref start, object_cref end
 
 #undef _BOOST_PYTHON_ASLONG
 
-BOOST_PYTHON_DEFINE_STR_METHOD(strip, 0)
-BOOST_PYTHON_DEFINE_STR_METHOD(swapcase, 0)
-BOOST_PYTHON_DEFINE_STR_METHOD(title, 0)
-BOOST_PYTHON_DEFINE_STR_METHOD(translate, 1)
-BOOST_PYTHON_DEFINE_STR_METHOD(translate, 2)
-BOOST_PYTHON_DEFINE_STR_METHOD(upper, 0)
+str str_base::strip() const
+{
+    return str_call("strip");
+}
+
+str str_base::swapcase() const
+{
+    return str_call("swapcase");
+}
+
+str str_base::title() const
+{
+    return str_call("title");
+}
+
+str str_base::translate(object_cref table) const
+{
+    return str_call("translate", table);
+}
+
+str str_base::translate(object_cref table, object_cref deletechars) const
+{
+    return str_call("translate", table, deletechars);
+}
+
+str str_base::upper() const
+{
+    return str_call("upper");
+}
 
 static struct register_str_pytype_ptr
 {

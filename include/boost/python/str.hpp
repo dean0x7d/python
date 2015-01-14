@@ -32,9 +32,7 @@ namespace detail
       str center(object_cref width) const;
 
       long count(object_cref sub) const;
-
       long count(object_cref sub, object_cref start) const;
-    
       long count(object_cref sub, object_cref start, object_cref end) const;
 
 #if PY_VERSION_HEX < 0x03000000
@@ -49,7 +47,6 @@ namespace detail
       object encode(object_cref encoding, object_cref errors) const;
 
       bool endswith(object_cref suffix) const;
-    
       bool endswith(object_cref suffix, object_cref start) const;
       bool endswith(object_cref suffix, object_cref start, object_cref end) const;
     
@@ -58,11 +55,9 @@ namespace detail
 
       long find(object_cref sub) const;
       long find(object_cref sub, object_cref start) const;
-
       long find(object_cref sub, object_cref start, object_cref end) const;
 
       long index(object_cref sub) const;
-
       long index(object_cref sub, object_cref start) const;
       long index(object_cref sub, object_cref start, object_cref end) const;
 
@@ -82,33 +77,26 @@ namespace detail
 
       str replace(object_cref old, object_cref new_) const;
       str replace(object_cref old, object_cref new_, object_cref maxsplit) const;
+
       long rfind(object_cref sub) const;
-
       long rfind(object_cref sub, object_cref start) const;
-
       long rfind(object_cref sub, object_cref start, object_cref end) const;
+
       long rindex(object_cref sub) const;
       long rindex(object_cref sub, object_cref start) const;
-
-
       long rindex(object_cref sub, object_cref start, object_cref end) const;
 
       str rjust(object_cref width) const;
-    
       str rstrip() const;
     
       list split() const; 
       list split(object_cref sep) const;
-   
-      list split(object_cref sep, object_cref maxsplit) const; 
+      list split(object_cref sep, object_cref maxsplit) const;
     
-
       list splitlines() const;
       list splitlines(object_cref keepends) const;
 
       bool startswith(object_cref prefix) const;
-
-
       bool startswith(object_cref prefix, object_cref start) const;
       bool startswith(object_cref prefix, object_cref start, object_cref end) const;
 
@@ -117,26 +105,23 @@ namespace detail
       str title() const;
     
       str translate(object_cref table) const;
-
       str translate(object_cref table, object_cref deletechars) const;
 
-    
       str upper() const;
 
    protected:
       str_base(); // new str
-    
       str_base(const char* s); // new str
-
       str_base(char const* start, char const* finish);
-      
       str_base(char const* start, std::size_t length);
-      
       explicit str_base(object_cref other);
 
       BOOST_PYTHON_FORWARD_OBJECT_CONSTRUCTORS(str_base, object)
    private:
       static new_reference call(object const&);
+
+      template<class... Args>
+      str str_call(char const* name, Args... args) const;
   };
 }
 
