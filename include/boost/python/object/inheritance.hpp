@@ -10,18 +10,18 @@
 
 namespace boost { namespace python { namespace objects {
 
-typedef type_info class_id;
-using python::type_id;
+using class_id = type_info;
+using cast_function = void*(*)(void*);
 
 // Types used to get address and id of most derived type
-typedef std::pair<void*,class_id> dynamic_id_t;
-typedef dynamic_id_t (*dynamic_id_function)(void*);
+using dynamic_id_t = std::pair<void*, class_id>;
+using dynamic_id_function = dynamic_id_t (*)(void*);
 
 BOOST_PYTHON_DECL void register_dynamic_id_aux(
     class_id static_id, dynamic_id_function get_dynamic_id);
 
 BOOST_PYTHON_DECL void add_cast(
-    class_id src_t, class_id dst_t, void* (*cast)(void*), bool is_downcast);
+    class_id src_t, class_id dst_t, cast_function cast, bool is_downcast);
 
 //
 // a generator with an execute() function which, given a source type
