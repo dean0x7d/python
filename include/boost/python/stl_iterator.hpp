@@ -8,8 +8,7 @@
 # include <boost/python/detail/prefix.hpp>
 
 # include <boost/python/object/stl_iterator_core.hpp>
-
-# include <boost/iterator/iterator_facade.hpp>
+# include <boost/python/extract.hpp>
 
 namespace boost { namespace python
 { 
@@ -17,12 +16,7 @@ namespace boost { namespace python
 // An STL input iterator over a python sequence
 template<typename ValueT>
 struct stl_input_iterator
-  : boost::iterator_facade<
-        stl_input_iterator<ValueT>
-      , ValueT
-      , std::input_iterator_tag
-      , ValueT
-    >
+    : std::iterator<std::input_iterator_tag, ValueT, std::ptrdiff_t, ValueT*, ValueT>
 {
     stl_input_iterator()
       : impl_()
@@ -36,8 +30,6 @@ struct stl_input_iterator
     }
 
 private:
-    friend class boost::iterator_core_access;
-
     void increment()
     {
         this->impl_.increment();
@@ -54,6 +46,11 @@ private:
     }
 
     objects::stl_input_iterator_impl impl_;
+
+public:
+    stl_input_iterator<ValueT>& operator++() { increment(); return *this; }
+    ValueT operator*() const { return dereference(); }
+    bool operator!=(stl_input_iterator<ValueT> const& rhs) const { return !equal(rhs); }
 };
 
 }} // namespace boost::python
