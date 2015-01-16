@@ -197,56 +197,22 @@ namespace detail
 // make_getter function family -- build a callable object which
 // retrieves data through the first argument and is appropriate for
 // use as the `get' function in Python properties .  The second,
-// policies argument, is optional.  We need both D& and D const&
-// overloads in order be able to handle rvalues.
-//
-template <class D, class Policies>
-inline object make_getter(D& d, Policies const& policies)
+// policies argument, is optional.
+template <class D, class Policies = detail::not_specified>
+inline object make_getter(D&& d, Policies policies = {})
 {
-    return detail::make_getter(d, policies);
-}
-
-template <class D, class Policies>
-inline object make_getter(D const& d, Policies const& policies)
-{
-    return detail::make_getter(d, policies);
-}
-
-template <class D>
-inline object make_getter(D& x)
-{
-    return detail::make_getter(x, detail::not_specified());
-}
-
-template <class D>
-inline object make_getter(D const& d)
-{
-    return detail::make_getter(d, detail::not_specified());
+    return detail::make_getter(std::forward<D>(d), std::forward<Policies>(policies));
 }
 
 //
 // make_setter function family -- build a callable object which
 // writes data through the first argument and is appropriate for
 // use as the `set' function in Python properties .  The second,
-// policies argument, is optional.  We need both D& and D const&
-// overloads in order be able to handle rvalues.
-//
-template <class D, class Policies>
-inline object make_setter(D& x, Policies const& policies)
+// policies argument, is optional.
+template <class D, class Policies = default_call_policies>
+inline object make_setter(D&& d, Policies policies = {})
 {
-    return detail::make_setter(x, policies);
-}
-
-template <class D, class Policies>
-inline object make_setter(D const& x, Policies const& policies)
-{
-    return detail::make_setter(x, policies);
-}
-
-template <class D>
-inline object make_setter(D& x)
-{
-    return detail::make_setter(x, default_call_policies());
+    return detail::make_setter(std::forward<D>(d), std::forward<Policies>(policies));
 }
 
 }} // namespace boost::python
