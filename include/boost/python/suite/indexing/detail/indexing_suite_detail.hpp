@@ -7,10 +7,9 @@
 # define INDEXING_SUITE_DETAIL_JDG20036_HPP
 
 # include <boost/python/extract.hpp>
-# include <boost/numeric/conversion/cast.hpp>
+# include <boost/python/detail/check_overflow.hpp>
 # include <vector>
 # include <map>
-#include <iostream>
 
 namespace boost { namespace python { namespace detail {
 
@@ -601,7 +600,7 @@ namespace boost { namespace python { namespace detail {
                     from += max_index;
                 if (from < 0) // Clip lower bounds to zero
                     from = 0;
-                from_ = boost::numeric_cast<Index>(from);
+                from_ = check_overflow<Index>(from);
                 if (from_ > max_index) // Clip upper bounds to max_index.
                     from_ = max_index;
             }
@@ -615,7 +614,7 @@ namespace boost { namespace python { namespace detail {
                     to += max_index;
                 if (to < 0)
                     to = 0;
-                to_ = boost::numeric_cast<Index>(to);
+                to_ = check_overflow<Index>(to);
                 if (to_ > max_index)
                     to_ = max_index;
             }

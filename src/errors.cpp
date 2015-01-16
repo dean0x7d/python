@@ -8,7 +8,6 @@
 #endif
 
 #include <boost/python/errors.hpp>
-#include <boost/cast.hpp>
 #include <boost/python/detail/exception_handler.hpp>
 
 #include <stdexcept>
@@ -35,7 +34,7 @@ BOOST_PYTHON_DECL bool detail::handle_exception_impl(std::function<void()> f) no
     {
         PyErr_NoMemory();
     }
-    catch(const bad_numeric_cast& x)
+    catch(const std::overflow_error& x)
     {
         PyErr_SetString(PyExc_OverflowError, x.what());
     }

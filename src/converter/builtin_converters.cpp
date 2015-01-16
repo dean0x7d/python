@@ -7,6 +7,7 @@
 #include <boost/python/type_id.hpp>
 
 #include <boost/python/detail/wrap_python.hpp>
+#include <boost/python/detail/check_overflow.hpp>
 
 #include <boost/python/converter/builtin_converters.hpp>
 #include <boost/python/converter/rvalue_from_python_data.hpp>
@@ -15,8 +16,6 @@
 
 #include <boost/python/dict.hpp>
 #include <boost/python/str.hpp>
-
-#include <boost/cast.hpp>
 
 namespace boost { namespace python { namespace converter {
 
@@ -92,7 +91,7 @@ namespace
   }
   unaryfunc py_object_identity = identity_unaryfunc;
 
-#if PY_VERSION_HEX >= 0x03000000
+#if PY_MAJOR_VERSION >= 3
   // As in Python 3 there is only one integer type, we can have much
   // simplified logic.
   // XXX(bhy) maybe the code will work with 2.6 or even 2.5?
@@ -113,7 +112,7 @@ namespace
           long x = PyLong_AsLong(intermediate);
           if (PyErr_Occurred())
               throw_error_already_set();
-          return numeric_cast<T>(x);
+          return python::detail::check_overflow<T>(x);
       }
   };
 
@@ -125,10 +124,10 @@ namespace
           unsigned long x = PyLong_AsUnsignedLong(intermediate);
           if (PyErr_Occurred())
               throw_error_already_set();
-          return numeric_cast<T>(x);
+          return python::detail::check_overflow<T>(x);
       }
   };
-#else // PY_VERSION_HEX >= 0x03000000
+#else // PY_MAJOR_VERSION < 3
   // A SlotPolicy for extracting signed integer types from Python objects
   struct signed_int_rvalue_from_python_base
   {
@@ -157,7 +156,7 @@ namespace
           long x = PyInt_AsLong(intermediate);
           if (PyErr_Occurred())
               throw_error_already_set();
-          return numeric_cast<T>(x);
+          return python::detail::check_overflow<T>(x);
       }
   };
   
@@ -191,7 +190,7 @@ namespace
               unsigned long result = PyLong_AsUnsignedLong(intermediate);
               if (PyErr_Occurred())
                   throw_error_already_set();
-              return numeric_cast<T>(result);
+              return python::detail::check_overflow<T>(result);
           } else {
               // None of PyInt_AsUnsigned*() functions check for negative
               // overflow, so use PyInt_AS_LONG instead and check if number is
@@ -204,11 +203,11 @@ namespace
                                   " value to unsigned");
                   throw_error_already_set();
               }
-              return numeric_cast<T>(result);
+              return python::detail::check_overflow<T>(result);
           }
       }
   };
-#endif // PY_VERSION_HEX >= 0x03000000
+#endif // PY_MAJOR_VERSION
 
 // Checking Python's macro instead of Boost's - we don't seem to get
 // the config right all the time. Furthermore, Python's is defined
@@ -270,7 +269,8 @@ namespace
 #if PY_VERSION_HEX < 0x03000000
           if (PyInt_Check(intermediate))
           {
-              return numeric_cast<unsigned BOOST_PYTHON_LONG_LONG>(PyInt_AS_LONG(intermediate));
+              auto x = PyInt_AS_LONG(intermediate);
+              return python::detail::check_overflow<unsigned BOOST_PYTHON_LONG_LONG>(x);
           }
           else
 #endif
