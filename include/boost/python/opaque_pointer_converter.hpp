@@ -113,7 +113,7 @@ PyTypeObject opaque<Pointee>::type_object =
 {
     PyVarObject_HEAD_INIT(NULL, 0)
     0,
-    sizeof( BOOST_DEDUCED_TYPENAME opaque<Pointee>::python_instance ),
+    sizeof( typename opaque<Pointee>::python_instance ),
     0,
     ::boost::python::detail::dealloc,
     0,          /* tp_print */

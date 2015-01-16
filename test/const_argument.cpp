@@ -12,10 +12,6 @@
 using namespace boost::python;
 
 
-#if BOOST_WORKAROUND(BOOST_MSVC, == 1200)
-bool accept_const_arg( object );
-#endif
-
 bool accept_const_arg( const object )
 {
     return true; 

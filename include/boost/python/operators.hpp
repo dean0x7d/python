@@ -143,7 +143,7 @@ namespace detail
           cl.def(
               generator::name()
             , &generator::template apply<
-                 BOOST_DEDUCED_TYPENAME ClassT::wrapped_type
+                 typename ClassT::wrapped_type
               >::execute
           );
       }

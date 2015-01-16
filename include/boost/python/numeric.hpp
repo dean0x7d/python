@@ -220,7 +220,7 @@ namespace converter
   struct object_manager_traits< numeric::array >
       : numeric::aux::array_object_manager_traits
   {
-      BOOST_STATIC_CONSTANT(bool, is_specialized = true);
+      static constexpr bool is_specialized = true;
   };
 }
 

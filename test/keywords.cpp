@@ -77,10 +77,6 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(bar_set, Bar::set, 0,3)
 using namespace boost::python;
 BOOST_PYTHON_MODULE(keywords)
 {
-#if BOOST_WORKAROUND(__GNUC__, == 2)
-    using boost::python::arg;
-#endif 
-    
     class_<Foo>(
         "Foo"
       , init<int, double, const std::string&>(

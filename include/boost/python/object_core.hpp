@@ -448,7 +448,7 @@ namespace converter
   template <>
   struct object_manager_traits<object>
   {
-      BOOST_STATIC_CONSTANT(bool, is_specialized = true);
+      static constexpr bool is_specialized = true;
       static bool check(PyObject*) { return true; }
       
       static python::detail::new_non_null_reference adopt(PyObject* x)
