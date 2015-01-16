@@ -15,8 +15,6 @@
 
 #  include <boost/python/detail/force_instantiate.hpp>
 
-#  include <boost/utility/addressof.hpp>
-
 namespace boost { namespace python { namespace objects { 
 
 template <class Value, class Held = Value, bool has_back_reference = false>
@@ -30,7 +28,7 @@ struct value_holder : instance_holder
     value_holder(PyObject* self, As&&... as)
     : m_held(objects::do_unforward(std::forward<As>(as),0)...)
     {
-        python::detail::initialize_wrapper(self, boost::addressof(this->m_held));
+        python::detail::initialize_wrapper(self, std::addressof(this->m_held));
     }
 
 
@@ -73,12 +71,12 @@ private: // required holder implementation
 template <class Value, class Held, bool has_back_reference>
 void* value_holder<Value, Held, has_back_reference>::holds(type_info dst_t, bool /*null_ptr_only*/)
 {
-    if (void* wrapped = holds_wrapped(dst_t, boost::addressof(m_held), boost::addressof(m_held)))
+    if (void* wrapped = holds_wrapped(dst_t, std::addressof(m_held), std::addressof(m_held)))
         return wrapped;
     
     type_info src_t = python::type_id<Value>();
-    return src_t == dst_t ? boost::addressof(m_held)
-        : find_static_type(boost::addressof(m_held), src_t, dst_t);
+    return src_t == dst_t ? std::addressof(m_held)
+        : find_static_type(std::addressof(m_held), src_t, dst_t);
 }
 
 template <class Value, class Held>
