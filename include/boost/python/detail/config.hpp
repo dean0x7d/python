@@ -9,17 +9,6 @@
 #ifndef CONFIG_DWA052200_H_
 # define CONFIG_DWA052200_H_
 
-# include <boost/config.hpp>
-
-# if defined(BOOST_MSVC)
-
-#  pragma warning (disable : 4786) // disable truncated debug symbols
-#  pragma warning (disable : 4251) // disable exported dll function
-#  pragma warning (disable : 4800) //'int' : forcing value to bool 'true' or 'false'
-#  pragma warning (disable : 4275) // non dll-interface class
-
-# endif
-
 /*****************************************************************************
  *
  *  Set up dll import/export options:
@@ -70,26 +59,6 @@
 #ifndef BOOST_PYTHON_DECL_EXCEPTION
 #  define BOOST_PYTHON_DECL_EXCEPTION BOOST_PYTHON_DECL
 #endif
-
-//  enable automatic library variant selection  ------------------------------// 
-
-#if !defined(BOOST_PYTHON_SOURCE) && !defined(BOOST_ALL_NO_LIB) && !defined(BOOST_PYTHON_NO_LIB)
-//
-// Set the name of our library, this will get undef'ed by auto_link.hpp
-// once it's done with it:
-//
-#define BOOST_LIB_NAME boost_python
-//
-// If we're importing code from a dll, then tell auto_link.hpp about it:
-//
-#ifdef BOOST_PYTHON_DYNAMIC_LIB
-#  define BOOST_DYN_LINK
-#endif
-//
-// And include the header that does the work:
-//
-#include <boost/config/auto_link.hpp>
-#endif  // auto-linking disabled
 
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
 #define BOOST_PYTHON_SUPPORTS_PY_SIGNATURES // enables smooth transition
