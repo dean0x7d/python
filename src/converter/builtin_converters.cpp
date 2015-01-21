@@ -376,19 +376,15 @@ namespace
       };
 
       // Remember that this will be used to construct the result object 
+      static std::string extract(PyObject* intermediate)
+      {
 #if PY_VERSION_HEX >= 0x03000000
-      static std::string extract(PyObject* intermediate)
-      {
           return std::string(PyBytes_AsString(intermediate),PyBytes_Size(intermediate));
-      }
-      static PyTypeObject const* get_pytype() { return &PyUnicode_Type;}
 #else
-      static std::string extract(PyObject* intermediate)
-      {
           return std::string(PyString_AsString(intermediate),PyString_Size(intermediate));
-      }
-      static PyTypeObject const* get_pytype() { return &PyString_Type;}
 #endif
+      }
+      static PyTypeObject const* get_pytype() { return &_PyString_Type;}
   };
 
 #if defined(Py_USING_UNICODE) && !defined(BOOST_NO_STD_WSTRING)
@@ -475,22 +471,14 @@ namespace
 
 BOOST_PYTHON_DECL PyObject* do_return_to_python(char x)
 {
-#if PY_VERSION_HEX >= 0x03000000
-    return PyUnicode_FromStringAndSize(&x, 1);
-#else
-    return PyString_FromStringAndSize(&x, 1);
-#endif
+    return _PyString_FromStringAndSize(&x, 1);
 }
   
 BOOST_PYTHON_DECL PyObject* do_return_to_python(char const* x)
 {
-#if PY_VERSION_HEX >= 0x03000000
-    return x ? PyUnicode_FromString(x) : boost::python::detail::none();
-#else
-    return x ? PyString_FromString(x) : boost::python::detail::none();
-#endif
+    return x ? _PyString_FromString(x) : boost::python::detail::none();
 }
-  
+
 BOOST_PYTHON_DECL PyObject* do_return_to_python(PyObject* x)
 {
     return x ? x : boost::python::detail::none();
@@ -543,11 +531,7 @@ void initialize_builtin_converters()
     slot_rvalue_from_python<std::complex<long double>,complex_rvalue_from_python>();
     
     // Add an lvalue converter for char which gets us char const*
-#if PY_VERSION_HEX < 0x03000000
-    registry::insert(convert_to_cstring,type_id<char>(),&converter::wrap_pytype<&PyString_Type>::get_pytype);
-#else
-    registry::insert(convert_to_cstring,type_id<char>(),&converter::wrap_pytype<&PyUnicode_Type>::get_pytype);
-#endif
+    registry::insert(convert_to_cstring,type_id<char>(),&converter::wrap_pytype<&_PyString_Type>::get_pytype);
 
     // Register by-value converters to std::string, std::wstring
 #if defined(Py_USING_UNICODE) && !defined(BOOST_NO_STD_WSTRING)

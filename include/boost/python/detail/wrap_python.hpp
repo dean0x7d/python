@@ -123,3 +123,16 @@
 #  error "HAVE_LONG_LONG defined but not PY_LONG_LONG or LONG_LONG"
 # endif
 #endif
+
+//
+// Python 2 and 3 compatibility
+//
+#if PY_VERSION_HEX >= 0x03000000
+# define _PyString_Type ::PyUnicode_Type
+# define _PyString_FromString ::PyUnicode_FromString
+# define _PyString_FromStringAndSize ::PyUnicode_FromStringAndSize
+#else
+# define _PyString_Type ::PyString_Type
+# define _PyString_FromString ::PyString_FromString
+# define _PyString_FromStringAndSize ::PyString_FromStringAndSize
+#endif

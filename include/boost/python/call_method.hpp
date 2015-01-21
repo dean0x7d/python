@@ -15,12 +15,7 @@ namespace boost { namespace python {
 template <typename R, typename... Args>
 R call_method(PyObject* self, char const* name, Args const&... args)
 {
-#if PY_VERSION_HEX >= 0x03000000
-    handle<> method_name(PyUnicode_FromString(name));
-#else
-    handle<> method_name(PyString_FromString(name));
-#endif
-
+    handle<> method_name(_PyString_FromString(name));
     PyObject* const result = PyObject_CallMethodObjArgs(
         self,
         method_name.get(),
