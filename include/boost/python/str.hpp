@@ -7,9 +7,9 @@
 
 # include <boost/python/detail/prefix.hpp>
 
-#include <boost/python/object.hpp>
-#include <boost/python/list.hpp>
-#include <boost/python/converter/pytype_object_mgr_traits.hpp>
+# include <boost/python/object.hpp>
+# include <boost/python/list.hpp>
+# include <boost/python/converter/pytype_object_mgr_traits.hpp>
 
 // disable defines in <cctype> provided by some system libraries
 #undef isspace
@@ -21,385 +21,280 @@
 
 namespace boost { namespace python {
 
-class str;
-
-namespace detail
+class str : public object
 {
-  struct BOOST_PYTHON_DECL str_base : object
-  {
-      str capitalize() const;
+public:
+    str(const char* s = "") : object(detail::new_reference(_PyString_FromString(s))) {}
 
-      str center(object_cref width) const;
-
-      long count(object_cref sub) const;
-      long count(object_cref sub, object_cref start) const;
-      long count(object_cref sub, object_cref start, object_cref end) const;
-
-#if PY_VERSION_HEX < 0x03000000
-      object decode() const;
-      object decode(object_cref encoding) const;
-
-      object decode(object_cref encoding, object_cref errors) const;
-#endif
-
-      object encode() const;
-      object encode(object_cref encoding) const;
-      object encode(object_cref encoding, object_cref errors) const;
-
-      bool endswith(object_cref suffix) const;
-      bool endswith(object_cref suffix, object_cref start) const;
-      bool endswith(object_cref suffix, object_cref start, object_cref end) const;
-    
-      str expandtabs() const;
-      str expandtabs(object_cref tabsize) const;
-
-      long find(object_cref sub) const;
-      long find(object_cref sub, object_cref start) const;
-      long find(object_cref sub, object_cref start, object_cref end) const;
-
-      long index(object_cref sub) const;
-      long index(object_cref sub, object_cref start) const;
-      long index(object_cref sub, object_cref start, object_cref end) const;
-
-      bool isalnum() const;
-      bool isalpha() const;
-      bool isdigit() const;
-      bool islower() const;
-      bool isspace() const;
-      bool istitle() const;
-      bool isupper() const;
-    
-      str join(object_cref sequence) const;
-
-      str ljust(object_cref width) const;
-      str lower() const;
-      str lstrip() const;
-
-      str replace(object_cref old, object_cref new_) const;
-      str replace(object_cref old, object_cref new_, object_cref maxsplit) const;
-
-      long rfind(object_cref sub) const;
-      long rfind(object_cref sub, object_cref start) const;
-      long rfind(object_cref sub, object_cref start, object_cref end) const;
-
-      long rindex(object_cref sub) const;
-      long rindex(object_cref sub, object_cref start) const;
-      long rindex(object_cref sub, object_cref start, object_cref end) const;
-
-      str rjust(object_cref width) const;
-      str rstrip() const;
-    
-      list split() const; 
-      list split(object_cref sep) const;
-      list split(object_cref sep, object_cref maxsplit) const;
-    
-      list splitlines() const;
-      list splitlines(object_cref keepends) const;
-
-      bool startswith(object_cref prefix) const;
-      bool startswith(object_cref prefix, object_cref start) const;
-      bool startswith(object_cref prefix, object_cref start, object_cref end) const;
-
-      str strip() const;
-      str swapcase() const;
-      str title() const;
-    
-      str translate(object_cref table) const;
-      str translate(object_cref table, object_cref deletechars) const;
-
-      str upper() const;
-
-   protected:
-      str_base(); // new str
-      str_base(const char* s); // new str
-      str_base(char const* start, char const* finish);
-      str_base(char const* start, std::size_t length);
-      explicit str_base(object_cref other);
-
-      BOOST_PYTHON_FORWARD_OBJECT_CONSTRUCTORS(str_base, object)
-   private:
-      static new_reference call(object const&);
-
-      template<class... Args>
-      str str_call(char const* name, Args... args) const;
-  };
-}
-
-
-class str : public detail::str_base
-{
-    typedef detail::str_base base;
- public:
-    str() {} // new str
-    
-    str(const char* s) : base(s) {} // new str
-    
-    str(char const* start, char const* finish) // new str
-      : base(start, finish)
+    str(char const* start, char const* finish)
+        : object(detail::new_reference(
+            _PyString_FromStringAndSize(start, str_size_as_py_ssize_t(finish - start))
+        ))
     {}
-    
-    str(char const* start, std::size_t length) // new str
-      : base(start, length)
+
+    str(char const* start, std::size_t length)
+        : object(detail::new_reference(
+            _PyString_FromStringAndSize(start, str_size_as_py_ssize_t(length))
+        ))
     {}
-    
-    template <class T>
-    explicit str(T const& other)
-        : base(object(other))
-    {
-    }
 
     template <class T>
-    str center(T const& width) const
-    {
-        return base::center(object(width));
+    explicit str(T&& other) : str{call(object{std::forward<T>(other)})} {}
+
+public:
+    str capitalize() const { return str_call("capitalize"); }
+
+    template <class T>
+    str center(T&& width) const {
+        return str_call("center", std::forward<T>(width));
     }
 
     template<class T>
-    long count(T const& sub) const
-    {
-        return base::count(object(sub));
+    long count(T&& sub) const {
+        return int_call("count", std::forward<T>(sub));
     }
-
     template<class T1, class T2>
-    long count(T1 const& sub,T2 const& start) const
-    {
-        return base::count(object(sub), object(start));
+    long count(T1&& sub, T2&& start) const {
+        return int_call("count", std::forward<T1>(sub), std::forward<T2>(start));
     }
-
     template<class T1, class T2, class T3>
-    long count(T1 const& sub,T2 const& start, T3 const& end) const
-    {
-        return base::count(object(sub), object(start));
+    long count(T1&& sub, T2&& start, T3&& end) const {
+        return int_call("count", std::forward<T1>(sub), std::forward<T2>(start), std::forward<T3>(end));
     }
 
 #if PY_VERSION_HEX < 0x03000000
-    object decode() const { return base::decode(); }
-    
-    template<class T>
-    object decode(T const& encoding) const
-    {
-        return base::decode(object(encoding));
+    object decode() const {
+        return this->attr("decode")();
     }
-
-    template<class T1, class T2>
-    object decode(T1 const& encoding, T2 const& errors) const
-    {
-        return base::decode(object(encoding),object(errors));
+    template <class T>
+    object decode(T&& encoding) const {
+        return this->attr("decode")(std::forward<T>(encoding));
+    }
+    template <class T1, class T2>
+    object decode(T1&& encoding, T2&& errors) const {
+        return this->attr("decode")(std::forward<T1>(encoding), std::forward<T2>(errors));
     }
 #endif
 
-    object encode() const { return base::encode(); }
-
-    template <class T>
-    object encode(T const& encoding) const
-    {
-        return base::encode(object(encoding));
+    object encode() const {
+        return this->attr("encode")();
     }
-
+    template <class T>
+    object encode(T&& encoding) const {
+        return this->attr("encode")(std::forward<T>(encoding));
+    }
     template <class T1, class T2>
-    object encode(T1 const& encoding, T2 const& errors) const
-    {
-        return base::encode(object(encoding),object(errors));
+    object encode(T1&& encoding, T2&& errors) const {
+        return this->attr("encode")(std::forward<T1>(encoding), std::forward<T2>(errors));
     }
 
     template <class T>
-    bool endswith(T const& suffix) const
-    {
-        return base::endswith(object(suffix));
+    bool endswith(T&& suffix) const {
+        return int_call("endswith", std::forward<T>(suffix));
     }
-
     template <class T1, class T2>
-    bool endswith(T1 const& suffix, T2 const& start) const
-    {
-        return base::endswith(object(suffix), object(start));
+    bool endswith(T1&& suffix, T2&& start) const {
+        return int_call("endswith", std::forward<T1>(suffix), std::forward<T2>(start));
     }
-
     template <class T1, class T2, class T3>
-    bool endswith(T1 const& suffix, T2 const& start, T3 const& end) const
-    {
-        return base::endswith(object(suffix), object(start), object(end));
+    bool endswith(T1&& suffix, T2&& start, T3&& end) const {
+        return int_call("endswith", std::forward<T1>(suffix), std::forward<T2>(start), std::forward<T3>(end));
     }
     
-    str expandtabs() const { return base::expandtabs(); }
-
+    str expandtabs() const {
+        return str_call("expandtabs");
+    }
     template <class T>
-    str expandtabs(T const& tabsize) const
-    {
-        return base::expandtabs(object(tabsize));
+    str expandtabs(T&& tabsize) const {
+        return str_call("expandtabs", std::forward<T>(tabsize));
     }
     
     template <class T>
-    long find(T const& sub) const
-    {
-        return base::find(object(sub));
+    long find(T&& sub) const {
+        return int_call("find", std::forward<T>(sub));
     }
-
     template <class T1, class T2>
-    long find(T1 const& sub, T2 const& start) const
-    {
-        return base::find(object(sub), object(start));
+    long find(T1&& sub, T2&& start) const {
+        return int_call("find", std::forward<T1>(sub), std::forward<T2>(start));
     }
-
     template <class T1, class T2, class T3>
-    long find(T1 const& sub, T2 const& start, T3 const& end) const
-    {
-        return base::find(object(sub), object(start), object(end));
+    long find(T1&& sub, T2&& start, T3&& end) const {
+        return int_call("find", std::forward<T1>(sub), std::forward<T2>(start), std::forward<T3>(end));
     }
     
     template <class T>
-    long index(T const& sub) const
-    {
-        return base::index(object(sub));
+    long index(T&& sub) const {
+        return int_call("index", std::forward<T>(sub));
     }
-    
     template <class T1, class T2>
-    long index(T1 const& sub, T2 const& start) const
-    {
-        return base::index(object(sub), object(start));
+    long index(T1&& sub, T2&& start) const {
+        return int_call("index", std::forward<T1>(sub), std::forward<T2>(start));
     }
-
     template <class T1, class T2, class T3>
-    long index(T1 const& sub, T2 const& start, T3 const& end) const
-    {
-        return base::index(object(sub), object(start), object(end));
+    long index(T1&& sub, T2&& start, T3&& end) const {
+        return int_call("index", std::forward<T1>(sub), std::forward<T2>(start), std::forward<T3>(end));
     }
 
+    bool isalnum() const { return int_call("isalnum"); }
+    bool isalpha() const { return int_call("isalpha"); }
+    bool isdigit() const { return int_call("isdigit"); }
+    bool islower() const { return int_call("islower"); }
+    bool isspace() const { return int_call("isspace"); }
+    bool istitle() const { return int_call("istitle"); }
+    bool isupper() const { return int_call("isupper"); }
+
     template <class T>
-    str join(T const& sequence) const
-    {
-        return base::join(object(sequence));
+    str join(T&& sequence) const {
+        return str_call("join", std::forward<T>(sequence));
     }
     
     template <class T>
-    str ljust(T const& width) const
-    {
-        return base::ljust(object(width));
+    str ljust(T&& width) const {
+        return str_call("ljust", std::forward<T>(width));
     }
+
+    str lower() const { return str_call("lower"); }
+    str lstrip() const { return str_call("lstrip"); }
 
     template <class T1, class T2>
-    str replace(T1 const& old, T2 const& new_) const 
-    {
-        return base::replace(object(old),object(new_));
+    str replace(T1&& old, T2&& new_) const {
+        return str_call("replace", std::forward<T1>(old), std::forward<T2>(new_));
     }
-
     template <class T1, class T2, class T3>
-    str replace(T1 const& old, T2 const& new_, T3 const& maxsplit) const 
-    {
-        return base::replace(object(old),object(new_), object(maxsplit));
+    str replace(T1&& old, T2&& new_, T3&& maxsplit) const {
+        return str_call("replace", std::forward<T1>(old), std::forward<T2>(new_), std::forward<T3>(maxsplit));
     }
     
     template <class T>
-    long rfind(T const& sub) const
-    {
-        return base::rfind(object(sub));
+    long rfind(T&& sub) const {
+        return int_call("rfind", std::forward<T>(sub));
     }
-
     template <class T1, class T2>
-    long rfind(T1 const& sub, T2 const& start) const
-    {
-        return base::rfind(object(sub), object(start));
+    long rfind(T1&& sub, T2&& start) const {
+        return int_call("rfind", std::forward<T1>(sub), std::forward<T2>(start));
     }
-    
     template <class T1, class T2, class T3>
-    long rfind(T1 const& sub, T2 const& start, T3 const& end) const
-    {
-        return base::rfind(object(sub), object(start), object(end));
+    long rfind(T1&& sub, T2&& start, T3&& end) const {
+        return int_call("rfind", std::forward<T1>(sub), std::forward<T2>(start), std::forward<T3>(end));
     }
     
     template <class T>
-    long rindex(T const& sub) const
-    {
-        return base::rindex(object(sub));
+    long rindex(T&& sub) const {
+        return int_call("rindex", std::forward<T>(sub));
     }
-
     template <class T1, class T2>
-    long rindex(T1 const& sub, T2 const& start) const
-    {
-        return base::rindex(object(sub), object(start));
+    long rindex(T1&& sub, T2&& start) const {
+        return int_call("rindex", std::forward<T1>(sub), std::forward<T2>(start));
     }
-
     template <class T1, class T2, class T3>
-    long rindex(T1 const& sub, T2 const& start, T3 const& end) const
-    {
-        return base::rindex(object(sub), object(start), object(end));
+    long rindex(T1&& sub, T2&& start, T3&& end) const {
+        return int_call("rindex", std::forward<T1>(sub), std::forward<T2>(start), std::forward<T3>(end));
     }
 
     template <class T>
-    str rjust(T const& width) const
-    {
-        return base::rjust(object(width));
-    }
-    
-    list split() const { return base::split(); }
-   
-    template <class T>
-    list split(T const& sep) const
-    {
-        return base::split(object(sep));
+    str rjust(T&& width) const {
+        return str_call("rjust", std::forward<T>(width));
     }
 
+    str rstrip() const { return str_call("rstrip"); }
+
+    list split() const {
+        return list(this->attr("split")());
+    }
+    template <class T>
+    list split(T&& sep) const {
+        return list(this->attr("split")(std::forward<T>(sep)));
+    }
     template <class T1, class T2>
-    list split(T1 const& sep, T2 const& maxsplit) const
-    {
-        return base::split(object(sep), object(maxsplit));
+    list split(T1&& sep, T2&& maxsplit) const {
+        return list(this->attr("split")(std::forward<T1>(sep), std::forward<T2>(maxsplit)));
     }
 
-    list splitlines() const { return base::splitlines(); }
+    list splitlines() const {
+        return list(this->attr("splitlines")());
+    }
+    template <class T>
+    list splitlines(T&& keepends) const {
+        return list(this->attr("splitlines")(std::forward<T>(keepends)));
+    }
 
     template <class T>
-    list splitlines(T const& keepends) const
-    {
-        return base::splitlines(object(keepends));
+    bool startswith(T&& prefix) const {
+        return int_call("startswith", std::forward<T>(prefix));
     }
-
-    template <class T>
-    bool startswith(T const& prefix) const
-    {
-        return base::startswith(object(prefix));
-    }
-
     template <class T1, class T2>
-    bool startswith(T1 const& prefix, T2 const& start) const
-    {
-        return base::startswith(object(prefix), object(start));
+    bool startswith(T1&& prefix, T2&& start) const {
+        return int_call("startswith", std::forward<T1>(prefix), std::forward<T2>(start));
     }
-     
     template <class T1, class T2, class T3>
-    bool startswith(T1 const& prefix, T2 const& start, T3 const& end) const
-    {
-        return base::startswith(object(prefix), object(start), object(end));
+    bool startswith(T1&& prefix, T2&& start, T3&& end) const {
+        return int_call("startswith", std::forward<T1>(prefix), std::forward<T2>(start), std::forward<T3>(end));
     }
+
+    str strip() const { return str_call("strip"); }
+    str swapcase() const { return str_call("swapcase"); }
+    str title() const { return str_call("title"); }
 
     template <class T>
-    str translate(T const& table) const
-    {
-        return base::translate(object(table));
+    str translate(T&& table) const {
+        return str_call("translate", std::forward<T>(table));
+    }
+    template <class T1, class T2>
+    str translate(T1&& table, T2&& deletechars) const {
+        return str_call("translate", std::forward<T1>(table), std::forward<T2>(deletechars));
     }
 
-    template <class T1, class T2>
-    str translate(T1 const& table, T2 const& deletechars) const
-    {
-        return base::translate(object(table), object(deletechars));
+public: // implementation detail -- for internal use only
+    BOOST_PYTHON_FORWARD_OBJECT_CONSTRUCTORS(str, object)
+
+private:
+    static detail::new_reference call(object const& arg) {
+        return detail::new_reference(
+            PyObject_CallFunctionObjArgs((PyObject*)&_PyString_Type, arg.ptr(), nullptr)
+        );
     }
-    
- public: // implementation detail -- for internal use only
-    BOOST_PYTHON_FORWARD_OBJECT_CONSTRUCTORS(str, base)
+
+    template<class... Args>
+    str str_call(char const* name, Args&&... args) const {
+        handle<> method_name(_PyString_FromString(name));
+        return str(detail::new_reference(expect_non_null(
+            PyObject_CallMethodObjArgs(
+                this->ptr(),
+                method_name.get(),
+                object(std::forward<Args>(args)).ptr()...,
+                nullptr
+            )
+        )));
+    }
+
+    template<class... Args>
+    long int_call(char const* name, Args&&... args) const {
+#if PY_VERSION_HEX >= 0x03000000
+        long result = PyLong_AsLong(this->attr(name)(std::forward<Args>(args)...).ptr());
+#else
+        long result = PyInt_AsLong(this->attr(name)(args...).ptr());
+#endif
+        if (PyErr_Occurred())
+            throw_error_already_set();
+        return result;
+    }
+
+    static ssize_t str_size_as_py_ssize_t(std::size_t n) {
+        if (n > static_cast<std::size_t>(ssize_t_max)) {
+            throw std::range_error("str size > ssize_t_max");
+        }
+        return static_cast<ssize_t>(n);
+    }
 };
 
 //
 // Converter Specializations
 //
-namespace converter
-{
+namespace converter {
   template <>
   struct object_manager_traits<str>
-#if PY_VERSION_HEX >= 0x03000000
-      : pytype_object_manager_traits<&PyUnicode_Type,str>
-#else
-      : pytype_object_manager_traits<&PyString_Type,str>
-#endif
-  {
-  };
+      : pytype_object_manager_traits<&_PyString_Type, str>
+  {};
 }
 
 }}  // namespace boost::python
