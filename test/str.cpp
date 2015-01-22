@@ -7,6 +7,7 @@
 #include <boost/python/def.hpp>
 #include <boost/python/class.hpp>
 #include <boost/python/str.hpp>
+#include <boost/python/dict.hpp>
 #define BOOST_ENABLE_ASSERT_HANDLER
 #include <boost/assert.hpp>
 
@@ -22,9 +23,16 @@ void work_with_string(object print)
     str data("this is a demo string");
     print(data.split(" "));
     print(data.split(" ",3));
+    print(data.rsplit(" "));
+    print(data.rsplit(" ",3));
     print(str("<->").join(data.split(" ")));
     print(data.capitalize());
     print('[' + data.center(30) + ']');
+    print('[' + data.center(30, '-') + ']');
+    print('[' + data.ljust(30) + ']');
+    print('[' + data.ljust(30, '-') + ']');
+    print('[' + data.rjust(30) + ']');
+    print('[' + data.rjust(30, '-') + ']');
     print(data.count("t"));
 #if PY_VERSION_HEX < 0x03000000
     print(data.encode("utf-8"));
@@ -41,12 +49,40 @@ void work_with_string(object print)
     print(data.strip());
     print(data.swapcase());
     print(data.title());
+    print(data.upper());
+#if PY_VERSION_HEX > 0x03000000
+    print(data.casefold());
+#else
+    print(data);
+#endif
+
+    print(str("   spacious   ").lstrip());
+    print(str("www.example.com").lstrip("cmowz."));
+    print(str("   spacious   ").rstrip());
+    print(str("mississippi").rstrip("ipz"));
+    print(str("   spacious   ").strip());
+    print(str("www.example.com").strip("cmowz."));
+    print(data.partition(" "));
+    print(data.rpartition(" "));
+    print(str("-42").zfill(5));
 
     print("find");
     print(data.find("demo"));
     print(data.find("demo"),3,5);
     print(data.find(std::string("demo")));
     print(data.find(std::string("demo"),9));
+
+    print("format");
+    print(str("{} <-> {} <=> {}").format("string", 'a', 2));
+#if PY_VERSION_HEX > 0x03000000
+    dict d;
+    d["first"] = "string";
+    d["second"] = 'a';
+    d["third"] = 2;
+    print(str("{first} <-> {second} <=> {third}").format_map(d));
+#else
+    print(str("{} <-> {} <=> {}").format("string", 'a', 2));
+#endif
 
     print("expandtabs");
     str tabstr("\t\ttab\tdemo\t!");

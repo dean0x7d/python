@@ -44,9 +44,17 @@ public:
 public:
     str capitalize() const { return str_call("capitalize"); }
 
+#if PY_VERSION_HEX > 0x03000000
+    str casefold() const { return str_call("casefold"); }
+#endif
+
     template <class T>
     str center(T&& width) const {
         return str_call("center", std::forward<T>(width));
+    }
+    template <class T1, class T2>
+    str center(T1&& width, T2&& fillchar) const {
+        return str_call("center", std::forward<T1>(width), std::forward<T2>(fillchar));
     }
 
     template<class T>
@@ -121,6 +129,18 @@ public:
     long find(T1&& sub, T2&& start, T3&& end) const {
         return int_call("find", std::forward<T1>(sub), std::forward<T2>(start), std::forward<T3>(end));
     }
+
+    template <class... Ts>
+    str format(Ts&&... args) const {
+        return str_call("format", std::forward<Ts>(args)...);
+    }
+
+#if PY_VERSION_HEX > 0x03000000
+    template <class T>
+    str format_map(T&& mapping) const {
+        return str_call("format_map", std::forward<T>(mapping));
+    }
+#endif
     
     template <class T>
     long index(T&& sub) const {
@@ -138,7 +158,14 @@ public:
     bool isalnum() const { return int_call("isalnum"); }
     bool isalpha() const { return int_call("isalpha"); }
     bool isdigit() const { return int_call("isdigit"); }
+#if PY_VERSION_HEX > 0x03000000
+    bool isidentifier() const { return int_call("isidentifier"); }
+#endif
     bool islower() const { return int_call("islower"); }
+#if PY_VERSION_HEX > 0x03000000
+    bool isnumeric() const { return int_call("isnumeric"); }
+    bool isprintable() const { return int_call("isprintable"); }
+#endif
     bool isspace() const { return int_call("isspace"); }
     bool istitle() const { return int_call("istitle"); }
     bool isupper() const { return int_call("isupper"); }
@@ -152,9 +179,40 @@ public:
     str ljust(T&& width) const {
         return str_call("ljust", std::forward<T>(width));
     }
+    template <class T1, class T2>
+    str ljust(T1&& width, T2&& fillchar) const {
+        return str_call("ljust", std::forward<T1>(width), std::forward<T2>(fillchar));
+    }
 
     str lower() const { return str_call("lower"); }
-    str lstrip() const { return str_call("lstrip"); }
+
+    str lstrip() const {
+        return str_call("lstrip");
+    }
+    template <class T>
+    str lstrip(T&& chars) const {
+        return str_call("lstrip", std::forward<T>(chars));
+    }
+
+#if PY_VERSION_HEX > 0x03000000
+    template <class T>
+    str maketrans(T&& x) const {
+        return str_call("maketrans", std::forward<T>(x));
+    }
+    template <class T1, class T2>
+    str maketrans(T1&& x, T2&& y) const {
+        return str_call("maketrans", std::forward<T1>(x), std::forward<T2>(y));
+    }
+    template <class T1, class T2, class T3>
+    str maketrans(T1&& x, T2&& y, T3&& z) const {
+        return str_call("maketrans", std::forward<T1>(x), std::forward<T2>(y), std::forward<T3>(z));
+    }
+#endif
+
+    template <class T>
+    str partition(T&& sep) const {
+        return str_call("partition", std::forward<T>(sep));
+    }
 
     template <class T1, class T2>
     str replace(T1&& old, T2&& new_) const {
@@ -195,8 +253,35 @@ public:
     str rjust(T&& width) const {
         return str_call("rjust", std::forward<T>(width));
     }
+    template <class T1, class T2>
+    str rjust(T1&& width, T2&& fillchar) const {
+        return str_call("rjust", std::forward<T1>(width), std::forward<T2>(fillchar));
+    }
 
-    str rstrip() const { return str_call("rstrip"); }
+    template <class T>
+    str rpartition(T&& sep) const {
+        return str_call("rpartition", std::forward<T>(sep));
+    }
+
+    list rsplit() const {
+        return list(this->attr("rsplit")());
+    }
+    template <class T>
+    list rsplit(T&& sep) const {
+        return list(this->attr("rsplit")(std::forward<T>(sep)));
+    }
+    template <class T1, class T2>
+    list rsplit(T1&& sep, T2&& maxsplit) const {
+        return list(this->attr("rsplit")(std::forward<T1>(sep), std::forward<T2>(maxsplit)));
+    }
+
+    str rstrip() const {
+        return str_call("rstrip");
+    }
+    template <class T>
+    str rstrip(T&& chars) const {
+        return str_call("rstrip", std::forward<T>(chars));
+    }
 
     list split() const {
         return list(this->attr("split")());
@@ -231,7 +316,14 @@ public:
         return int_call("startswith", std::forward<T1>(prefix), std::forward<T2>(start), std::forward<T3>(end));
     }
 
-    str strip() const { return str_call("strip"); }
+    str strip() const {
+        return str_call("strip");
+    }
+    template <class T>
+    str strip(T&& chars) const {
+        return str_call("strip", std::forward<T>(chars));
+    }
+
     str swapcase() const { return str_call("swapcase"); }
     str title() const { return str_call("title"); }
 
@@ -242,6 +334,13 @@ public:
     template <class T1, class T2>
     str translate(T1&& table, T2&& deletechars) const {
         return str_call("translate", std::forward<T1>(table), std::forward<T2>(deletechars));
+    }
+
+    str upper() const { return str_call("upper"); }
+
+    template <class T>
+    str zfill(T&& width) const {
+        return str_call("zfill", std::forward<T>(width));
     }
 
 public: // implementation detail -- for internal use only

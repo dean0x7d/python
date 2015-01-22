@@ -10,9 +10,16 @@
 >>> work_with_string(printer) #doctest: +NORMALIZE_WHITESPACE
 ['this', 'is', 'a', 'demo', 'string']
 ['this', 'is', 'a', 'demo string']
+['this', 'is', 'a', 'demo', 'string']
+['this is', 'a', 'demo', 'string']
 this<->is<->a<->demo<->string
 This is a demo string
 [    this is a demo string     ]
+[----this is a demo string-----]
+[this is a demo string         ]
+[this is a demo string---------]
+[         this is a demo string]
+[---------this is a demo string]
 2
 this is a demo string
 this is a demo string
@@ -20,11 +27,25 @@ this is a demo string
 this is a demo string
 THIS IS A DEMO STRING
 This Is A Demo String
+THIS IS A DEMO STRING
+this is a demo string
+spacious   
+example.com
+   spacious
+mississ
+spacious
+example
+('this', ' ', 'is a demo string')
+('this is a demo', ' ', 'string')
+-0042
 find
 10
 10 3 5
 10
 10
+format
+string <-> a <=> 2
+string <-> a <=> 2
 expandtabs
                 tab     demo    !
         tab demo    !
