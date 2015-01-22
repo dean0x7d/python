@@ -3,19 +3,9 @@
 // accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 
-// boost::python::make_tuple below are for gcc 4.4 -std=c++0x compatibility
-// (Intel C++ 10 and 11 with -std=c++0x don't need the full qualification).
-
 #include <boost/python/converter/registrations.hpp>
 #include <boost/python/object/function_doc_signature.hpp>
-#include <boost/python/errors.hpp>
-#include <boost/python/str.hpp>
 #include <boost/python/args.hpp>
-#include <boost/python/tuple.hpp>
-
-#include <boost/python/detail/signature.hpp>
-
-#include <vector>
 
 namespace boost { namespace python { namespace objects {
 
@@ -105,11 +95,11 @@ namespace boost { namespace python { namespace objects {
         return res;
     }
 
-    str function_doc_signature_generator::raw_function_pretty_signature(function const *f, size_t n_overloads,  bool cpp_types )
+    str function_doc_signature_generator::raw_function_pretty_signature(function const *f)
     {
         str res("object");
 
-        res = str("%s %s(%s)" % make_tuple( res, f->m_name, str("tuple args, dict kwds")) );
+        res = str("{} {}({})").format(res, f->m_name, "tuple args, dict kwds");
 
         return res;
     }
@@ -156,9 +146,9 @@ namespace boost { namespace python { namespace objects {
             {
                 object kv;
                 if ( arg_names && (kv = arg_names[n-1]) )
-                    param = str( " (%s)%s" % make_tuple(py_type_str(s[n]),kv[0]) );
+                    param = str(" ({}){}").format(py_type_str(s[n]), kv[0]);
                 else
-                    param = str(" (%s)%s%d" % make_tuple(py_type_str(s[n]),"arg", n) );
+                    param = str(" ({}){}{}").format(py_type_str(s[n]), "arg", n);
             }
             else //we are processing the return type
                 param = py_type_str(f.get_return_type());
@@ -170,7 +160,7 @@ namespace boost { namespace python { namespace objects {
             object kv(arg_names[n-1]);
             if (kv && len(kv) == 2)
             {
-                param = str("%s=%r" % make_tuple(param, kv[1]));
+                param = str("{}={!r}").format(param, kv[1]);
             }
         }
         return param;
@@ -187,7 +177,7 @@ namespace boost { namespace python { namespace objects {
 
         if(arity == unsigned(-1))// is this the proper raw function test?
         {
-            return raw_function_pretty_signature(f,n_overloads,cpp_types);
+            return raw_function_pretty_signature(f);
         }
 
         list formal_params;
@@ -196,8 +186,6 @@ namespace boost { namespace python { namespace objects {
 
         for (unsigned n = 0; n <= arity; ++n)
         {
-            str param;
-
             formal_params.append(
                 parameter_string(impl, n, f->m_arg_names, cpp_types)
                 );
@@ -228,41 +216,35 @@ namespace boost { namespace python { namespace objects {
         str ret_type (formal_params.pop(0));
         if (cpp_types )
         {
-            return str(
-                "%s %s(%s%s%s%s)"
-                % boost::python::make_tuple // workaround, see top
-                ( ret_type
-                    , f->m_name
-                    , str(",").join(formal_params.slice(0,arity-n_overloads))
-                    , n_overloads ? (n_overloads!=arity?str(" [,"):str("[ ")) : str()
-                    , str(" [,").join(formal_params.slice(arity-n_overloads,arity))
-                    , std::string(n_overloads,']')
-                    ));
-        }else{
-            return str(
-                "%s(%s%s%s%s) -> %s"
-                % boost::python::make_tuple // workaround, see top
-                ( f->m_name
-                    , str(",").join(formal_params.slice(0,arity-n_overloads))
-                    , n_overloads ? (n_overloads!=arity?str(" [,"):str("[ ")) : str()
-                    , str(" [,").join(formal_params.slice(arity-n_overloads,arity))
-                    , std::string(n_overloads,']')
-                    , ret_type
-                    ));
+            return str("{} {}({}{}{}{})").format(
+                ret_type,
+                f->m_name,
+                str(",").join(formal_params.slice(0, arity - n_overloads)),
+                n_overloads ? (n_overloads != arity ? " [," : "[ ") : "",
+                str(" [,").join(formal_params.slice(arity - n_overloads, arity)),
+                std::string(n_overloads, ']')
+            );
+        }
+        else {
+            return str("{}({}{}{}{}) -> {}").format(
+                f->m_name,
+                str(",").join(formal_params.slice(0, arity-n_overloads)),
+                n_overloads ? (n_overloads != arity ? " [," : "[ ") : "",
+                str(" [,").join(formal_params.slice(arity - n_overloads, arity)),
+                std::string(n_overloads,']'),
+                ret_type
+            );
         }
 
-        return str(
-            "%s %s(%s%s%s%s) %s"
-            % boost::python::make_tuple // workaround, see top
-            ( cpp_types?ret_type:str("")
-                , f->m_name
-                , str(",").join(formal_params.slice(0,arity-n_overloads))
-                , n_overloads ? (n_overloads!=arity?str(" [,"):str("[ ")) : str()
-                , str(" [,").join(formal_params.slice(arity-n_overloads,arity))
-                , std::string(n_overloads,']')
-                , cpp_types?str(""):ret_type
-                ));
-
+        return str("{} {}({}{}{}{}) {}").format(
+            cpp_types ? ret_type : "",
+            f->m_name,
+            str(",").join(formal_params.slice(0, arity - n_overloads)),
+            n_overloads ? (n_overloads != arity ? str(" [,") : "[ ") : "",
+            str(" [,").join(formal_params.slice(arity - n_overloads, arity)),
+            std::string(n_overloads,']'),
+            cpp_types ? "" : ret_type
+        );
     }
 
     namespace detail {    
