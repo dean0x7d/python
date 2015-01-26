@@ -7,7 +7,6 @@
 
 # include <boost/python/detail/prefix.hpp>
 # include <typeindex>
-# include <cstring>
 # include <ostream>
 
 # if !defined(BOOST_PYTHON_HAVE_GCC_CP_DEMANGLE) && defined(__GNUC__) && !defined(__EDG_VERSION__)
