@@ -5,6 +5,8 @@
 #include <boost/python/object/inheritance.hpp>
 #include <vector>
 #include <queue>
+#include <tuple>
+#include <algorithm>
 
 //
 // Procedure:
