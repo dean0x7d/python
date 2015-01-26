@@ -4,7 +4,6 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 
 #include <boost/python/type_id.hpp>
-#include <boost/python/detail/decorated_type_id.hpp>
 #include <vector>
 #include <algorithm>
 
@@ -84,21 +83,6 @@ namespace detail
 BOOST_PYTHON_DECL std::ostream& operator<<(std::ostream& os, type_info const& x)
 {
     return os << x.name();
-}
-
-namespace detail
-{
-  BOOST_PYTHON_DECL std::ostream& operator<<(std::ostream& os, detail::decorated_type_info const& x)
-  {
-      os << x.m_base_type;
-      if (x.m_decoration & decorated_type_info::const_)
-          os << " const";
-      if (x.m_decoration & decorated_type_info::volatile_)
-          os << " volatile";
-      if (x.m_decoration & decorated_type_info::reference)
-          os << "&";
-      return os;
-  }
 }
 
 }} // namespace boost::python
