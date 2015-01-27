@@ -128,36 +128,6 @@ BOOST_PYTHON_DECL void* get_lvalue_from_python(
     return nullptr;
 }
 
-namespace
-{
-  // Prevent looping in implicit conversions. This could/should be
-  // much more efficient, but will work for now.
-  typedef std::vector<std::forward_list<rvalue_from_python> const*> visited_t;
-  static visited_t visited;
-
-  inline bool visit(std::forward_list<rvalue_from_python> const* chain) {
-      visited_t::iterator const p = std::lower_bound(visited.begin(), visited.end(), chain);
-      if (p != visited.end() && *p == chain)
-          return false;
-      visited.insert(p, chain);
-      return true;
-  }
-
-  // RAII class for managing global visited marks.
-  struct unvisit {
-      unvisit(std::forward_list<rvalue_from_python> const* chain) : chain(chain) {}
-
-      ~unvisit() {
-          visited_t::iterator const p = std::lower_bound(visited.begin(), visited.end(), chain);
-          assert(p != visited.end());
-          visited.erase(p);
-      }
-   private:
-      std::forward_list<rvalue_from_python> const* chain;
-  };
-}
-
-
 BOOST_PYTHON_DECL bool implicit_rvalue_convertible_from_python(
     PyObject* source
     , registration const& converters)
@@ -165,19 +135,19 @@ BOOST_PYTHON_DECL bool implicit_rvalue_convertible_from_python(
     if (objects::find_instance_impl(source, converters.target_type))
         return true;
     
-    auto const* chain = &converters.rvalue_chain;
-    
-    if (!visit(chain))
+    if (converters.is_being_visited)
         return false;
+    converters.is_being_visited = true;
 
-    unvisit protect(chain);
+    auto is_convertible = std::any_of(
+        converters.rvalue_chain.begin(), converters.rvalue_chain.end(),
+        [source](rvalue_from_python const& rvalue_converter) {
+            return rvalue_converter.convertible(source);
+        }
+    );
 
-    for (auto& rvalue_converter : converters.rvalue_chain) {
-        if (rvalue_converter.convertible(source))
-            return true;
-    }
-
-    return false;
+    converters.is_being_visited = false;
+    return is_convertible;
 }
 
 namespace
