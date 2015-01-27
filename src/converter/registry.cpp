@@ -7,7 +7,6 @@
 #include <boost/python/converter/builtin_converters.hpp>
 
 #include <set>
-#include <stdexcept>
 
 #if defined(BOOST_PYTHON_TRACE_REGISTRY)
 # include <iostream>
@@ -16,21 +15,20 @@
 namespace boost { namespace python { namespace converter { 
 BOOST_PYTHON_DECL PyTypeObject const* registration::expected_from_python_type() const
 {
-    if (this->m_class_object != 0)
-        return this->m_class_object;
+    if (m_class_object)
+        return m_class_object;
 
     std::set<PyTypeObject const*> pool;
-
-    for(rvalue_from_python_chain* r = rvalue_chain; r ; r=r->next)
-        if(r->expected_pytype)
-            pool.insert(r->expected_pytype());
+    for (const auto& rvalue_converter : rvalue_chain) {
+        if (rvalue_converter.expected_pytype)
+            pool.insert(rvalue_converter.expected_pytype());
+    }
 
     //for now I skip the search for common base
     if (pool.size()==1)
         return *pool.begin();
 
-    return 0;
-
+    return nullptr;
 }
 
 BOOST_PYTHON_DECL PyTypeObject const* registration::to_python_target_type() const
@@ -61,45 +59,23 @@ BOOST_PYTHON_DECL PyTypeObject* registration::get_class_object() const
   
 BOOST_PYTHON_DECL PyObject* registration::to_python(void const volatile* source) const
 {
-    if (this->m_to_python == 0)
-    {
+    if (!m_to_python) {
         handle<> msg(
 #if PY_VERSION_HEX >= 0x3000000
             ::PyUnicode_FromFormat
 #else
             ::PyString_FromFormat
 #endif
-            (
-                "No to_python (by-value) converter found for C++ type: %s"
-                , this->target_type.name()
-                )
-            );
-            
-        PyErr_SetObject(PyExc_TypeError, msg.get());
+            ("No to_python (by-value) converter found for C++ type: %s", target_type.name())
+        );
 
+        PyErr_SetObject(PyExc_TypeError, msg.get());
         throw_error_already_set();
     }
         
-    return source == 0
+    return (source == nullptr)
         ? incref(Py_None)
-        : this->m_to_python(const_cast<void*>(source));
-}
-
-namespace
-{
-  template< typename T >
-  void delete_node( T* node )
-  {
-      if( !!node && !!node->next )
-          delete_node( node->next );
-      delete node;
-  }
-}
-
-registration::~registration()
-{
-  delete_node(lvalue_chain);
-  delete_node(rvalue_chain);
+        : m_to_python(const_cast<void*>(source));
 }
 
 
@@ -185,10 +161,7 @@ namespace registry
       std::cout << "inserting lvalue from_python " << key << "\n";
 #  endif 
       entry* found = get(key);
-      lvalue_from_python_chain *registration = new lvalue_from_python_chain;
-      registration->convert = convert;
-      registration->next = found->lvalue_chain;
-      found->lvalue_chain = registration;
+      found->lvalue_chain.push_front({convert});
       
       insert(convert, 0, key,exp_pytype);
   }
@@ -203,12 +176,7 @@ namespace registry
       std::cout << "inserting rvalue from_python " << key << "\n";
 #  endif 
       entry* found = get(key);
-      rvalue_from_python_chain *registration = new rvalue_from_python_chain;
-      registration->convertible = convertible;
-      registration->construct = construct;
-      registration->expected_pytype = exp_pytype;
-      registration->next = found->rvalue_chain;
-      found->rvalue_chain = registration;
+      found->rvalue_chain.push_front({convertible, construct, exp_pytype});
   }
 
   // Insert an rvalue from_python converter
@@ -220,16 +188,12 @@ namespace registry
 #  ifdef BOOST_PYTHON_TRACE_REGISTRY
       std::cout << "push_back rvalue from_python " << key << "\n";
 #  endif 
-      rvalue_from_python_chain** found = &get(key)->rvalue_chain;
-      while (*found != 0)
-          found = &(*found)->next;
-      
-      rvalue_from_python_chain *registration = new rvalue_from_python_chain;
-      registration->convertible = convertible;
-      registration->construct = construct;
-      registration->expected_pytype = exp_pytype;
-      registration->next = 0;
-      *found = registration;
+      entry* found = get(key);
+      auto before_end = found->rvalue_chain.before_begin();
+      while (std::next(before_end) != found->rvalue_chain.end())
+          ++before_end;
+
+      found->rvalue_chain.insert_after(before_end, {convertible, construct, exp_pytype});
   }
 
   registration const& lookup(type_info key)

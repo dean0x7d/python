@@ -44,18 +44,13 @@ BOOST_PYTHON_DECL rvalue_from_python_stage1_data rvalue_from_python_stage1(
     // First check to see if it's embedded in an extension class
     // instance, as a special case.
     data.convertible = objects::find_instance_impl(source, converters.target_type, converters.is_shared_ptr);
-        data.construct = 0;
+    data.construct = nullptr;
     if (!data.convertible)
     {
-        for (rvalue_from_python_chain const* chain = converters.rvalue_chain;
-             chain != 0;
-             chain = chain->next)
-        {
-            void* r = chain->convertible(source);
-            if (r != 0)
-            {
-                data.convertible = r;
-                data.construct = chain->construct;
+        for (auto& rvalue_converter : converters.rvalue_chain) {
+            if (void* result = rvalue_converter.convertible(source)) {
+                data.convertible = result;
+                data.construct = rvalue_converter.construct;
                 break;
             }
         }
@@ -126,25 +121,21 @@ BOOST_PYTHON_DECL void* get_lvalue_from_python(
     if (x)
         return x;
 
-    lvalue_from_python_chain const* chain = converters.lvalue_chain;
-    for (;chain != 0; chain = chain->next)
-    {
-        void* r = chain->convert(source);
-        if (r != 0)
-            return r;
+    for (auto& lvalue_converter : converters.lvalue_chain) {
+        if (void* result = lvalue_converter.convert(source))
+            return result;
     }
-    return 0;
+    return nullptr;
 }
 
 namespace
 {
   // Prevent looping in implicit conversions. This could/should be
   // much more efficient, but will work for now.
-  typedef std::vector<rvalue_from_python_chain const*> visited_t;
+  typedef std::vector<std::forward_list<rvalue_from_python> const*> visited_t;
   static visited_t visited;
 
-  inline bool visit(rvalue_from_python_chain const* chain)
-  {
+  inline bool visit(std::forward_list<rvalue_from_python> const* chain) {
       visited_t::iterator const p = std::lower_bound(visited.begin(), visited.end(), chain);
       if (p != visited.end() && *p == chain)
           return false;
@@ -153,19 +144,16 @@ namespace
   }
 
   // RAII class for managing global visited marks.
-  struct unvisit
-  {
-      unvisit(rvalue_from_python_chain const* chain)
-          : chain(chain) {}
-      
-      ~unvisit()
-      {
+  struct unvisit {
+      unvisit(std::forward_list<rvalue_from_python> const* chain) : chain(chain) {}
+
+      ~unvisit() {
           visited_t::iterator const p = std::lower_bound(visited.begin(), visited.end(), chain);
           assert(p != visited.end());
           visited.erase(p);
       }
    private:
-      rvalue_from_python_chain const* chain;
+      std::forward_list<rvalue_from_python> const* chain;
   };
 }
 
@@ -177,16 +165,15 @@ BOOST_PYTHON_DECL bool implicit_rvalue_convertible_from_python(
     if (objects::find_instance_impl(source, converters.target_type))
         return true;
     
-    rvalue_from_python_chain const* chain = converters.rvalue_chain;
+    auto const* chain = &converters.rvalue_chain;
     
     if (!visit(chain))
         return false;
 
     unvisit protect(chain);
-    
-    for (;chain != 0; chain = chain->next)
-    {
-        if (chain->convertible(source))
+
+    for (auto& rvalue_converter : converters.rvalue_chain) {
+        if (rvalue_converter.convertible(source))
             return true;
     }
 
