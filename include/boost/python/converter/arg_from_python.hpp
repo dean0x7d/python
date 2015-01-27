@@ -46,7 +46,7 @@ struct pointer_cref_arg_from_python
  private: // storage for a U*
     // needed because not all compilers will let us declare U* as the
     // return type of operator() -- we return U*const& instead
-    typename python::detail::referent_storage<T>::type m_result;
+    python::detail::aligned_storage<T> m_result;
 };
 
 // Base class for pointer and reference converters

@@ -7,7 +7,6 @@
 
 # include <boost/python/converter/constructor_function.hpp>
 # include <boost/python/detail/referent_storage.hpp>
-# include <boost/python/detail/destroy.hpp>
 # include <cstddef>
 
 // Data management for potential rvalue conversions from Python to C++
@@ -74,9 +73,7 @@ struct rvalue_from_python_storage
     rvalue_from_python_stage1_data stage1;
 
     // Storage for the result, in case an rvalue must be constructed
-    typename python::detail::referent_storage<
-        cpp14::add_lvalue_reference_t<T>
-    >::type storage;
+    python::detail::aligned_storage<T> storage;
 };
 
 // Augments rvalue_from_python_storage<T> with a destructor. If
@@ -101,8 +98,6 @@ struct rvalue_from_python_data : rvalue_from_python_storage<T>
 
     // Destroys any object constructed in the storage.
     ~rvalue_from_python_data();
- private:
-    typedef cpp14::add_lvalue_reference_t<cpp14::add_cv_t<T>> ref_type;
 };
 
 //
@@ -124,7 +119,7 @@ template <class T>
 inline rvalue_from_python_data<T>::~rvalue_from_python_data()
 {
     if (this->stage1.convertible == this->storage.bytes)
-        python::detail::destroy_referent<ref_type>(this->storage.bytes);
+        python::detail::destroy_stored<T>(this->storage.bytes);
 }
 
 }}} // namespace boost::python::converter

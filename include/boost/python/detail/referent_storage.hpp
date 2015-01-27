@@ -8,56 +8,42 @@
 
 namespace boost { namespace python { namespace detail {
 
-struct alignment_dummy;
-typedef void (*function_ptr)();
-typedef int (alignment_dummy::*member_ptr);
-typedef int (alignment_dummy::*member_function_ptr)();
-
-# define BOOST_PYTHON_ALIGNER(T, n)                     \
-        cpp14::conditional_t<                           \
-           sizeof(T) <= size, T, char> t##n
-
-// Storage for size bytes, aligned to all fundamental types no larger than size
-template <std::size_t size>
-union aligned_storage
-{
-    BOOST_PYTHON_ALIGNER(char, 0);
-    BOOST_PYTHON_ALIGNER(short, 1);
-    BOOST_PYTHON_ALIGNER(int, 2);
-    BOOST_PYTHON_ALIGNER(long, 3);
-    BOOST_PYTHON_ALIGNER(float, 4);
-    BOOST_PYTHON_ALIGNER(double, 5);
-    BOOST_PYTHON_ALIGNER(long double, 6);
-    BOOST_PYTHON_ALIGNER(void*, 7);
-    BOOST_PYTHON_ALIGNER(function_ptr, 8);
-    BOOST_PYTHON_ALIGNER(member_ptr, 9);
-    BOOST_PYTHON_ALIGNER(member_function_ptr, 10);
-    char bytes[size];
-};
-
-# undef BOOST_PYTHON_ALIGNER
-
-  // Compute the size of T's referent. We wouldn't need this at all,
-  // but sizeof() is broken in CodeWarriors <= 8.0
-  template <class T> struct referent_size;
-  
-  
-  template <class T>
-  struct referent_size<T&>
-  {
-      static constexpr std::size_t value = sizeof(T);
-  };
-
-
-// A metafunction returning a POD type which can store U, where T ==
-// U&. If T is not a reference type, returns a POD which can store T.
+// This is a little ugly, but the "bytes" data member
+// is needed for backward compatibility.
 template <class T>
-struct referent_storage
-{
-    typedef aligned_storage<
-        ::boost::python::detail::referent_size<T>::value
-    > type;
+struct aligned_storage {
+    cpp14::aligned_storage_t<sizeof(T), alignof(T)> bytes[1];
 };
+
+template <bool is_array = false>
+struct value_destroyer {
+    template <class T>
+    static void execute(T const volatile* p) {
+        p->~T();
+    }
+};
+
+template <>
+struct value_destroyer<true> {
+    template <class A, class T>
+    static void execute(A*, T const volatile* const first) {
+        for (T const volatile* p = first; p != first + sizeof(A)/sizeof(T); ++p) {
+            value_destroyer<std::is_array<T>::value>::execute(p);
+        }
+    }
+
+    template <class T>
+    static void execute(T const volatile* p) {
+        execute(p, *p);
+    }
+};
+
+template <class T>
+inline void destroy_stored(void* p)
+{
+    using value_t = cpp14::remove_reference_t<T>;
+    value_destroyer<std::is_array<value_t>::value>::execute((value_t*)p);
+}
 
 }}} // namespace boost::python::detail
 

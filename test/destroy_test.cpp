@@ -1,7 +1,7 @@
 // Copyright David Abrahams 2004. Distributed under the Boost
 // Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-#include <boost/python/detail/destroy.hpp>
+#include <boost/python/detail/referent_storage.hpp>
 
 #include <boost/detail/lightweight_test.hpp>
 
@@ -41,18 +41,18 @@ int main()
     typedef int a[2];
     
     foo* f1 = new foo;
-    boost::python::detail::destroy_referent<foo const volatile&>(f1);
+    boost::python::detail::destroy_stored<foo const volatile&>(f1);
     assert_destructions(1);
     
     foo* f2 = new foo[2];
     typedef foo x[2];
     
-    boost::python::detail::destroy_referent<x const&>(f2);
+    boost::python::detail::destroy_stored<x const&>(f2);
     assert_destructions(3);
 
     typedef foo y[2][2];
     x* f3 = new y;
-    boost::python::detail::destroy_referent<y&>(f3);
+    boost::python::detail::destroy_stored<y&>(f3);
     assert_destructions(7);
 
     return boost::report_errors();

@@ -7,7 +7,6 @@
 
 # include <boost/python/detail/prefix.hpp>
 # include <boost/python/detail/referent_storage.hpp>
-# include <boost/python/detail/destroy.hpp>
 # include <boost/python/detail/construct.hpp>
 # include <boost/python/converter/object_manager.hpp>
 # include <boost/python/detail/raw_pyobject.hpp>
@@ -50,7 +49,7 @@ struct object_manager_ref_arg_from_python
     Ref operator()() const;
     ~object_manager_ref_arg_from_python();
  private:
-    typename python::detail::referent_storage<Ref>::type m_result;
+    python::detail::aligned_storage<Ref> m_result;
 };
 
 //
@@ -84,7 +83,7 @@ inline object_manager_ref_arg_from_python<Ref>::object_manager_ref_arg_from_pyth
 template <class Ref>
 inline object_manager_ref_arg_from_python<Ref>::~object_manager_ref_arg_from_python()
 {
-    python::detail::destroy_referent<Ref>(this->m_result.bytes);
+    python::detail::destroy_stored<Ref>(this->m_result.bytes);
 }
 
 namespace detail
