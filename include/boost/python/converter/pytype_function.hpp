@@ -7,6 +7,7 @@
 
 # include <boost/python/detail/prefix.hpp>
 # include <boost/python/converter/registered.hpp>
+# include <boost/python/converter/pytype_function_fwd.hpp>
 
 namespace boost { namespace python {
 
@@ -20,8 +21,6 @@ struct wrap_pytype
         return python_type;
     }
 };
-
-typedef PyTypeObject const* (*pytype_function)();
 
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
 

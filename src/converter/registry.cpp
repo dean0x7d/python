@@ -81,9 +81,7 @@ BOOST_PYTHON_DECL PyObject* registration::to_python(void const volatile* source)
 
 namespace // <unnamed>
 {
-  typedef registration entry;
-  
-  typedef std::set<entry> registry_t;
+  typedef std::set<registration> registry_t;
   
   registry_t& entries()
   {
@@ -111,30 +109,29 @@ namespace // <unnamed>
       return registry;
   }
 
-  entry* get(type_info type, bool is_shared_ptr = false)
+  registration* get(type_info type, bool is_shared_ptr = false)
   {
 #  ifdef BOOST_PYTHON_TRACE_REGISTRY
-      registry_t::iterator p = entries().find(entry(type));
+      registry_t::iterator p = entries().find(registration(type));
       
       std::cout << "looking up " << type << ": "
                 << (p == entries().end() || p->target_type != type
                     ? "...NOT found\n" : "...found\n");
 #  endif
-      std::pair<registry_t::const_iterator,bool> pos_ins
-          = entries().insert(entry(type,is_shared_ptr));
+      auto pos_ins = entries().emplace(type, is_shared_ptr);
       
-      return const_cast<entry*>(&*pos_ins.first);
+      return const_cast<registration*>(&*pos_ins.first);
   }
 } // namespace <unnamed>
 
 namespace registry
 {
-  void insert(to_python_function_t f, type_info source_t, PyTypeObject const* (*to_python_target_type)())
+  void insert(to_python_function_t f, type_info source_t, pytype_function to_python_target_type)
   {
 #  ifdef BOOST_PYTHON_TRACE_REGISTRY
       std::cout << "inserting to_python " << source_t << "\n";
 #  endif 
-      entry* slot = get(source_t);
+      registration* slot = get(source_t);
       
       assert(slot->m_to_python == 0); // we have a problem otherwise
       if (slot->m_to_python != 0)
@@ -155,12 +152,12 @@ namespace registry
   }
 
   // Insert an lvalue from_python converter
-  void insert(convertible_function convert, type_info key, PyTypeObject const* (*exp_pytype)())
+  void insert(convertible_function convert, type_info key, pytype_function exp_pytype)
   {
 #  ifdef BOOST_PYTHON_TRACE_REGISTRY
       std::cout << "inserting lvalue from_python " << key << "\n";
 #  endif 
-      entry* found = get(key);
+      registration* found = get(key);
       found->lvalue_chain.push_front({convert});
       
       insert(convert, 0, key,exp_pytype);
@@ -170,12 +167,12 @@ namespace registry
   void insert(convertible_function convertible
               , constructor_function construct
               , type_info key
-              , PyTypeObject const* (*exp_pytype)())
+              , pytype_function exp_pytype)
   {
 #  ifdef BOOST_PYTHON_TRACE_REGISTRY
       std::cout << "inserting rvalue from_python " << key << "\n";
 #  endif 
-      entry* found = get(key);
+      registration* found = get(key);
       found->rvalue_chain.push_front({convertible, construct, exp_pytype});
   }
 
@@ -183,12 +180,12 @@ namespace registry
   void push_back(convertible_function convertible
               , constructor_function construct
               , type_info key
-              , PyTypeObject const* (*exp_pytype)())
+              , pytype_function exp_pytype)
   {
 #  ifdef BOOST_PYTHON_TRACE_REGISTRY
       std::cout << "push_back rvalue from_python " << key << "\n";
 #  endif 
-      entry* found = get(key);
+      registration* found = get(key);
       auto before_end = found->rvalue_chain.before_begin();
       while (std::next(before_end) != found->rvalue_chain.end())
           ++before_end;
@@ -208,7 +205,7 @@ namespace registry
 
   registration const* query(type_info type)
   {
-      registry_t::iterator p = entries().find(entry(type));
+      registry_t::iterator p = entries().find(registration(type));
 #  ifdef BOOST_PYTHON_TRACE_REGISTRY
       std::cout << "querying " << type
                 << (p == entries().end() || p->target_type != type

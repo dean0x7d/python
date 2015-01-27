@@ -12,6 +12,7 @@
 # include <boost/python/converter/convertible_function.hpp>
 # include <boost/python/converter/constructor_function.hpp>
 # include <boost/python/converter/to_python_function_type.hpp>
+# include <boost/python/converter/pytype_function_fwd.hpp>
 
 # include <forward_list>
 
@@ -24,7 +25,7 @@ struct lvalue_from_python {
 struct rvalue_from_python {
     convertible_function convertible;
     constructor_function construct;
-    PyTypeObject const* (*expected_pytype)();
+    pytype_function expected_pytype;
 };
 
 struct BOOST_PYTHON_DECL registration
@@ -59,7 +60,7 @@ struct BOOST_PYTHON_DECL registration
 
     // The unique to_python converter for the associated C++ type.
     to_python_function_t m_to_python = nullptr;
-    PyTypeObject const* (*m_to_python_target_type)() = nullptr;
+    pytype_function m_to_python_target_type = nullptr;
 
     // True iff this type is a shared_ptr.  Needed for special rvalue
     // from_python handling.
