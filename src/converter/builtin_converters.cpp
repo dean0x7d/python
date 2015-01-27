@@ -18,17 +18,6 @@
 
 namespace boost { namespace python { namespace converter {
 
-shared_ptr_deleter::shared_ptr_deleter(handle<> owner)
-    : owner(owner)
-{}
-
-shared_ptr_deleter::~shared_ptr_deleter() {}
-
-void shared_ptr_deleter::operator()(void const*)
-{
-    owner.reset();
-}
-
 namespace
 {
 

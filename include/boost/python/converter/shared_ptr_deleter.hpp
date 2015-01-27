@@ -9,10 +9,11 @@ namespace boost { namespace python { namespace converter {
 
 struct BOOST_PYTHON_DECL shared_ptr_deleter
 {
-    shared_ptr_deleter(handle<> owner);
-    ~shared_ptr_deleter();
+    shared_ptr_deleter(handle<> owner) : owner(owner) {}
 
-    void operator()(void const*);
+    void operator()(void const*) {
+        owner.reset();
+    }
         
     handle<> owner;
 };
