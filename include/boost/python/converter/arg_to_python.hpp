@@ -12,7 +12,6 @@
 # include <boost/python/to_python_indirect.hpp>
 
 # include <boost/python/converter/registered.hpp>
-# include <boost/python/converter/registered_pointee.hpp>
 # include <boost/python/converter/arg_to_python_base.hpp>
 # include <boost/python/converter/shared_ptr_to_python.hpp>
 // Bring in specializations
