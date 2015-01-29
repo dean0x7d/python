@@ -5,6 +5,7 @@
 #ifndef AS_TO_PYTHON_FUNCTION_DWA2002121_HPP
 # define AS_TO_PYTHON_FUNCTION_DWA2002121_HPP
 # include <boost/python/converter/to_python_function_type.hpp>
+# include <type_traits>
 
 namespace boost { namespace python { namespace converter { 
 
@@ -13,18 +14,11 @@ namespace boost { namespace python { namespace converter {
 template <class T, class ToPython>
 struct as_to_python_function
 {
-    // Assertion functions used to prevent wrapping of converters
-    // which take non-const reference parameters. The T* argument in
-    // the first overload ensures it isn't used in case T is a
-    // reference.
-    template <class U>
-    static void convert_function_must_take_value_or_const_reference(U(*)(T), int, T* = 0) {}
-    template <class U>
-    static void convert_function_must_take_value_or_const_reference(U(*)(T const&), long ...) {}
-        
     static PyObject* convert(void const* x)
     {
-        convert_function_must_take_value_or_const_reference(&ToPython::convert, 1L);
+        static_assert(std::is_same<decltype(ToPython::convert), PyObject*(T)>::value ||
+                      std::is_same<decltype(ToPython::convert), PyObject*(T const&)>::value,
+                      "Convert function must take value or const reference");
         
         // Yes, the const_cast below opens a hole in const-correctness,
         // but it's needed to convert auto_ptr<U> to python.
