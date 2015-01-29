@@ -77,6 +77,11 @@ namespace detail
   struct is_keywords<keywords<nkeywords>> : std::true_type {};
 }
 
+namespace literals {
+    inline arg operator"" _a(char const* str, std::size_t) {
+        return arg{str};
+    }
+}
 
 template<typename... Ts, int N = sizeof...(Ts)>
 inline detail::keywords<N> args(Ts&&... names) {

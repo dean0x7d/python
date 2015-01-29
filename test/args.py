@@ -28,6 +28,14 @@ True
 ... except TypeError: pass
 ... else: print 'expected an exception: unknown keyword'
 
+   Keyword defaults
+
+>>> f()
+(1, 4.25, 'wow')
+>>> f_a()
+(1, 4.25, 'wow')
+>>> f_b()
+(1, 4.25, 'wow')
 
    Exercise the functions using default stubs
 

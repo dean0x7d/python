@@ -13,6 +13,7 @@
 #include <boost/python/return_internal_reference.hpp>
 
 using namespace boost::python;
+using namespace boost::python::literals;
 
 #if BOOST_WORKAROUND(__SUNPRO_CC, BOOST_TESTED_AT(0x580)) || BOOST_WORKAROUND(BOOST_MSVC, BOOST_TESTED_AT(1500))
 # define make_tuple boost::python::make_tuple
@@ -54,6 +55,8 @@ BOOST_PYTHON_MODULE(args_ext)
     def("f", f, (arg("x")=1, arg("y")=4.25, arg("z")="wow")
         , "This is f's docstring"
         );
+    def("f_a", f, ("x"_a=1, "y"_a=4.25, "z"_a="wow"));
+    def("f_b", f, args("x"_a=1, "y"_a=4.25, "z"_a="wow"));
 
     def("raw", raw_function(raw_func));
     
