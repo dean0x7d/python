@@ -21,19 +21,18 @@ struct BOOST_PYTHON_DECL_EXCEPTION error_already_set
 
 // Handles exceptions caught just before returning to Python code.
 // Returns true iff an exception was caught.
-BOOST_PYTHON_DECL bool handle_exception_impl(std::function<void()>);
-
-template <class T>
-bool handle_exception(T&& f)
-{
-    return handle_exception_impl(std::forward<T>(f));
+// All exceptions will be caugth inside, hence the 'noexcept' specifier.
+namespace detail {
+    BOOST_PYTHON_DECL bool handle_exception_impl(std::function<void()>) noexcept;
 }
 
-namespace detail { inline void rethrow() { throw; } }
+template <class T>
+inline bool handle_exception(T&& f) noexcept {
+    return detail::handle_exception_impl(std::forward<T>(f));
+}
 
-inline void handle_exception()
-{
-    handle_exception(detail::rethrow);
+inline void handle_exception() noexcept {
+    handle_exception([]{ throw; }); // rethrow existing
 }
 
 BOOST_PYTHON_DECL void throw_error_already_set();
