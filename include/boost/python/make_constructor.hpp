@@ -224,15 +224,11 @@ object make_constructor(
   , CallPolicies const& policies
   , KeywordsOrSignature const& keywords_or_signature)
 {
-    typedef typename
-        detail::is_reference_to_keywords<KeywordsOrSignature&>::type
-        is_kw;
-    
     return detail::make_constructor_dispatch(
         f
       , policies
       , keywords_or_signature
-      , is_kw()
+      , detail::is_keywords<KeywordsOrSignature>{}
     );
 }
 

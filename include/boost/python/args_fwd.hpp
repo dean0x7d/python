@@ -12,11 +12,8 @@ namespace boost { namespace python {
 
 namespace detail
 {
-  struct keyword
-  {
-      keyword(char const* name_=0)
-       : name(name_)
-      {}
+  struct keyword {
+      keyword(char const* name = nullptr) : name(name) {}
       
       char const* name;
       handle<> default_value;
@@ -27,10 +24,9 @@ namespace detail
   using keyword_range = std::pair<keyword const*, keyword const*>;
   
   template <>
-  struct keywords<0>
-  {
+  struct keywords<0> {
       static constexpr auto size = 0;
-      static keyword_range range() { return keyword_range(); }
+      static keyword_range range() { return {}; }
   };
 }
 

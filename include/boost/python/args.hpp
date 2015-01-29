@@ -19,16 +19,16 @@ using arg = detail::keywords<1>;
 namespace detail
 {
   template <std::size_t nkeywords>
-  struct keywords_base
-  {
+  struct keywords_base {
       static constexpr auto size = nkeywords;
-      
-      keyword_range range() const
-      {
+      keyword elements[nkeywords];
+
+      template<typename... Ts>
+      explicit keywords_base(Ts&&... args) : elements{std::forward<Ts>(args)...} {}
+
+      keyword_range range() const {
           return keyword_range(elements, elements + nkeywords);
       }
-
-      keyword elements[nkeywords];
 
       keywords<nkeywords+1>
       operator,(python::arg const &k) const;
@@ -38,86 +38,49 @@ namespace detail
   };
   
   template <std::size_t nkeywords>
-  struct keywords : keywords_base<nkeywords>
-  {
+  struct keywords : keywords_base<nkeywords> {
+      using keywords_base<nkeywords>::keywords_base;
   };
 
   template <>
-  struct keywords<1> : keywords_base<1>
-  {
-      explicit keywords(char const *name)
-      {
-          elements[0].name = name;
-      }
-    
+  struct keywords<1> : keywords_base<1> {
+      using keywords_base<1>::keywords_base;
+
       template <class T>
-      python::arg& operator=(T const& value)
-      {
-          object z(value);
+      keywords<1>& operator=(T const& value) {
           elements[0].default_value = handle<>(python::borrowed(object(value).ptr()));
           return *this;
       }
     
-      operator detail::keyword const&() const
-      {
+      operator detail::keyword const&() const {
           return elements[0];
       }
   };
 
   template <std::size_t nkeywords>
-  inline
-  keywords<nkeywords+1>
-  keywords_base<nkeywords>::operator,(python::arg const &k) const
-  {
-      keywords<nkeywords> const& l = *static_cast<keywords<nkeywords> const*>(this);
+  inline keywords<nkeywords+1> keywords_base<nkeywords>::operator,(python::arg const& k) const {
       python::detail::keywords<nkeywords+1> res;
-      std::copy(l.elements, l.elements+nkeywords, res.elements);
+      std::copy(elements, elements+nkeywords, res.elements);
       res.elements[nkeywords] = k.elements[0];
       return res;
   }
 
   template <std::size_t nkeywords>
-  inline
-  keywords<nkeywords + 1>
-  keywords_base<nkeywords>::operator,(char const *name) const
-  {
+  inline keywords<nkeywords + 1> keywords_base<nkeywords>::operator,(char const* name) const {
       return this->operator,(python::arg(name));
   }
 
   template<typename T>
-  struct is_keywords {
-      static constexpr bool value = false;
-  };
+  struct is_keywords : std::false_type {};
 
   template<std::size_t nkeywords>
-  struct is_keywords<keywords<nkeywords> > {
-      static constexpr bool value = true;
-  };
-
-  template <class T>
-  struct is_reference_to_keywords
-  {
-      using key_t = cpp14::remove_cv_t<cpp14::remove_reference_t<T>>;
-      static constexpr bool value = std::is_reference<T>::value && is_keywords<key_t>::value;
-      
-      using type = std::integral_constant<bool, value>;
-  };
+  struct is_keywords<keywords<nkeywords>> : std::true_type {};
 }
 
-inline detail::keywords<1> args(char const* name)
-{ 
-    return detail::keywords<1>(name);
-}
 
 template<typename... Ts, int N = sizeof...(Ts)>
-detail::keywords<N> args(Ts... names)
-{
-    detail::keywords<N> result;
-    auto list = { detail::keyword(names)... };
-    std::move(std::begin(list), std::end(list), 
-              std::begin(result.elements));
-    
-    return result;
+inline detail::keywords<N> args(Ts&&... names) {
+    return detail::keywords<N>{detail::keyword(std::forward<Ts>(names))...};
 }
 
 }} // namespace boost::python
