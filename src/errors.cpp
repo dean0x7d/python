@@ -65,40 +65,8 @@ void BOOST_PYTHON_DECL throw_error_already_set()
 
 namespace detail {
 
-bool exception_handler::operator()(std::function<void()> const& f) const
-{
-    if (m_next)
-    {
-        return m_next->handle(f);
-    }
-    else
-    {
-        f();
-        return false;
-    }
-}
-
-exception_handler::exception_handler(handler_function const& impl)
-    : m_impl(impl)
-    , m_next(0)
-{
-    if (chain != 0)
-        tail->m_next = this;
-    else
-        chain = this;
-    tail = this;
-}
-
-exception_handler* exception_handler::chain;
+std::unique_ptr<exception_handler> exception_handler::chain;
 exception_handler* exception_handler::tail;
-
-BOOST_PYTHON_DECL void register_exception_handler(handler_function const& f)
-{
-    // the constructor links the new object into a handler chain, so
-    // this object isn't actaully leaked (until, of course, the
-    // interpreter exits).
-    new exception_handler(f);
-}
 
 } // namespace boost::python::detail
 

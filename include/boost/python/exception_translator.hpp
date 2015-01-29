@@ -6,7 +6,6 @@
 # define EXCEPTION_TRANSLATOR_DWA2002810_HPP
 
 # include <boost/python/detail/prefix.hpp>
-
 # include <boost/python/detail/exception_handler.hpp>
 
 namespace boost { namespace python { 
@@ -16,8 +15,8 @@ namespace boost { namespace python {
 template <class ExceptionType, class Translate>
 void register_exception_translator(Translate translate)
 {
-    detail::register_exception_handler([translate](
-        detail::exception_handler const& handler, 
+    detail::exception_handler::add([translate](
+        detail::exception_handler const& handler,
         std::function<void()> const& f
     ) -> bool
     {

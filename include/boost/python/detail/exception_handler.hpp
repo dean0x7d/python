@@ -7,6 +7,7 @@
 
 # include <boost/python/detail/config.hpp>
 # include <functional>
+# include <memory>
 
 namespace boost { namespace python { namespace detail {
 
@@ -18,31 +19,33 @@ using handler_function = std::function<
 
 struct BOOST_PYTHON_DECL exception_handler
 {
- private: // types
-    
- public:
-    explicit exception_handler(handler_function const& impl);
+    static std::unique_ptr<exception_handler> chain;
 
-    inline bool handle(std::function<void()> const& f) const;
-    
-    bool operator()(std::function<void()> const& f) const;
- 
-    static exception_handler* chain;
-    
- private:
+    static void add(handler_function const& f) {
+        auto& new_tail = chain ? tail->m_next : chain;
+        new_tail.reset(new exception_handler(f));
+        tail = new_tail.get();
+    };
+
+    bool handle(std::function<void()> const& f) const {
+        return m_impl(*this, f);
+    }
+
+    bool operator()(std::function<void()> const& f) const {
+        if (m_next)
+            return m_next->handle(f);
+        f();
+        return false;
+    }
+
+private:
+    explicit exception_handler(handler_function const& impl) : m_impl(impl) {}
+
     static exception_handler* tail;
-    
+
     handler_function m_impl;
-    exception_handler* m_next;
+    std::unique_ptr<exception_handler> m_next;
 };
-
-
-inline bool exception_handler::handle(std::function<void()> const& f) const
-{
-    return this->m_impl(*this, f);
-}
-
-BOOST_PYTHON_DECL void register_exception_handler(handler_function const& f);
 
 }}} // namespace boost::python::detail
 
