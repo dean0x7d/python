@@ -19,192 +19,128 @@ namespace boost { namespace python {
 template <class T> struct null_ok;
 
 template <class T>
-inline null_ok<T>* allow_null(T* p)
-{
+inline null_ok<T>* allow_null(T* p) noexcept {
     return (null_ok<T>*)p;
 }
 
 namespace detail
 {
   template <class T>
-  inline T* manage_ptr(detail::borrowed<null_ok<T> >* p, int)
-  {
+  inline T* manage_ptr(detail::borrowed<null_ok<T> >* p) noexcept {
       return python::xincref((T*)p);
   }
   
   template <class T>
-  inline T* manage_ptr(null_ok<detail::borrowed<T> >* p, int)
-  {
+  inline T* manage_ptr(null_ok<detail::borrowed<T> >* p) noexcept {
       return python::xincref((T*)p);
   }
   
   template <class T>
-  inline T* manage_ptr(detail::borrowed<T>* p, long)
-  {
+  inline T* manage_ptr(detail::borrowed<T>* p) {
       return python::incref(expect_non_null((T*)p));
   }
   
   template <class T>
-  inline T* manage_ptr(null_ok<T>* p, long)
-  {
+  inline T* manage_ptr(null_ok<T>* p) noexcept {
       return (T*)p;
   }
   
   template <class T>
-  inline T* manage_ptr(T* p, ...)
-  {
+  inline T* manage_ptr(T* p) {
       return expect_non_null(p);
   }
 }
 
 template <class T>
-class handle
-{
-    typedef T* (handle::* bool_type )() const;
+class handle {
+    using bool_type = T* (handle::*)() const;
 
- public: // types
-    typedef T element_type;
-    
- public: // member functions
-    handle();
-    ~handle();
+public: // types
+    using element_type = T;
+
+public: // member functions
+    handle() = default;
+    ~handle() { xdecref(m_p); }
 
     template <class Y>
-    explicit handle(Y* p)
-        : m_p(
-            python::upcast<T>(
-                detail::manage_ptr(p, 0)
-                )
-            )
-    {
-    }
+    explicit handle(Y* p) : m_p{upcast<T>(detail::manage_ptr(p))} {}
 
-    handle& operator=(handle const& r)
-    {
-        python::xdecref(m_p);
-        m_p = python::xincref(r.m_p);
+    handle(handle const& r) noexcept : m_p{xincref(r.m_p)} {}
+
+    template <typename Y>
+    handle(handle<Y> const& r) noexcept : m_p{xincref(upcast<T>(r.get()))} {}
+
+    handle& operator=(handle const& r) noexcept {
+        xdecref(m_p);
+        m_p = xincref(r.m_p);
         return *this;
     }
 
     template<typename Y>
-    handle& operator=(handle<Y> const & r) // never throws
-    {
-        python::xdecref(m_p);
-        m_p = python::xincref(python::upcast<T>(r.get()));
+    handle& operator=(handle<Y> const& r) noexcept {
+        xdecref(m_p);
+        m_p = xincref(upcast<T>(r.get()));
         return *this;
     }
 
-    template <typename Y>
-    handle(handle<Y> const& r)
-        : m_p(python::xincref(python::upcast<T>(r.get())))
-    {
-    }
-    
-    handle(handle const& r)
-        : m_p(python::xincref(r.m_p))
-    {
-    }
-    
-    T* operator-> () const;
-    T& operator* () const;
-    T* get() const;
-    T* release();
-    void reset();
-    
-    operator bool_type() const // never throws
-    {
-        return m_p ? &handle<T>::get : 0;
-    }
-    bool operator! () const; // never throws
+    handle(handle&& r) noexcept : m_p{r.release()} {}
 
- public: // implementation details -- do not touch
-    // Defining this in the class body suppresses a VC7 link failure
-    inline handle(detail::borrowed_reference x)
-        : m_p(
-            python::incref(
-                downcast<T>((PyObject*)x)
-                ))
-    {
+    template <typename Y>
+    handle(handle<Y>&& r) noexcept : m_p{upcast<T>(r.release())} {}
+
+    handle& operator=(handle&& r) noexcept {
+        xdecref(m_p);
+        m_p = r.release();
+        return *this;
     }
+
+    template<typename Y>
+    handle& operator=(handle<Y>&& r) noexcept {
+        xdecref(m_p);
+        m_p = upcast<T>(r.release());
+        return *this;
+    }
+
+    T* operator->() const noexcept { return m_p; }
+    T& operator*() const noexcept { return *m_p; }
+    T* get() const noexcept { return m_p; }
+
+    T* release() noexcept {
+        auto result = m_p;
+        m_p = nullptr;
+        return result;
+    }
+    void reset() noexcept {
+        python::xdecref(m_p);
+        m_p = nullptr;
+    }
+    
+    operator bool_type() const noexcept { return m_p ? &handle<T>::get : nullptr; }
+    bool operator! () const noexcept { return m_p == nullptr; };
+
+public: // implementation details -- do not touch
+    handle(detail::borrowed_reference x) noexcept : m_p{incref(downcast<T>((PyObject*)x))} {}
     
  private: // data members
-    T* m_p;
+    T* m_p = nullptr;
 };
 
-typedef handle<PyTypeObject> type_handle;
+using type_handle = handle<PyTypeObject>;
 
-//
 // Compile-time introspection
-//
 template<typename T>
 struct is_handle : std::false_type {};
 
 template<typename T>
 struct is_handle<handle<T>> : std::true_type {};
 
-//
-// implementations
-//
-template <class T>
-inline handle<T>::handle()
-    : m_p(0)
-{
-}
-
-template <class T>
-inline handle<T>::~handle()
-{
-    python::xdecref(m_p);
-}
-
-template <class T>
-inline T* handle<T>::operator->() const
-{
-    return m_p;
-}
-
-template <class T>
-inline T& handle<T>::operator*() const
-{
-    return *m_p;
-}
-
-template <class T>
-inline T* handle<T>::get() const
-{
-    return m_p;
-}
-    
-template <class T>
-inline bool handle<T>::operator!() const
-{
-    return m_p == 0;
-}
-
-template <class T>
-inline T* handle<T>::release()
-{
-    T* result = m_p;
-    m_p = 0;
-    return result;
-}
-
-template <class T>
-inline void handle<T>::reset()
-{
-    python::xdecref(m_p);
-    m_p = 0;
-}
-
 // Because get_managed_object must return a non-null PyObject*, we
 // return Py_None if the handle is null.
 template <class T>
-inline PyObject* get_managed_object(handle<T> const& h)
-{
+inline PyObject* get_managed_object(handle<T> const& h) noexcept {
     return h.get() ? python::upcast<PyObject>(h.get()) : Py_None;
 }
 
 }} // namespace boost::python
-
 
 #endif // HANDLE_DWA200269_HPP

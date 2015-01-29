@@ -11,28 +11,24 @@
 namespace boost { namespace python { 
 
 template <class T>
-inline T* incref(T* p)
-{
+inline T* incref(T* p) noexcept {
     Py_INCREF(python::upcast<PyObject>(p));
     return p;
 }
 
 template <class T>
-inline T* xincref(T* p)
-{
+inline T* xincref(T* p) noexcept {
     Py_XINCREF(python::upcast<PyObject>(p));
     return p;
 }
 
 template <class T>
-inline void decref(T* p)
-{
+inline void decref(T* p) noexcept {
     Py_DECREF(python::upcast<PyObject>(p));
 }
 
 template <class T>
-inline void xdecref(T* p)
-{
+inline void xdecref(T* p) noexcept {
     Py_XDECREF(python::upcast<PyObject>(p));
 }
 
