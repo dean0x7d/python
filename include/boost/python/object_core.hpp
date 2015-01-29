@@ -13,7 +13,6 @@
 # include <boost/python/handle_fwd.hpp>
 # include <boost/python/errors.hpp>
 # include <boost/python/refcount.hpp>
-# include <boost/python/tag.hpp>
 # include <boost/python/def_visitor.hpp>
 
 # include <boost/python/detail/raw_pyobject.hpp>
@@ -293,7 +292,7 @@ namespace api
       static PyObject*
       get(T const& x, U)
       {
-          return python::incref(get_managed_object(x, boost::python::tag));
+          return python::incref(get_managed_object(x));
       }
   };
 
@@ -348,7 +347,7 @@ object api::object_operators<U>::operator()(Args const&... args) const
 {
     // TODO: this should use perfect forwarding, but the converter isn't compatible yet
     U const& self = *static_cast<U const*>(this);
-    return call<object>(get_managed_object(self, tag), args...);
+    return call<object>(get_managed_object(self), args...);
 }
 
 template <typename U> 
@@ -362,7 +361,7 @@ template <typename U>
 object api::object_operators<U>::operator()(detail::args_proxy const &args) const 
 { 
   U const& self = *static_cast<U const*>(this); 
-  PyObject *result = PyObject_Call(get_managed_object(self, boost::python::tag), 
+  PyObject *result = PyObject_Call(get_managed_object(self),
                                    args.operator object().ptr(), 
                                    0); 
   return object(boost::python::detail::new_reference(result)); 
@@ -374,7 +373,7 @@ object api::object_operators<U>::operator()(detail::args_proxy const &args,
                                             detail::kwds_proxy const &kwds) const 
 { 
   U const& self = *static_cast<U const*>(this); 
-  PyObject *result = PyObject_Call(get_managed_object(self, boost::python::tag), 
+  PyObject *result = PyObject_Call(get_managed_object(self),
                                    args.operator object().ptr(), 
                                    kwds.operator object().ptr()); 
   return object(boost::python::detail::new_reference(result)); 
@@ -461,7 +460,7 @@ namespace converter
   };
 }
 
-inline PyObject* get_managed_object(object const& x, tag_t)
+inline PyObject* get_managed_object(object const& x)
 {
     return x.ptr();
 }

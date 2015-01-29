@@ -12,7 +12,6 @@
 # include <boost/python/borrowed.hpp>
 # include <boost/python/handle_fwd.hpp>
 # include <boost/python/refcount.hpp>
-# include <boost/python/tag.hpp>
 # include <boost/python/detail/raw_pyobject.hpp>
 
 namespace boost { namespace python { 
@@ -200,7 +199,7 @@ inline void handle<T>::reset()
 // Because get_managed_object must return a non-null PyObject*, we
 // return Py_None if the handle is null.
 template <class T>
-inline PyObject* get_managed_object(handle<T> const& h, tag_t)
+inline PyObject* get_managed_object(handle<T> const& h)
 {
     return h.get() ? python::upcast<PyObject>(h.get()) : Py_None;
 }

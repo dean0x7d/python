@@ -8,7 +8,6 @@
 # include <boost/python/detail/prefix.hpp>
 
 # include <boost/python/refcount.hpp>
-# include <boost/python/tag.hpp>
 # include <boost/python/handle.hpp>
 
 # include <boost/python/converter/registry.hpp>
@@ -142,7 +141,7 @@ namespace detail
   {
       return python::upcast<PyObject>(
           python::xincref(
-              get_managed_object(x, tag))
+              get_managed_object(x))
           );
   }
 

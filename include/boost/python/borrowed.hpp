@@ -8,7 +8,6 @@
 # include <boost/python/detail/prefix.hpp>
 # include <boost/python/cpp14/type_traits.hpp>
 # include <boost/python/detail/is_xxx.hpp>
-# include <boost/python/tag.hpp>
 
 namespace boost { namespace python {
 
@@ -32,7 +31,7 @@ inline python::detail::borrowed<T>* borrowed(T* p)
 }
 
 template <class T>
-inline T* get_managed_object(detail::borrowed<T> const volatile* p, tag_t)
+inline T* get_managed_object(detail::borrowed<T> const volatile* p)
 {
     return (T*)p;
 }

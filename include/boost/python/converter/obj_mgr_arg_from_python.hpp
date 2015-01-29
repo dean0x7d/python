@@ -10,7 +10,6 @@
 # include <boost/python/detail/construct.hpp>
 # include <boost/python/converter/object_manager.hpp>
 # include <boost/python/detail/raw_pyobject.hpp>
-# include <boost/python/tag.hpp>
 
 //
 // arg_from_python converters for Python type wrappers, to be used as
@@ -91,7 +90,7 @@ namespace detail
   template <class T>
   inline bool object_manager_ref_check(T const& x)
   {
-      return object_manager_traits<T>::check(get_managed_object(x, tag));
+      return object_manager_traits<T>::check(get_managed_object(x));
   }
 }
 

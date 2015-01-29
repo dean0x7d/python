@@ -8,7 +8,6 @@
 # include <boost/python/cpp14/type_traits.hpp>
 
 # include <boost/python/ptr.hpp>
-# include <boost/python/tag.hpp>
 # include <boost/python/to_python_indirect.hpp>
 
 # include <boost/python/converter/registered.hpp>
@@ -81,7 +80,7 @@ namespace detail
       
       PyObject* get() const
       {
-          return python::upcast<PyObject>(get_managed_object(m_src, tag));
+          return python::upcast<PyObject>(get_managed_object(m_src));
       }
       
    private:
