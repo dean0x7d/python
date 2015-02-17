@@ -23,6 +23,9 @@ namespace detail
       static constexpr auto size = nkeywords;
       keyword elements[nkeywords];
 
+      // This is needed on some compilers which assume the template below is also a move ctor
+      keywords_base(keywords_base&&) = default;
+
       template<typename... Ts>
       explicit keywords_base(Ts&&... args) : elements{std::forward<Ts>(args)...} {}
 
@@ -47,7 +50,7 @@ namespace detail
       using keywords_base<1>::keywords_base;
 
       template <class T>
-      keywords<1>& operator=(T const& value) {
+      keywords<1>& operator=(T value) {
           elements[0].default_value = handle<>(python::borrowed(object(value).ptr()));
           return *this;
       }

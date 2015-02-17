@@ -3,10 +3,11 @@
 // accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 #include <boost/python/object/inheritance.hpp>
-#include <vector>
-#include <queue>
 #include <tuple>
 #include <algorithm>
+#include <vector>
+#include <queue>
+#include <cstdint>
 
 //
 // Procedure:
@@ -275,7 +276,7 @@ namespace
       key_type key;
       std::ptrdiff_t offset;
 
-      static constexpr std::ptrdiff_t not_found = std::numeric_limits<std::ptrdiff_t>::min();
+      static constexpr std::ptrdiff_t not_found = PTRDIFF_MIN;
       
       bool operator<(cache_element const& rhs) const
       {
@@ -367,7 +368,7 @@ BOOST_PYTHON_DECL void add_cast(
     {
         c.erase(std::remove_if(
                     c.begin(), c.end(),
-                    std::mem_fn(&cache_element::unreachable))
+                    [](cache_element const& e) { return e.unreachable(); })
                 , c.end());
 
         // If any new cache entries get added, we'll have to do this
