@@ -13,7 +13,6 @@
 #include <boost/python/return_internal_reference.hpp>
 
 using namespace boost::python;
-using namespace boost::python::literals;
 
 #if BOOST_WORKAROUND(__SUNPRO_CC, BOOST_TESTED_AT(0x580)) || BOOST_WORKAROUND(BOOST_MSVC, BOOST_TESTED_AT(1500))
 # define make_tuple boost::python::make_tuple
