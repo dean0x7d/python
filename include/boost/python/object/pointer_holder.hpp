@@ -10,7 +10,6 @@
 
 #  include <boost/python/instance_holder.hpp>
 #  include <boost/python/object/inheritance_query.hpp>
-#  include <boost/python/object/forward.hpp>
 
 #  include <boost/python/pointee.hpp>
 #  include <boost/python/type_id.hpp>

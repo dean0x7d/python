@@ -18,7 +18,6 @@
 # include <boost/python/detail/raw_pyobject.hpp>
 # include <boost/python/detail/dependent.hpp>
 
-# include <boost/python/object/forward.hpp>
 # include <boost/python/object/add_to_namespace.hpp>
 
 # include <boost/python/detail/is_xxx.hpp>

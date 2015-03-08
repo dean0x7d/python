@@ -11,7 +11,6 @@
 #  include <boost/python/wrapper.hpp>
 
 #  include <boost/python/object/inheritance_query.hpp>
-#  include <boost/python/object/forward.hpp>
 
 #  include <boost/python/detail/force_instantiate.hpp>
 
