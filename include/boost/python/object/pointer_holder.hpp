@@ -36,7 +36,7 @@ struct pointer_holder : instance_holder
     // Forward construction to the held object
     template<class... As>
     pointer_holder(PyObject* self, As&&... as)
-    : m_p(new Value(objects::do_unforward(std::forward<As>(as), 0)...))
+        : m_p(new Value(std::forward<As>(as)...))
     {
         python::detail::initialize_wrapper(self, get_pointer(this->m_p));
     }
@@ -76,7 +76,7 @@ struct pointer_holder_back_reference : instance_holder
     // Forward construction to the held object
     template <class... As>
     pointer_holder_back_reference(PyObject* p, As&&... as)
-    : m_p(new held_type(p, objects::do_unforward(std::forward<As>(as), 0)...))
+        : m_p(new held_type(p, std::forward<As>(as)...))
     {}
 
 

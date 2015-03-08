@@ -26,7 +26,7 @@ struct value_holder : instance_holder
     // Forward construction to the held object
     template <class... As>
     value_holder(PyObject* self, As&&... as)
-    : m_held(objects::do_unforward(std::forward<As>(as),0)...)
+        : m_held(std::forward<As>(as)...)
     {
         python::detail::initialize_wrapper(self, std::addressof(this->m_held));
     }
@@ -58,7 +58,8 @@ struct value_holder<Value, Held, true> : instance_holder
     // Forward construction to the held object
     template <class... As>
     value_holder(PyObject* p, As&&... as)
-    : m_held(p, objects::do_unforward(std::forward<As>(as),0)...) {}
+        : m_held(p, std::forward<As>(as)...)
+    {}
 
 private: // required holder implementation
     void* holds(type_info, bool null_ptr_only);

@@ -195,27 +195,16 @@ namespace api
       >
   {};
 
-  template <class T>
-  typename objects::unforward_cref<T>::type do_unforward_cref(T const& x)
-  {
-      return x;
-  }
-
   class object;
   
   template <class T>
   PyObject* object_base_initializer(T const& x)
   {
-      typedef typename is_derived<
-          typename objects::unforward_cref<T>::type
-        , object
-      >::type is_obj;
-
       return object_initializer<
           typename objects::unwrap_reference<T>::type
       >::get(
             x
-          , is_obj()
+          , is_derived<T, object>()
       );
   }
   

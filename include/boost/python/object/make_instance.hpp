@@ -63,7 +63,7 @@ struct make_instance
         return converter::registered<T>::converters.get_class_object();
     }
     
-    static inline Holder* construct(void* storage, PyObject* instance, std::reference_wrapper<T const> x)
+    static inline Holder* construct(void* storage, PyObject* instance, T const& x)
     {
         return new (storage) Holder(instance, x);
     }
