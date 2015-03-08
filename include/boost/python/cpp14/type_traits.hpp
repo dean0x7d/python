@@ -37,7 +37,7 @@ using aligned_storage_t = typename std::aligned_storage<Len, Align>::type;
 template< class T >
 using result_of_t = typename std::result_of<T>::type;
 
-template<bool condition, class T>
+template<bool condition, class T = void>
 using enable_if_t = typename std::enable_if<condition, T>::type;
 
 }
