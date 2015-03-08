@@ -22,6 +22,7 @@
 
 # include <boost/python/detail/string_literal.hpp>
 # include <boost/python/detail/value_is_shared_ptr.hpp>
+# include <boost/python/detail/unwrap.hpp>
 
 namespace boost { namespace python { namespace converter { 
 
@@ -90,7 +91,7 @@ namespace detail
   template <class T>
   struct select_arg_to_python
   {
-      typedef typename objects::unwrap_reference<T>::type unwrapped_referent;
+      using unwrapped_type = python::detail::unwrap_t<T>;
       typedef typename unwrap_pointer<T>::type unwrapped_ptr;
 
       using type = cpp14::conditional_t<
@@ -122,8 +123,8 @@ namespace detail
                               pointer_shallow_arg_to_python<unwrapped_ptr>,
 
                               cpp14::conditional_t<
-                                  objects::is_reference_wrapper<T>::value,
-                                  reference_arg_to_python<unwrapped_referent>,
+                                  python::detail::is_<std::reference_wrapper, T>::value,
+                                  reference_arg_to_python<unwrapped_type>,
                                   value_arg_to_python<T>
                               >
                           >

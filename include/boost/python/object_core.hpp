@@ -24,6 +24,7 @@
 # include <boost/python/detail/is_xxx.hpp>
 # include <boost/python/detail/string_literal.hpp>
 # include <boost/python/detail/def_helper_fwd.hpp>
+# include <boost/python/detail/unwrap.hpp>
 
 namespace boost { namespace python { 
 
@@ -201,7 +202,7 @@ namespace api
   PyObject* object_base_initializer(T const& x)
   {
       return object_initializer<
-          typename objects::unwrap_reference<T>::type
+          detail::unwrap_t<T>
       >::get(
             x
           , is_derived<T, object>()
