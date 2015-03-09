@@ -5,8 +5,6 @@
 #ifndef OBJECT_CORE_DWA2002615_HPP
 # define OBJECT_CORE_DWA2002615_HPP
 
-# define BOOST_PYTHON_OBJECT_HAS_IS_NONE // added 2010-03-15 by rwgk
-
 # include <boost/python/detail/prefix.hpp>
 
 # include <boost/python/call.hpp>
@@ -67,14 +65,11 @@ namespace api
   typedef proxy<const_slice_policies> const_object_slice;
   typedef proxy<slice_policies> object_slice;
 
-  template <class T> struct object_initializer;
-  
   class object;
-  typedef PyObject* (object::*bool_type)() const;
-  
+
   template <class U>
-  class object_operators : public def_visitor<U>
-  {
+  class object_operators : public def_visitor<U> {
+      using bool_type = PyObject* (object::*)() const;
    protected:
       typedef object const& object_cref;
    public:
@@ -165,70 +160,47 @@ namespace api
     typedef object const object_cref2;
   };
 
-  
-  // VC6 and VC7 require this base class in order to generate the
-  // correct copy constructor for object. We can't define it there
-  // explicitly or it will complain of ambiguity.
-  struct object_base : object_operators<object>
-  {
-      // copy constructor without NULL checking, for efficiency. 
-      inline object_base(object_base const&);
-      inline object_base(PyObject* ptr);
-      
-      inline object_base& operator=(object_base const& rhs);
-      inline ~object_base();
-        
-      // Underlying object access -- returns a borrowed reference
-      inline PyObject* ptr() const;
-
-      inline bool is_none() const;
-
-   private:
-      PyObject* m_ptr;
-  };
-
-  template <class T, class U>
-  struct is_derived
-    : std::is_convertible<
-          cpp14::remove_reference_t<T>*
-        , U const*
-      >
-  {};
-
-  class object;
-  
   template <class T>
-  PyObject* object_base_initializer(T const& x)
-  {
-      return object_initializer<
-          detail::unwrap_t<T>
-      >::get(
-            x
-          , is_derived<T, object>()
-      );
-  }
+  PyObject* object_initializer(T const& x);
   
-  class object : public object_base
-  {
-   public:
+  class object : public object_operators<object> {
+  public:
       // default constructor creates a None object
-      object();
+      object() : m_ptr{python::detail::none()} {}
       
       // explicit conversion from any C++ object to Python
       template <class T>
-      explicit object(T const& x)
-        : object_base(object_base_initializer(x))
-      {
-      }
+      explicit object(T const& x) : m_ptr{object_initializer(x)} {}
 
       // Throw error_already_set() if the handle is null.
-      BOOST_PYTHON_DECL explicit object(handle<> const&);
-   private:
-      
-   public: // implementation detail -- for internal use only
-      explicit object(detail::borrowed_reference);
-      explicit object(detail::new_reference);
-      explicit object(detail::new_non_null_reference);
+      explicit object(handle<> const& x)
+          : m_ptr{python::incref(python::expect_non_null(x.get()))}
+      {}
+
+      // copy constructor without NULL checking, for efficiency.
+      object(object const& rhs) : m_ptr{python::incref(rhs.m_ptr)} {}
+
+      object& operator=(object const& rhs) {
+          python::incref(rhs.m_ptr);
+          python::decref(this->m_ptr);
+          this->m_ptr = rhs.m_ptr;
+          return *this;
+      }
+
+      ~object() { python::decref(m_ptr); }
+
+      // Underlying object access -- returns a borrowed reference
+      PyObject* ptr() const { return m_ptr; }
+
+      bool is_none() const { return m_ptr == Py_None; }
+
+  private:
+      PyObject* m_ptr;
+
+  public: // implementation detail -- for internal use only
+      explicit object(detail::borrowed_reference p) : m_ptr{python::incref((PyObject*)p)} {}
+      explicit object(detail::new_reference p) : m_ptr{expect_non_null((PyObject*)p)} {}
+      explicit object(detail::new_non_null_reference p) : m_ptr{(PyObject*)p} {}
   };
 
   // Macros for forwarding constructors in classes derived from
@@ -247,40 +219,29 @@ namespace api
   // based on whether T is a proxy or derived from object
   //
   template <bool is_proxy = false, bool is_object_manager = false>
-  struct object_initializer_impl
-  {
-      static PyObject*
-      get(object const& x, std::true_type)
-      {
+  struct object_initializer_impl {
+      static PyObject* get(object const& x, std::true_type) {
           return python::incref(x.ptr());
       }
       
       template <class T>
-      static PyObject*
-      get(T const& x, std::false_type)
-      {
+      static PyObject* get(T const& x, std::false_type) {
           return python::incref(converter::arg_to_python<T>(x).get());
       }
   };
       
   template <>
-  struct object_initializer_impl<true, false>
-  {
+  struct object_initializer_impl<true, false> {
       template <class Policies>
-      static PyObject* 
-      get(proxy<Policies> const& x, std::false_type)
-      {
+      static PyObject* get(proxy<Policies> const& x, std::false_type) {
           return python::incref(x.operator object().ptr());
       }
   };
 
   template <>
-  struct object_initializer_impl<false, true>
-  {
+  struct object_initializer_impl<false, true> {
       template <class T, class U>
-      static PyObject*
-      get(T const& x, U)
-      {
+      static PyObject* get(T const& x, U) {
           return python::incref(get_managed_object(x));
       }
   };
@@ -290,13 +251,19 @@ namespace api
   {}; // empty implementation should cause an error
 
   template <class T>
-  struct object_initializer : object_initializer_impl<
-      detail::is_<boost::python::api::proxy, T>::value
-    , converter::is_object_manager<T>::value
-  >
-  {};
+  PyObject* object_initializer(T const& x) {
+      using type = cpp14::conditional_t<
+          python::detail::is_<std::reference_wrapper, T>::value,
+          detail::unwrap_t<T>,
+          T
+      >;
+      return object_initializer_impl<
+          detail::is_<boost::python::api::proxy, type>::value,
+          converter::is_object_manager<type>::value
+      >::get(x, std::is_base_of<object, T>());
+  }
 
-}
+} // namespace api
 using api::object;
 template <class T> struct extract;
 
@@ -377,54 +344,6 @@ object api::object_operators<U>::contains(T const& key) const
     return this->attr("__contains__")(object(key));
 }
 
-
-inline object::object()
-    : object_base(python::incref(Py_None))
-{}
-
-// copy constructor without NULL checking, for efficiency
-inline api::object_base::object_base(object_base const& rhs)
-    : m_ptr(python::incref(rhs.m_ptr))
-{}
-
-inline api::object_base::object_base(PyObject* p)
-    : m_ptr(p)
-{}
-
-inline api::object_base& api::object_base::operator=(api::object_base const& rhs)
-{
-    Py_INCREF(rhs.m_ptr);
-    Py_DECREF(this->m_ptr);
-    this->m_ptr = rhs.m_ptr;
-    return *this;
-}
-
-inline api::object_base::~object_base()
-{
-    Py_DECREF(m_ptr);
-}
-
-inline object::object(detail::borrowed_reference p)
-    : object_base(python::incref((PyObject*)p))
-{}
-
-inline object::object(detail::new_reference p)
-    : object_base(expect_non_null((PyObject*)p))
-{}
-
-inline object::object(detail::new_non_null_reference p)
-    : object_base((PyObject*)p)
-{}
-
-inline PyObject* api::object_base::ptr() const
-{
-    return m_ptr;
-}
-
-inline bool api::object_base::is_none() const
-{
-    return (m_ptr == Py_None);
-}
 
 //
 // Converter specialization implementations
