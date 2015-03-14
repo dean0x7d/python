@@ -166,7 +166,7 @@ namespace api
   class object : public object_operators<object> {
   public:
       // default constructor creates a None object
-      object() : m_ptr{python::detail::none()} {}
+      object() noexcept : m_ptr{python::detail::none()} {}
       
       // explicit conversion from any C++ object to Python
       template <class T>
@@ -178,40 +178,53 @@ namespace api
       {}
 
       // copy constructor without NULL checking, for efficiency.
-      object(object const& rhs) : m_ptr{python::incref(rhs.m_ptr)} {}
+      object(object const& rhs) noexcept : m_ptr{python::incref(rhs.m_ptr)} {}
+      object(object&& rhs) noexcept : m_ptr{rhs.release()} {}
 
-      object& operator=(object const& rhs) {
+      object& operator=(object const& rhs) noexcept {
           python::incref(rhs.m_ptr);
-          python::decref(this->m_ptr);
-          this->m_ptr = rhs.m_ptr;
+          python::decref(m_ptr);
+          m_ptr = rhs.m_ptr;
+          return *this;
+      }
+
+      object& operator=(object&& rhs) noexcept {
+          python::decref(m_ptr);
+          m_ptr = rhs.release();
           return *this;
       }
 
       ~object() { python::decref(m_ptr); }
 
       // Underlying object access -- returns a borrowed reference
-      PyObject* ptr() const { return m_ptr; }
+      PyObject* ptr() const noexcept { return m_ptr; }
+      // Underlying object access -- returns an owned reference
+      PyObject* release() noexcept {
+          auto result = m_ptr;
+          m_ptr = python::detail::none();
+          return result;
+      }
 
-      bool is_none() const { return m_ptr == Py_None; }
+      bool is_none() const noexcept { return m_ptr == Py_None; }
 
   private:
       PyObject* m_ptr;
 
   public: // implementation detail -- for internal use only
-      explicit object(detail::borrowed_reference p) : m_ptr{python::incref((PyObject*)p)} {}
+      explicit object(detail::borrowed_reference p) noexcept : m_ptr{python::incref((PyObject*)p)} {}
       explicit object(detail::new_reference p) : m_ptr{expect_non_null((PyObject*)p)} {}
-      explicit object(detail::new_non_null_reference p) : m_ptr{(PyObject*)p} {}
+      explicit object(detail::new_non_null_reference p) noexcept : m_ptr{(PyObject*)p} {}
   };
 
   // Macros for forwarding constructors in classes derived from
   // object. Derived classes will usually want these as an
   // implementation detail
-# define BOOST_PYTHON_FORWARD_OBJECT_CONSTRUCTORS(derived, base)               \
-    inline explicit derived(::boost::python::detail::borrowed_reference p)     \
-        : base(p) {}                                                           \
-    inline explicit derived(::boost::python::detail::new_reference p)          \
-        : base(p) {}                                                           \
-    inline explicit derived(::boost::python::detail::new_non_null_reference p) \
+# define BOOST_PYTHON_FORWARD_OBJECT_CONSTRUCTORS(derived, base)                        \
+    inline explicit derived(::boost::python::detail::borrowed_reference p) noexcept     \
+        : base(p) {}                                                                    \
+    inline explicit derived(::boost::python::detail::new_reference p)                   \
+        : base(p) {}                                                                    \
+    inline explicit derived(::boost::python::detail::new_non_null_reference p) noexcept \
         : base(p) {}
 
   //
