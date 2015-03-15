@@ -7,7 +7,6 @@
 
 # include <boost/python/detail/prefix.hpp>
 # include <boost/python/detail/referent_storage.hpp>
-# include <boost/python/detail/construct.hpp>
 # include <boost/python/converter/object_manager.hpp>
 # include <boost/python/detail/raw_pyobject.hpp>
 
@@ -76,7 +75,8 @@ inline T object_manager_value_arg_from_python<T>::operator()() const
 template <class Ref>
 inline object_manager_ref_arg_from_python<Ref>::object_manager_ref_arg_from_python(PyObject* x)
 {
-    python::detail::construct_referent<Ref>(&m_result.bytes, (python::detail::borrowed_reference)x);
+    using type = cpp14::remove_cv_t<cpp14::remove_reference_t<Ref>>;
+    new (&m_result.bytes) type(python::detail::borrowed_reference(x));
 }
 
 template <class Ref>
