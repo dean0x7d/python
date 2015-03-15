@@ -47,16 +47,18 @@ struct object_manager_ref_arg_from_python {
     }
 
     ~object_manager_ref_arg_from_python() {
-        python::detail::destroy_stored<Ref>(this->m_result.bytes);
+        python::detail::destroy_stored<Ref>(m_result.bytes);
     }
 
     bool convertible() const {
         using type = cpp14::remove_cv_t<cpp14::remove_reference_t<Ref>>;
-        return object_manager_traits<type>::check(get_managed_object(*(type*)(m_result.bytes)));
+        return object_manager_traits<type>::check(
+            get_managed_object(python::detail::void_ptr_to_reference<Ref>(m_result.bytes))
+        );
     }
 
     Ref operator()() const {
-        return *(cpp14::remove_reference_t<Ref>*)(m_result.bytes);
+        return python::detail::void_ptr_to_reference<Ref>(m_result.bytes);
     }
 
 private:

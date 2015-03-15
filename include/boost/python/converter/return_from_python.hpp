@@ -9,7 +9,7 @@
 # include <boost/python/converter/rvalue_from_python_data.hpp>
 # include <boost/python/converter/registered.hpp>
 # include <boost/python/converter/object_manager.hpp>
-# include <boost/python/detail/void_ptr.hpp>
+# include <boost/python/detail/referent_storage.hpp>
 # include <boost/python/errors.hpp>
 # include <boost/python/handle.hpp>
 
@@ -112,9 +112,9 @@ namespace detail
   template <class T>
   inline T return_reference_from_python<T>::operator()(PyObject* obj) const
   {
-      return python::detail::void_ptr_to_reference(
-          (reference_result_from_python)(obj, registered<T>::converters)
-          , (T(*)())0);
+      return python::detail::void_ptr_to_reference<T>(
+          reference_result_from_python(obj, registered<T>::converters)
+      );
   }
 
   template <class T>

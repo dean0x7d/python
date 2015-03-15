@@ -12,7 +12,7 @@
 
 # include <boost/python/type_id.hpp>
 # include <boost/python/converter/registry.hpp>
-# include <boost/python/detail/void_ptr.hpp>
+# include <boost/python/detail/referent_storage.hpp>
 
 namespace boost { namespace python {
 
@@ -36,10 +36,7 @@ namespace detail
       static inline void* execute(PyObject* op)
       {
           using param = cpp14::add_lvalue_reference_t<U>;
-          return &Extractor::execute(
-              boost::python::detail::void_ptr_to_reference(
-                  op, (param(*)())0 )
-              );
+          return &Extractor::execute(void_ptr_to_reference<param>(op));
       }
   };
 

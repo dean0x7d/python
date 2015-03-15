@@ -16,7 +16,7 @@
 # include <boost/python/refcount.hpp>
 
 # include <boost/python/detail/copy_ctor_mutates_rhs.hpp>
-# include <boost/python/detail/void_ptr.hpp>
+# include <boost/python/detail/referent_storage.hpp>
 
 namespace boost { namespace python {
 
@@ -188,7 +188,7 @@ namespace converter
       if (m_result == 0)
           (throw_no_reference_from_python)(m_source, registered<Ref>::converters);
       
-      return python::detail::void_ptr_to_reference(m_result, (Ref(*)())0);
+      return python::detail::void_ptr_to_reference<Ref>(m_result);
   }
 
   template <class Ptr>

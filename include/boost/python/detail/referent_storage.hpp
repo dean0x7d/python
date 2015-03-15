@@ -45,6 +45,11 @@ inline void destroy_stored(void* p)
     value_destroyer<std::is_array<value_t>::value>::execute((value_t*)p);
 }
 
+template<class T, class U = cpp14::remove_reference_t<T>>
+inline U& void_ptr_to_reference(void const volatile* p) {
+    return *(U*)p;
+}
+
 }}} // namespace boost::python::detail
 
 #endif // REFERENT_STORAGE_DWA200278_HPP

@@ -59,7 +59,7 @@ struct reference_arg_from_python : arg_lvalue_from_python_base {
     } {}
 
     result_type operator()() const {
-        return *static_cast<cpp14::remove_reference_t<T>*>(m_result);
+        return python::detail::void_ptr_to_reference<T>(m_result);
     }
 };
 
@@ -90,7 +90,7 @@ struct arg_rvalue_from_python {
         if (m_data.stage1.construct)
             m_data.stage1.construct(m_source, &m_data.stage1);
 
-        return *static_cast<cpp14::remove_reference_t<T>*>(m_data.stage1.convertible);
+        return python::detail::void_ptr_to_reference<T>(m_data.stage1.convertible);
     }
 
 private:
