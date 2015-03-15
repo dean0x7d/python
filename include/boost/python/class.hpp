@@ -28,7 +28,6 @@
 # include <boost/python/detail/operator_id.hpp>
 # include <boost/python/detail/def_helper.hpp>
 # include <boost/python/detail/force_instantiate.hpp>
-# include <boost/python/detail/unwrap_type_id.hpp>
 # include <boost/python/detail/unwrap_wrapper.hpp>
 
 # include <array>
@@ -63,10 +62,9 @@ class class_ : public objects::class_base
     struct id_vector_impl;
     
     template<class Derived, class... Bases>
-    struct id_vector_impl<Derived, bases<Bases...>>
-    {
+    struct id_vector_impl<Derived, bases<Bases...>> {
         id_vector_impl()
-		: id_array({{ detail::unwrap_type_id((Derived*)0, (Derived*)0), type_id<Bases>()... }})
+		    : id_array({{ type_id<detail::unwrap_wrapper_t<Derived>>(), type_id<Bases>()... }})
         {}
         
         static constexpr auto size = sizeof...(Bases) + 1;
