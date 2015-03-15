@@ -8,8 +8,8 @@
 # include <boost/python/detail/prefix.hpp>
 # include <boost/python/object/instance.hpp>
 # include <boost/python/converter/registered.hpp>
-# include <boost/python/detail/decref_guard.hpp>
 # include <boost/python/detail/none.hpp>
+# include <boost/python/handle.hpp>
 
 namespace boost { namespace python { namespace objects { 
 
@@ -33,7 +33,7 @@ struct make_instance_impl
           
         if (raw_result != 0)
         {
-            python::detail::decref_guard protect(raw_result);
+            python::handle<> protect(raw_result);
             
             instance_t* instance = (instance_t*)raw_result;
             
@@ -46,7 +46,7 @@ struct make_instance_impl
             Py_SIZE(instance) = offsetof(instance_t, storage);
 
             // Release ownership of the python object
-            protect.cancel();
+            protect.release();
         }
         return raw_result;
     }
