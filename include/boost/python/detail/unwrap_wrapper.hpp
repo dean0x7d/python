@@ -5,7 +5,8 @@
 # define UNWRAP_WRAPPER_DWA2004723_HPP
 
 # include <boost/python/detail/prefix.hpp>
-# include <boost/python/detail/is_wrapper.hpp>
+# include <boost/python/detail/is_xxx.hpp>
+# include <boost/python/wrapper.hpp>
 
 namespace boost { namespace python { namespace detail { 
 
@@ -20,7 +21,7 @@ struct unwrap_wrapper_impl<T, true> {
 };
 
 template <class T>
-using unwrap_wrapper_t = typename unwrap_wrapper_impl<T, is_wrapper<T>::value>::type;
+using unwrap_wrapper_t = typename unwrap_wrapper_impl<T, is_base_template_of<wrapper, T>::value>::type;
 
 template <class T>
 unwrap_wrapper_t<T>* unwrap_wrapper(T*) {
