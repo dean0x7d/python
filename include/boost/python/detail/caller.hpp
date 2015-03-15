@@ -13,7 +13,7 @@
 # include <boost/python/detail/signature.hpp>
 
 # include <boost/python/type_id.hpp>
-# include <boost/python/arg_from_python.hpp>
+# include <boost/python/converter/arg_from_python.hpp>
 # include <boost/python/converter/context_result_converter.hpp>
 # include <boost/python/converter/builtin_converters.hpp>
 
@@ -121,7 +121,7 @@ struct caller<F, CallPolicies, type_list<Result, Args...>>
     bool check_converters(argument_package pack, cpp14::index_sequence<Is...>)
     {
         // The 'true' at the end is not needed, but it keeps VS14 CTP3 happy
-        bool chk[] = { arg_from_python<Args>(get<Is>(pack)).convertible()..., true };
+        bool chk[] = { converter::arg_from_python<Args>(get<Is>(pack)).convertible()..., true };
         for (auto is_convertible : chk) {
             if (!is_convertible)
                 return false;
@@ -138,7 +138,7 @@ struct caller<F, CallPolicies, type_list<Result, Args...>>
             detail::invoke_tag<Result, F>(),
             create_result_converter<result_converter>(args),
             m_function,
-            arg_from_python<Args>(get<Is>(inner_args))...
+            converter::arg_from_python<Args>(get<Is>(inner_args))...
         );
     }
     

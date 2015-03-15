@@ -17,14 +17,14 @@
 namespace boost { namespace python { namespace converter { 
 
 template <class T>
-struct object_manager_value_arg_from_python
-{
-    typedef T result_type;
+struct object_manager_value_arg_from_python {
+    using result_type = T;
     
-    object_manager_value_arg_from_python(PyObject*);
-    bool convertible() const;
-    T operator()() const;
- private:
+    object_manager_value_arg_from_python(PyObject* p) : m_source{p} {}
+    bool convertible() const { return object_manager_traits<T>::check(m_source); }
+    T operator()() const { return T(python::detail::borrowed_reference(m_source)); }
+
+private:
     PyObject* m_source;
 };
 
@@ -38,75 +38,30 @@ struct object_manager_value_arg_from_python
 // fails, nothing else in the program ever gets to touch this strange
 // "forced" object.
 template <class Ref>
-struct object_manager_ref_arg_from_python
-{
-    typedef Ref result_type;
+struct object_manager_ref_arg_from_python {
+    using result_type = Ref;
     
-    object_manager_ref_arg_from_python(PyObject*);
-    bool convertible() const;
-    Ref operator()() const;
-    ~object_manager_ref_arg_from_python();
- private:
+    object_manager_ref_arg_from_python(PyObject* p) {
+        using type = cpp14::remove_cv_t<cpp14::remove_reference_t<Ref>>;
+        new (m_result.bytes) type(python::detail::borrowed_reference(p));
+    }
+
+    ~object_manager_ref_arg_from_python() {
+        python::detail::destroy_stored<Ref>(this->m_result.bytes);
+    }
+
+    bool convertible() const {
+        using type = cpp14::remove_cv_t<cpp14::remove_reference_t<Ref>>;
+        return object_manager_traits<type>::check(get_managed_object(*(type*)(m_result.bytes)));
+    }
+
+    Ref operator()() const {
+        return *(cpp14::remove_reference_t<Ref>*)(m_result.bytes);
+    }
+
+private:
     python::detail::aligned_storage<Ref> m_result;
 };
-
-//
-// implementations
-//
-
-template <class T>
-inline object_manager_value_arg_from_python<T>::object_manager_value_arg_from_python(PyObject* x)
-    : m_source(x)
-{
-}
-    
-template <class T>
-inline bool object_manager_value_arg_from_python<T>::convertible() const
-{
-    return object_manager_traits<T>::check(m_source);
-}
-
-template <class T>
-inline T object_manager_value_arg_from_python<T>::operator()() const
-{
-    return T(python::detail::borrowed_reference(m_source));
-}
-
-template <class Ref>
-inline object_manager_ref_arg_from_python<Ref>::object_manager_ref_arg_from_python(PyObject* x)
-{
-    using type = cpp14::remove_cv_t<cpp14::remove_reference_t<Ref>>;
-    new (&m_result.bytes) type(python::detail::borrowed_reference(x));
-}
-
-template <class Ref>
-inline object_manager_ref_arg_from_python<Ref>::~object_manager_ref_arg_from_python()
-{
-    python::detail::destroy_stored<Ref>(this->m_result.bytes);
-}
-
-namespace detail
-{
-  template <class T>
-  inline bool object_manager_ref_check(T const& x)
-  {
-      return object_manager_traits<T>::check(get_managed_object(x));
-  }
-}
-
-template <class Ref>
-inline bool object_manager_ref_arg_from_python<Ref>::convertible() const
-{
-    return detail::object_manager_ref_check(
-        python::detail::void_ptr_to_reference(this->m_result.bytes, (Ref(*)())0));
-}
-
-template <class Ref>
-inline Ref object_manager_ref_arg_from_python<Ref>::operator()() const
-{
-    return python::detail::void_ptr_to_reference(
-        this->m_result.bytes, (Ref(*)())0);
-}
 
 }}} // namespace boost::python::converter
 

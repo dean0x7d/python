@@ -5,18 +5,6 @@
 #include <boost/python/type_id.hpp>
 #include <iostream>
 
-// gcc 2.95.x, MIPSpro 7.3.1.3 and IBM XL for Linux linker seem to demand this definition
-#if (defined(__GNUC__) && (__GNUC__ < 3)) \
- || (defined(__sgi) && defined(__EDG_VERSION__) && (__EDG_VERSION__ == 238)) \
- || (defined(__IBMCPP__) && defined(__linux__))
-namespace boost { namespace python {
-BOOST_PYTHON_DECL bool handle_exception_impl(function0<void>)
-{
-    return true;
-}
-}}
-#endif
-
 int result;
 
 #define ASSERT_SAME(T1,T2) \
@@ -107,19 +95,19 @@ int main()
 
 
     ASSERT_SAME(
-        select_arg_from_python<int* const&>::type, pointer_cref_arg_from_python<int*const&>
+        select_arg_from_python<int* const&>::type, pointer_arg_from_python<int*const&>
         );
     
     ASSERT_SAME(
-        select_arg_from_python<int const* const&>::type, pointer_cref_arg_from_python<int const*const&>
+        select_arg_from_python<int const* const&>::type, pointer_arg_from_python<int const*const&>
         );
     
     ASSERT_SAME(
-        select_arg_from_python<int volatile* const&>::type, pointer_cref_arg_from_python<int volatile*const&>
+        select_arg_from_python<int volatile* const&>::type, pointer_arg_from_python<int volatile*const&>
         );
 
     ASSERT_SAME(
-        select_arg_from_python<int const volatile* const&>::type, pointer_cref_arg_from_python<int const volatile*const&>
+        select_arg_from_python<int const volatile* const&>::type, pointer_arg_from_python<int const volatile*const&>
         );
 
 

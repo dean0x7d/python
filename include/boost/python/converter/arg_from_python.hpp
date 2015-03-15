@@ -10,21 +10,16 @@
 # include <boost/python/converter/rvalue_from_python_data.hpp>
 # include <boost/python/converter/registry.hpp>
 # include <boost/python/converter/registered.hpp>
-# include <boost/python/detail/void_ptr.hpp>
 # include <boost/python/back_reference.hpp>
-# include <boost/python/detail/referent_storage.hpp>
 # include <boost/python/converter/obj_mgr_arg_from_python.hpp>
 # include <boost/python/cpp14/type_traits.hpp>
-
-namespace boost { namespace python
-{
-  template <class T> struct arg_from_python;
-}}
 
 // This header defines Python->C++ function argument converters,
 // parametrized on the argument type.
 
 namespace boost { namespace python { namespace converter {
+
+template <class T> struct arg_from_python;
 
 //
 // lvalue converters
@@ -32,56 +27,40 @@ namespace boost { namespace python { namespace converter {
 //   These require that an lvalue of the type U is stored somewhere in
 //   the Python object being converted.
 
-// Used when T == U*const&
+// Base class for pointer and reference converters
+struct arg_lvalue_from_python_base {
+    arg_lvalue_from_python_base(void* result) : m_result{result} {}
+    bool convertible() const { return m_result != nullptr; }
+    
+    void* m_result;
+};
+
+// Used when T == U* or T == U*const&
 template <class T>
-struct pointer_cref_arg_from_python {
+struct pointer_arg_from_python : arg_lvalue_from_python_base {
     using result_type = cpp14::remove_reference_t<T>;
 
-    pointer_cref_arg_from_python(PyObject* p) {
-        m_result = (p == Py_None) ? p : get_lvalue_from_python(p, registered_pointee<T>::converters);
-    }
-    bool convertible() const { return m_result != nullptr; }
+    pointer_arg_from_python(PyObject* p) : arg_lvalue_from_python_base{
+        (p == Py_None) ? p : get_lvalue_from_python(p, registered_pointee<T>::converters)
+    } {}
 
     result_type operator()() const {
         return (m_result == Py_None) ? nullptr : static_cast<result_type>(m_result);
     }
-
- private: // storage for a U*
-    void* m_result;
-};
-
-// Base class for pointer and reference converters
-struct arg_lvalue_from_python_base
-{
- public: // member functions
-    arg_lvalue_from_python_base(void* result);
-    bool convertible() const;
-    
- protected: // member functions
-    void*const& result() const;
-    
- private: // data members
-    void* m_result;
-};
-
-// Used when T == U* 
-template <class T>
-struct pointer_arg_from_python : arg_lvalue_from_python_base
-{
-    typedef T result_type;
-    
-    pointer_arg_from_python(PyObject*);
-    T operator()() const;
 };
 
 // Used when T == U& and (T != V const& or T == W volatile&)
 template <class T>
-struct reference_arg_from_python : arg_lvalue_from_python_base
-{
-    typedef T result_type;
-    
-    reference_arg_from_python(PyObject*);
-    T operator()() const;
+struct reference_arg_from_python : arg_lvalue_from_python_base {
+    using result_type = T;
+
+    reference_arg_from_python(PyObject* p) : arg_lvalue_from_python_base{
+        get_lvalue_from_python(p, registered<T>::converters)
+    } {}
+
+    result_type operator()() const {
+        return *static_cast<cpp14::remove_reference_t<T>*>(m_result);
+    }
 };
 
 // ===================
@@ -97,20 +76,24 @@ struct reference_arg_from_python : arg_lvalue_from_python_base
 // Used when T is a plain value (non-pointer, non-reference) type or
 // a (non-volatile) const reference to a plain value type.
 template <class T>
-struct arg_rvalue_from_python
-{
-    typedef cpp14::add_lvalue_reference_t<
-        T
-        // We can't add_const here, or it would be impossible to pass
-        // auto_ptr<U> args from Python to C++
-    > result_type;
+struct arg_rvalue_from_python {
+    // We can't add_const here, or it would be impossible to pass
+    // auto_ptr<U> args from Python to C++
+    using result_type = cpp14::add_lvalue_reference_t<T>;
     
-    arg_rvalue_from_python(PyObject*);
-    bool convertible() const;
+    arg_rvalue_from_python(PyObject* p)
+        : m_data{rvalue_from_python_stage1(p, registered<T>::converters)}, m_source{p}
+    {}
+    bool convertible() const { return m_data.stage1.convertible != nullptr; }
 
-    result_type operator()();
-    
- private:
+    result_type operator()() {
+        if (m_data.stage1.construct)
+            m_data.stage1.construct(m_source, &m_data.stage1);
+
+        return *static_cast<cpp14::remove_reference_t<T>*>(m_data.stage1.convertible);
+    }
+
+private:
     rvalue_from_python_data<result_type> m_data;
     PyObject* m_source;
 };
@@ -121,26 +104,24 @@ struct arg_rvalue_from_python
 // Converts to a (PyObject*,T) bundle, for when you need a reference
 // back to the Python object
 template <class T>
-struct back_reference_arg_from_python
-    : boost::python::arg_from_python<typename T::type>
-{
-    typedef T result_type;
-    
-    back_reference_arg_from_python(PyObject*);
-    T operator()();
- private:
-    typedef boost::python::arg_from_python<typename T::type> base;
+struct back_reference_arg_from_python : arg_from_python<typename T::type> {
+private:
+    using base = arg_from_python<typename T::type>;
     PyObject* m_source;
-};
 
+public:
+    using result_type = T;
+
+    back_reference_arg_from_python(PyObject* p) : base(p), m_source(p) {}
+    T operator()() { return T(m_source, base::operator()()); }
+};
 
 // ==================
 
 // This metafunction selects the appropriate arg_from_python converter
 // type for an argument of type T.
 template <class T>
-struct select_arg_from_python
-{
+struct select_arg_from_python {
     using T_without_ref = cpp14::remove_reference_t<T>;
     
     using type = cpp14::conditional_t<
@@ -152,129 +133,63 @@ struct select_arg_from_python
             object_manager_ref_arg_from_python<T>,
     
             cpp14::conditional_t<
-                std::is_pointer<T>::value,
+                std::is_pointer<T>::value ||
+                (std::is_reference<T>::value &&
+                 std::is_pointer<T_without_ref>::value &&
+                 std::is_const<T_without_ref>::value &&
+                 !std::is_volatile<T_without_ref>::value),
                 pointer_arg_from_python<T>,
     
                 cpp14::conditional_t<
-                    (std::is_reference<T>::value &&
-                     std::is_pointer<T_without_ref>::value &&
-                     std::is_const<T_without_ref>::value &&
-                     !std::is_volatile<T_without_ref>::value),
-                    pointer_cref_arg_from_python<T>,
-    
+                    std::is_reference<T>::value &&
+                    (!std::is_const<T_without_ref>::value ||
+                     std::is_volatile<T_without_ref>::value),
+                    reference_arg_from_python<T>,
+
                     cpp14::conditional_t<
-                        (std::is_reference<T>::value &&
-                         (!std::is_const<T_without_ref>::value ||
-                          std::is_volatile<T_without_ref>::value)),
-                        reference_arg_from_python<T>,
-    
-                        cpp14::conditional_t<
-                            boost::python::is_back_reference<T>::value,
-                            back_reference_arg_from_python<T>,
-                            arg_rvalue_from_python<T>
-                        >
+                        boost::python::is_back_reference<T>::value,
+                        back_reference_arg_from_python<T>,
+                        arg_rvalue_from_python<T>
                     >
                 >
             >
         >
     >;
 };
-    
+
 template <class T>
 using select_arg_from_python_t = typename select_arg_from_python<T>::type;
 
-// ==================
-
-//
-// implementations
-//
-
-// arg_lvalue_from_python_base
-//
-inline arg_lvalue_from_python_base::arg_lvalue_from_python_base(void* result)
-    : m_result(result)
-{
-}
-
-inline bool arg_lvalue_from_python_base::convertible() const
-{
-    return m_result != 0;
-}
-
-inline void*const& arg_lvalue_from_python_base::result() const
-{
-    return m_result;
-}
-
-// pointer_arg_from_python
-//
 template <class T>
-inline pointer_arg_from_python<T>::pointer_arg_from_python(PyObject* p)
-    : arg_lvalue_from_python_base(
-        p == Py_None ? p : converter::get_lvalue_from_python(p, registered_pointee<T>::converters))
-{
-}
+struct arg_from_python : select_arg_from_python_t<T> {
+    using base = select_arg_from_python_t<T>;
+    using base::base;
+};
 
-template <class T>
-inline T pointer_arg_from_python<T>::operator()() const
-{
-    return (result() == Py_None) ? 0 : T(result());
-}
+// specialization for PyObject*
+template <>
+struct arg_from_python<PyObject*> {
+    using result_type = PyObject*;
 
-// reference_arg_from_python
-//
-template <class T>
-inline reference_arg_from_python<T>::reference_arg_from_python(PyObject* p)
-    : arg_lvalue_from_python_base(converter::get_lvalue_from_python(p,registered<T>::converters))
-{
-}
+    arg_from_python(PyObject* p) : m_source(p) {}
+    bool convertible() const { return true; }
+    result_type operator()() const { return m_source; }
 
-template <class T>
-inline T reference_arg_from_python<T>::operator()() const
-{
-    return python::detail::void_ptr_to_reference(result(), (T(*)())0);
-}
+private:
+    PyObject* m_source;
+};
 
+template <>
+struct arg_from_python<PyObject* const&> {
+    using result_type = PyObject* const&;
 
-// arg_rvalue_from_python
-//
-template <class T>
-inline arg_rvalue_from_python<T>::arg_rvalue_from_python(PyObject* obj)
-    : m_data(converter::rvalue_from_python_stage1(obj, registered<T>::converters))
-    , m_source(obj)
-{
-}
+    arg_from_python(PyObject* p) : m_source(p) {}
+    bool convertible() const { return true; }
+    result_type operator()() const { return m_source; }
 
-template <class T>
-inline bool arg_rvalue_from_python<T>::convertible() const
-{
-    return m_data.stage1.convertible != 0;
-}
-
-template <class T>
-inline typename arg_rvalue_from_python<T>::result_type
-arg_rvalue_from_python<T>::operator()()
-{
-    if (m_data.stage1.construct != 0)
-        m_data.stage1.construct(m_source, &m_data.stage1);
-    
-    return python::detail::void_ptr_to_reference(m_data.stage1.convertible, (result_type(*)())0);
-}
-
-// back_reference_arg_from_python
-//
-template <class T>
-back_reference_arg_from_python<T>::back_reference_arg_from_python(PyObject* x)
-  : base(x), m_source(x)
-{
-}
-
-template <class T>
-inline T
-back_reference_arg_from_python<T>::operator()()
-{
-    return T(m_source, base::operator()());
-}
+private:
+    PyObject* m_source;
+};
 
 }}} // namespace boost::python::converter
 
