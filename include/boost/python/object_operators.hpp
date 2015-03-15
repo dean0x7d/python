@@ -10,24 +10,14 @@
 # include <boost/python/object_core.hpp>
 # include <boost/python/call.hpp>
 # include <boost/python/cpp14/type_traits.hpp>
+# include <boost/python/detail/is_xxx.hpp>
 
 namespace boost { namespace python { namespace api {
 
-template <class X>
-char is_object_operators_helper(object_operators<X> const*);
-    
-typedef char (&no_type)[2];
-no_type is_object_operators_helper(...);
-
-template <class X> X* make_ptr();
-
 template <class L, class R = L>
-struct is_object_operators
-{
-    static constexpr bool value =
-            sizeof(api::is_object_operators_helper(api::make_ptr<L>()))
-            + sizeof(api::is_object_operators_helper(api::make_ptr<R>()))
-            < 4;
+struct is_object_operators {
+    static constexpr bool value = python::detail::is_base_template_of<object_operators, L>::value
+                               || python::detail::is_base_template_of<object_operators, R>::value;
     using type = std::integral_constant<bool, value>;
 };
 
@@ -62,15 +52,6 @@ object_operators<U>::operator!() const
     return !is_true;
 }
 
-# define BOOST_PYTHON_COMPARE_OP(op, opid)                              \
-template <class L, class R>                                             \
-enable_binary_t<L, R, object> operator op(L const& l, R const& r)       \
-{                                                                       \
-    return PyObject_RichCompare(                                        \
-        object(l).ptr(), object(r).ptr(), opid);                        \
-}
-# undef BOOST_PYTHON_COMPARE_OP
-    
 # define BOOST_PYTHON_BINARY_OPERATOR(op)                               \
 BOOST_PYTHON_DECL object operator op(object const& l, object const& r); \
 template <class L, class R>                                             \
