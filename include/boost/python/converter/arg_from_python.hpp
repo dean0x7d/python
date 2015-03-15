@@ -34,18 +34,20 @@ namespace boost { namespace python { namespace converter {
 
 // Used when T == U*const&
 template <class T>
-struct pointer_cref_arg_from_python
-{
-    typedef T result_type;
-    
-    pointer_cref_arg_from_python(PyObject*);
-    T operator()() const;
-    bool convertible() const;
-    
+struct pointer_cref_arg_from_python {
+    using result_type = cpp14::remove_reference_t<T>;
+
+    pointer_cref_arg_from_python(PyObject* p) {
+        m_result = (p == Py_None) ? p : get_lvalue_from_python(p, registered_pointee<T>::converters);
+    }
+    bool convertible() const { return m_result != nullptr; }
+
+    result_type operator()() const {
+        return (m_result == Py_None) ? nullptr : static_cast<result_type>(m_result);
+    }
+
  private: // storage for a U*
-    // needed because not all compilers will let us declare U* as the
-    // return type of operator() -- we return U*const& instead
-    python::detail::aligned_storage<T> m_result;
+    void* m_result;
 };
 
 // Base class for pointer and reference converters
@@ -202,53 +204,6 @@ inline bool arg_lvalue_from_python_base::convertible() const
 inline void*const& arg_lvalue_from_python_base::result() const
 {
     return m_result;
-}
-
-// pointer_cref_arg_from_python
-//
-namespace detail
-{
-  // null_ptr_reference -- a function returning a reference to a null
-  // pointer of type U. Needed so that extractors for T*const& can
-  // convert Python's None.
-  template <class T>
-  struct null_ptr_owner
-  {
-      static T value;
-  };
-  template <class T> T null_ptr_owner<T>::value = 0;
-  
-  template <class U>
-  inline U& null_ptr_reference(U&(*)())
-  {
-      return null_ptr_owner<U>::value;
-  }
-}
-
-template <class T>
-inline pointer_cref_arg_from_python<T>::pointer_cref_arg_from_python(PyObject* p)
-{
-    // T == U*const&: store a U* in the m_result storage. Nonzero
-    // indicates success.  If find returns nonzero, it's a pointer to
-    // a U object.
-    python::detail::write_void_ptr_reference(
-        m_result.bytes
-        , p == Py_None ? p : converter::get_lvalue_from_python(p, registered_pointee<T>::converters)
-        , (T(*)())0);
-}
-
-template <class T>
-inline bool pointer_cref_arg_from_python<T>::convertible() const
-{
-    return python::detail::void_ptr_to_reference(m_result.bytes, (T(*)())0) != 0;
-}
-template <class T>
-inline T pointer_cref_arg_from_python<T>::operator()() const
-{
-    return (*(void**)m_result.bytes == Py_None)  // None ==> 0
-        ? detail::null_ptr_reference((T(*)())0)
-        // Otherwise, return a U*const& to the m_result storage.
-        : python::detail::void_ptr_to_reference(m_result.bytes, (T(*)())0);
 }
 
 // pointer_arg_from_python
