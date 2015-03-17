@@ -94,7 +94,7 @@ struct converter_target_type <void_result_to_python >
 //
 // Template Arguments:
 //
-//   F -
+//   Function -
 //      the C++ `function object' that will be called. Might
 //      actually be any data for which an appropriate invoke_tag() can
 //      be generated. invoke(...) takes care of the actual invocation syntax.
@@ -103,66 +103,21 @@ struct converter_target_type <void_result_to_python >
 //      The precall, postcall, and what kind of resultconverter to
 //      generate for Result
 //
-//   Sig -
+//   Signature -
 //      The `intended signature' of the function. A type_list
 //      beginning with a result type and continuing with a list of
 //      argument types.
-template <class F, class CallPolicies, class Sig> 
+template<class Function, class CallPolicies, class Signature,
+         class = cpp14::make_index_sequence<Signature::size - 1>>
 struct caller;
 
-template <class F, class CallPolicies, class Result, class... Args>
-struct caller<F, CallPolicies, type_list<Result, Args...>>
-{
-    caller(F f) : m_function(f) {}
-    
-    using argument_package = typename CallPolicies::argument_package;
+template<class Function, class CallPolicies, class Result, class... Args, std::size_t... Is>
+struct caller<Function, CallPolicies, type_list<Result, Args...>, cpp14::index_sequence<Is...>> {
+    caller(Function f) : m_function(f) {}
 
-    template <std::size_t... Is>
-    bool check_converters(argument_package pack, cpp14::index_sequence<Is...>)
-    {
-        // The 'true' at the end is not needed, but it keeps VS14 CTP3 happy
-        bool chk[] = { converter::arg_from_python<Args>(get<Is>(pack)).convertible()..., true };
-        for (auto is_convertible : chk) {
-            if (!is_convertible)
-                return false;
-        }
-        return true;
-    }
-    
-    template <std::size_t... Is>
-    PyObject* call_impl(argument_package inner_args, PyObject* args, cpp14::index_sequence<Is...>)
-    {
-        using result_converter = select_result_converter_t<CallPolicies, Result>;
-        
-        return detail::invoke(
-            detail::invoke_tag<Result, F>(),
-            create_result_converter<result_converter>(args),
-            m_function,
-            converter::arg_from_python<Args>(get<Is>(inner_args))...
-        );
-    }
-    
-    PyObject* operator()(PyObject* args, PyObject*) // eliminate
-                                                     // this
-                                                     // trailing
-                                                     // keyword dict
-    {
-        using argument_package = typename CallPolicies::argument_package;
-        argument_package inner_args(args);
-        
-        if (!check_converters(inner_args, cpp14::index_sequence_for<Args...>()))
-            return nullptr;
-        
-        // all converters have been checked. Now we can do the
-        // precall part of the policy
-        if (!CallPolicies::precall(inner_args))
-            return nullptr;
-        
-        // TODO: Currently, the converters are created twice (check_converters, call_impl).
-        //       This can be improved by making a tuple<converters...> and passing it to both.
-        PyObject* result = call_impl(inner_args, args, cpp14::index_sequence_for<Args...>());
-        
-        return CallPolicies::postcall(inner_args, result);
+    PyObject* operator()(PyObject* args, PyObject* /*kwargs*/) {
+        auto inner_args = argument_package{args};
+        return call_impl(args, inner_args, converter::arg_from_python<Args>(get<Is>(inner_args))...);
     }
     
     static unsigned min_arity() { return sizeof...(Args); }
@@ -192,7 +147,33 @@ struct caller<F, CallPolicies, type_list<Result, Args...>>
     }
 
 private:
-    F m_function;
+    using argument_package = typename CallPolicies::argument_package;
+
+    template<class... Converters>
+    PyObject* call_impl(PyObject* args, argument_package inner_args, Converters... converters) {
+        // The 'true' at the end is not needed, but it keeps VS14 CTP3 happy
+        bool check_converters[] = { converters.convertible()..., true };
+        for (auto is_convertible : check_converters) {
+            if (!is_convertible)
+                return nullptr;
+        }
+
+        if (!CallPolicies::precall(inner_args))
+            return nullptr;
+
+        using result_converter = select_result_converter_t<CallPolicies, Result>;
+        PyObject* result = detail::invoke(
+            detail::invoke_tag<Result, Function>{},
+            create_result_converter<result_converter>(args),
+            m_function,
+            converters...
+        );
+
+        return CallPolicies::postcall(inner_args, result);
+    }
+
+private:
+    Function m_function;
 };
     
 }}} // namespace boost::python::detail
