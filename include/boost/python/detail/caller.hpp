@@ -31,25 +31,23 @@ inline Py_ssize_t arity(PyObject* const& args) {
 // This "result converter" is really just used as
 // a dispatch tag to invoke(...), selecting the appropriate
 // implementation
-typedef int void_result_to_python;
+using void_result_to_python = int;
 
 // Given a model of CallPolicies and a C++ result type, this
 // metafunction selects the appropriate converter to use for
 // converting the result to python.
-template <class Policies, class Result, bool is_void = true>
+template <class CallPolicies, class Result>
 struct select_result_converter {
+    using type = typename CallPolicies::result_converter::template apply<Result>::type;
+};
+
+template <class CallPolicies>
+struct select_result_converter<CallPolicies, void> {
     using type = void_result_to_python;
 };
 
-template <class Policies, class Result>
-struct select_result_converter<Policies, Result, false> {
-    using type = typename Policies::result_converter::template apply<Result>::type;
-};
-
-template <class Policies, class Result>
-using select_result_converter_t = typename select_result_converter<
-    Policies, Result, std::is_same<Result, void>::value
->::type;
+template <class CallPolicies, class Result>
+using select_result_converter_t = typename select_result_converter<CallPolicies, Result>::type;
 
 
 template <class ResultConverter, class ArgPackage>
@@ -58,31 +56,27 @@ inline ResultConverter create_result_converter(ArgPackage const& args, std::true
 }
 
 template <class ResultConverter, class ArgPackage>
-inline ResultConverter create_result_converter(ArgPackage const& args, std::false_type) {
+inline ResultConverter create_result_converter(ArgPackage const&, std::false_type) {
     return {};
 }
 
 template <class ResultConverter, class ArgPackage>
 inline ResultConverter create_result_converter(ArgPackage const& args) {
-    using pick = std::is_convertible<ResultConverter*, converter::context_result_converter*>;
-    return create_result_converter<ResultConverter>(args, pick());
+    using pick = std::is_base_of<converter::context_result_converter, ResultConverter>;
+    return create_result_converter<ResultConverter>(args, pick{});
 }
 
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
 template <class ResultConverter>
-struct converter_target_type 
-{
-    static PyTypeObject const *get_pytype()
-    {
-        return create_result_converter<ResultConverter>((PyObject*)nullptr).get_pytype();
+struct converter_target_type {
+    static PyTypeObject const* get_pytype() {
+        return create_result_converter<ResultConverter>(nullptr).get_pytype();
     }
 };
 
 template < >
-struct converter_target_type <void_result_to_python >
-{
-    static PyTypeObject const *get_pytype()
-    {
+struct converter_target_type<void_result_to_python> {
+    static PyTypeObject const* get_pytype() {
         return nullptr;
     }
 };
@@ -96,7 +90,7 @@ struct converter_target_type <void_result_to_python >
 //
 //   Function -
 //      the C++ `function object' that will be called. Might
-//      actually be any data for which an appropriate invoke_tag() can
+//      actually be any data for which an appropriate invoke_tag can
 //      be generated. invoke(...) takes care of the actual invocation syntax.
 //
 //   CallPolicies -
@@ -122,27 +116,24 @@ struct caller<Function, CallPolicies, type_list<Result, Args...>, cpp14::index_s
     
     static unsigned min_arity() { return sizeof...(Args); }
     
-    static py_func_sig_info signature()
-    {
+    static py_func_sig_info signature() {
         using Sig = type_list<Result, Args...>;
-        
-        const signature_element * sig = detail::signature<Sig>::elements();
+        signature_element const* sig = detail::signature<Sig>::elements();
+
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-        
-        typedef typename CallPolicies::template extract_return_type<Sig>::type rtype;
+        using rtype = typename CallPolicies::template extract_return_type<Sig>::type;
         using result_converter = select_result_converter_t<CallPolicies, rtype>;
         
         static const signature_element ret = {
             std::is_same<void, rtype>::value ? "void" : type_id<rtype>().name(),
             &detail::converter_target_type<result_converter>::get_pytype,
-            std::is_reference<rtype>::value && 
-            !std::is_const<cpp14::remove_reference_t<rtype>>::value 
+            std::is_reference<rtype>::value &&
+                !std::is_const<cpp14::remove_reference_t<rtype>>::value
         };
-        py_func_sig_info res = {sig, &ret };
+        py_func_sig_info res = {sig, &ret};
 #else
-        py_func_sig_info res = {sig, sig };
+        py_func_sig_info res = {sig, sig};
 #endif
-        
         return res;
     }
 
@@ -163,7 +154,7 @@ private:
 
         using result_converter = select_result_converter_t<CallPolicies, Result>;
         PyObject* result = detail::invoke(
-            detail::invoke_tag<Result, Function>{},
+            detail::make_invoke_tag<Result, Function>{},
             create_result_converter<result_converter>(args),
             m_function,
             converters...

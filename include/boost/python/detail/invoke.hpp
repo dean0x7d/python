@@ -27,42 +27,35 @@
 
 namespace boost { namespace python { namespace detail { 
 
-template <bool void_return, bool member>
-struct invoke_tag_ {};
+template<bool void_return, bool member>
+struct invoke_tag {};
 
-// A metafunction returning the appropriate tag type for invoking an
-// object of type F with return type R.
-template <class R, class F>
-struct invoke_tag
-  : invoke_tag_<
-    std::is_same<R,void>::value,
-    std::is_member_function_pointer<F>::value
-    >
-{
-};
+// A metafunction returning the appropriate tag type
+// for invoking a Function which returns Result.
+template<class Result, class Function>
+using make_invoke_tag = invoke_tag<
+    std::is_same<Result, void>::value,
+    std::is_member_function_pointer<Function>::value
+>;
 
 template <class RC, class F, class... ACs>
-inline PyObject* invoke(invoke_tag_<false,false>, RC const& rc, F& f, ACs&&... acs)
-{
+inline PyObject* invoke(invoke_tag<false,false>, RC const& rc, F& f, ACs&&... acs) {
     return rc(f( std::forward<ACs>(acs)()... ));
 }
 
 template <class RC, class F, class... ACs>
-inline PyObject* invoke(invoke_tag_<true,false>, RC const&, F& f, ACs&&... acs)
-{
+inline PyObject* invoke(invoke_tag<true,false>, RC const&, F& f, ACs&&... acs) {
     f( std::forward<ACs>(acs)()... );
     return none();
 }
 
 template <class RC, class F, class TC, class... ACs>
-inline PyObject* invoke(invoke_tag_<false,true>, RC const& rc, F& f, TC&& tc, ACs&&... acs)
-{
+inline PyObject* invoke(invoke_tag<false,true>, RC const& rc, F& f, TC&& tc, ACs&&... acs) {
     return rc( (std::forward<TC>(tc)().*f)(std::forward<ACs>(acs)()...) );
 }
 
 template <class RC, class F, class TC, class... ACs>
-inline PyObject* invoke(invoke_tag_<true,true>, RC const&, F& f, TC&& tc, ACs&&... acs)
-{
+inline PyObject* invoke(invoke_tag<true,true>, RC const&, F& f, TC&& tc, ACs&&... acs) {
     (std::forward<TC>(tc)().*f)(std::forward<ACs>(acs)()...);
     return none();
 }
