@@ -193,14 +193,9 @@ namespace registry
       found->rvalue_chain.insert_after(before_end, {convertible, construct, exp_pytype});
   }
 
-  registration const& lookup(type_info key)
+  registration const& lookup(type_info key, bool is_shared_ptr)
   {
-      return *get(key);
-  }
-
-  registration const& lookup_shared_ptr(type_info key)
-  {
-      return *get(key, true);
+      return *get(key, is_shared_ptr);
   }
 
   registration const* query(type_info type)

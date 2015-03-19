@@ -7,6 +7,7 @@
 # include <boost/python/converter/registry.hpp>
 # include <boost/python/converter/registrations.hpp>
 # include <boost/python/cpp14/type_traits.hpp>
+# include <boost/python/detail/is_xxx.hpp>
 
 # include <boost/shared_ptr.hpp>
 
@@ -15,10 +16,13 @@ namespace boost { namespace python { namespace converter {
 namespace detail
 {
   template <class T>
-  struct registered_base
-  {
+  struct registered_base {
       static registration const& converters;
   };
+
+  template<class T>
+  registration const& registered_base<T>::converters =
+      registry::lookup(type_id<T>(), python::detail::is_<shared_ptr, T>::value);
 }
 
 template <class T>
@@ -34,29 +38,6 @@ using registered_pointee = detail::registered_base<
         cpp14::remove_reference_t<T>
     >
 >;
-
-//
-// implementations
-//
-namespace detail
-{
-  template<class T>
-  struct lookup_helper {
-      static registration const& execute() {
-          return registry::lookup(type_id<T>());
-      }
-  };
-
-  template<class T>
-  struct lookup_helper<shared_ptr<T>> {
-      static registration const& execute() {
-          return registry::lookup_shared_ptr(type_id<shared_ptr<T>>());
-      }
-  };
-
-  template <class T>
-  registration const& registered_base<T>::converters = detail::lookup_helper<T>::execute();
-}
 
 }}} // namespace boost::python::converter
 
