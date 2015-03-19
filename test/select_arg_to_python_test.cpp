@@ -40,31 +40,31 @@ int main()
 
 
     ASSERT_SAME(
-        select_arg_to_python<int>::type, value_arg_to_python<int>
+        select_arg_to_python_t<int>, value_arg_to_python<int>
         );
 
     ASSERT_SAME(
-        select_arg_to_python<std::reference_wrapper<int> >::type, reference_arg_to_python<int>
+        select_arg_to_python_t<std::reference_wrapper<int> >, reference_arg_to_python<int>
         );
     
     ASSERT_SAME(
-        select_arg_to_python<pointer_wrapper<int> >::type, pointer_shallow_arg_to_python<int>
+        select_arg_to_python_t<pointer_wrapper<int> >, pointer_shallow_arg_to_python<int>
         );
     
     ASSERT_SAME(
-        select_arg_to_python<int*>::type, pointer_deep_arg_to_python<int*>
+        select_arg_to_python_t<int*>, pointer_deep_arg_to_python<int*>
         );
     
     ASSERT_SAME(
-        select_arg_to_python<handle<> >::type, object_manager_arg_to_python<handle<> >
+        select_arg_to_python_t<handle<> >, object_manager_arg_to_python<handle<> >
         );
 
     ASSERT_SAME(
-        select_arg_to_python<object>::type, object_manager_arg_to_python<object>
+        select_arg_to_python_t<object>, object_manager_arg_to_python<object>
         );
 
     ASSERT_SAME(
-        select_arg_to_python<char[20]>::type, arg_to_python<char const*>
+        select_arg_to_python_t<char[20]>, arg_to_python<char const*>
         );
 
     return result;

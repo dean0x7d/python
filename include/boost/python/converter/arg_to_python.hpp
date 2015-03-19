@@ -5,19 +5,15 @@
 #ifndef ARG_TO_PYTHON_DWA200265_HPP
 # define ARG_TO_PYTHON_DWA200265_HPP
 
-# include <boost/python/cpp14/type_traits.hpp>
-
 # include <boost/python/ptr.hpp>
 # include <boost/python/to_python_indirect.hpp>
+# include <boost/python/object/function_handle.hpp>
+# include <boost/python/base_type_traits.hpp>
 
 # include <boost/python/converter/registered.hpp>
 # include <boost/python/converter/shared_ptr_to_python.hpp>
 // Bring in specializations
 # include <boost/python/converter/builtin_converters.hpp>
-
-# include <boost/python/object/function_handle.hpp>
-
-# include <boost/python/base_type_traits.hpp>
 
 # include <boost/python/detail/string_literal.hpp>
 # include <boost/python/detail/value_is_shared_ptr.hpp>
@@ -87,53 +83,46 @@ namespace detail
       T const& m_src;
   };
 
-  template <class T>
-  struct select_arg_to_python {
-      using unwrapped_type = python::detail::unwrap_t<T>;
+  template <class T, class unwrapped_type = python::detail::unwrap_t<T>>
+  using select_arg_to_python_t = cpp14::conditional_t<
+      // Special handling for char const[N]; interpret them as char
+      // const* for the sake of conversion
+      python::detail::is_string_literal<T const>::value,
+      arg_to_python<char const*>,
 
-      using type = cpp14::conditional_t<
-          // Special handling for char const[N]; interpret them as char
-          // const* for the sake of conversion
-          python::detail::is_string_literal<T const>::value,
-          arg_to_python<char const*>,
+      cpp14::conditional_t<
+          python::detail::value_is_shared_ptr<T>::value,
+          shared_ptr_arg_to_python<T>,
 
           cpp14::conditional_t<
-              python::detail::value_is_shared_ptr<T>::value,
-              shared_ptr_arg_to_python<T>,
-      
+              (std::is_function<T>::value ||
+                  std::is_function<cpp14::remove_pointer_t<T>>::value ||
+                  std::is_member_function_pointer<T>::value),
+              function_arg_to_python<T>,
+
               cpp14::conditional_t<
-                  (std::is_function<T>::value ||
-                   std::is_function<cpp14::remove_pointer_t<T>>::value ||
-                   std::is_member_function_pointer<T>::value),
-                  function_arg_to_python<T>,
+                  is_object_manager<T>::value,
+                  object_manager_arg_to_python<T>,
 
                   cpp14::conditional_t<
-                      is_object_manager<T>::value,
-                      object_manager_arg_to_python<T>,
+                      std::is_pointer<T>::value,
+                      pointer_deep_arg_to_python<T>,
 
                       cpp14::conditional_t<
-                          std::is_pointer<T>::value,
-                          pointer_deep_arg_to_python<T>,
+                          python::detail::is_<pointer_wrapper, T>::value,
+                          pointer_shallow_arg_to_python<unwrapped_type>,
 
                           cpp14::conditional_t<
-                              python::detail::is_<pointer_wrapper, T>::value,
-                              pointer_shallow_arg_to_python<unwrapped_type>,
-
-                              cpp14::conditional_t<
-                                  python::detail::is_<std::reference_wrapper, T>::value,
-                                  reference_arg_to_python<unwrapped_type>,
-                                  value_arg_to_python<T>
-                              >
+                              python::detail::is_<std::reference_wrapper, T>::value,
+                              reference_arg_to_python<unwrapped_type>,
+                              value_arg_to_python<T>
                           >
                       >
                   >
               >
           >
-      >;
-  };
-
-  template <class T>
-  using select_arg_to_python_t = typename select_arg_to_python<T>::type;
+      >
+  >;
 }
 
 // Throw an exception if the conversion can't succeed
