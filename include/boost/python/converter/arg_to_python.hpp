@@ -116,8 +116,8 @@ namespace detail
                           pointer_deep_arg_to_python<T>,
 
                           cpp14::conditional_t<
-                              is_pointer_wrapper<T>::value,
-                              pointer_shallow_arg_to_python<unwrapped_ptr>,
+                              python::detail::is_<pointer_wrapper, T>::value,
+                              pointer_shallow_arg_to_python<unwrapped_type>,
 
                               cpp14::conditional_t<
                                   python::detail::is_<std::reference_wrapper, T>::value,
