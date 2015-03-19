@@ -11,7 +11,6 @@
 # include <boost/python/to_python_indirect.hpp>
 
 # include <boost/python/converter/registered.hpp>
-# include <boost/python/converter/arg_to_python_base.hpp>
 # include <boost/python/converter/shared_ptr_to_python.hpp>
 // Bring in specializations
 # include <boost/python/converter/builtin_converters.hpp>
@@ -29,70 +28,68 @@ namespace boost { namespace python { namespace converter {
 namespace detail
 {
   template <class T>
-  struct function_arg_to_python : handle<>
-  {
-      function_arg_to_python(T const& x);
+  struct function_arg_to_python : handle<> {
+      function_arg_to_python(T const& x)
+          : handle<>{python::objects::make_function_handle(x)}
+      {}
   };
 
   template <class T>
-  struct reference_arg_to_python : handle<>
-  {
-      reference_arg_to_python(T& x);
-   private:
-      static PyObject* get_object(T& x);
+  struct reference_arg_to_python : handle<> {
+      reference_arg_to_python(T& x)
+          : handle<>{to_python_indirect<T&, python::detail::make_reference_holder>{}(x)}
+      {}
   };
 
   template <class T>
-  struct shared_ptr_arg_to_python : handle<>
-  {
-      shared_ptr_arg_to_python(T const& x);
-   private:
-      static PyObject* get_object(T& x);
+  struct shared_ptr_arg_to_python : handle<> {
+      shared_ptr_arg_to_python(T const& x)
+          : handle<>(shared_ptr_to_python(x))
+      {}
   };
 
   template <class T>
-  struct value_arg_to_python : arg_to_python_base
-  {
-      // Throw an exception if the conversion can't succeed
-      value_arg_to_python(T const&);
+  struct value_arg_to_python : handle<>  {
+      value_arg_to_python(T const& x)
+          : handle<>(registered<T>::converters.to_python(&x))
+      {}
   };
 
   template <class Ptr>
-  struct pointer_deep_arg_to_python : arg_to_python_base
-  {
-      // Throw an exception if the conversion can't succeed
-      pointer_deep_arg_to_python(Ptr);
+  struct pointer_deep_arg_to_python : handle<> {
+      static_assert(!is_pyobject<cpp14::remove_pointer_t<Ptr>>::value,
+                    "Passing a raw Python object pointer is not allowed");
+
+      pointer_deep_arg_to_python(Ptr x)
+          : handle<>(registered_pointee<Ptr>::converters.to_python(x))
+      {}
   };
 
   template <class Ptr>
-  struct pointer_shallow_arg_to_python : handle<>
-  {
-      // Throw an exception if the conversion can't succeed
-      pointer_shallow_arg_to_python(Ptr);
-   private:
-      static PyObject* get_object(Ptr p);
+  struct pointer_shallow_arg_to_python : handle<> {
+      static_assert(!is_pyobject<cpp14::remove_pointer_t<Ptr>>::value,
+                    "Passing a raw Python object pointer is not allowed");
+
+      pointer_shallow_arg_to_python(Ptr x)
+          : handle<>(to_python_indirect<Ptr, python::detail::make_reference_holder>{}(x))
+      {}
   };
 
-  // Convert types that manage a Python object to_python
   template <class T>
-  struct object_manager_arg_to_python
-  {
+  struct object_manager_arg_to_python {
       object_manager_arg_to_python(T const& x) : m_src(x) {}
       
-      PyObject* get() const
-      {
+      PyObject* get() const {
           return python::upcast<PyObject>(get_managed_object(m_src));
       }
       
-   private:
+  private:
       T const& m_src;
   };
 
   template <class T>
-  struct select_arg_to_python
-  {
+  struct select_arg_to_python {
       using unwrapped_type = python::detail::unwrap_t<T>;
-      typedef typename unwrap_pointer<T>::type unwrapped_ptr;
 
       using type = cpp14::conditional_t<
           // Special handling for char const[N]; interpret them as char
@@ -139,84 +136,11 @@ namespace detail
   using select_arg_to_python_t = typename select_arg_to_python<T>::type;
 }
 
+// Throw an exception if the conversion can't succeed
 template <class T>
-struct arg_to_python : detail::select_arg_to_python_t<T>
-{
-    using base = detail::select_arg_to_python_t<T>;
- public: // member functions
-    // Throw an exception if the conversion can't succeed
-    arg_to_python(T const& x);
+struct arg_to_python : detail::select_arg_to_python_t<T> {
+    using detail::select_arg_to_python_t<T>::select_arg_to_python_t;
 };
-
-//
-// implementations
-//
-namespace detail
-{
-  template <class T>
-  inline void reject_raw_object_ptr(T*)
-  {
-      static_assert(!is_pyobject<T>::value,
-                    "Passing a raw Python object pointer is not allowed");
-  }
-      
-  template <class T>
-  inline function_arg_to_python<T>::function_arg_to_python(T const& x)
-      : handle<>(python::objects::make_function_handle(x))
-  {
-  }
-
-  template <class T>
-  inline value_arg_to_python<T>::value_arg_to_python(T const& x)
-      : arg_to_python_base(&x, registered<T>::converters)
-  {
-  }
-
-  template <class Ptr>
-  inline pointer_deep_arg_to_python<Ptr>::pointer_deep_arg_to_python(Ptr x)
-      : arg_to_python_base(x, registered_pointee<Ptr>::converters)
-  {
-      detail::reject_raw_object_ptr((Ptr)0);
-  }
-
-  template <class T>
-  inline PyObject* reference_arg_to_python<T>::get_object(T& x)
-  {
-      to_python_indirect<T&,python::detail::make_reference_holder> convert;
-      return convert(x);
-  }
-
-  template <class T>
-  inline reference_arg_to_python<T>::reference_arg_to_python(T& x)
-      : handle<>(reference_arg_to_python<T>::get_object(x))
-  {
-  }
-
-  template <class T>
-  inline shared_ptr_arg_to_python<T>::shared_ptr_arg_to_python(T const& x)
-      : handle<>(shared_ptr_to_python(x))
-  {
-  }
-
-  template <class Ptr>
-  inline pointer_shallow_arg_to_python<Ptr>::pointer_shallow_arg_to_python(Ptr x)
-      : handle<>(pointer_shallow_arg_to_python<Ptr>::get_object(x))
-  {
-      detail::reject_raw_object_ptr((Ptr)0);
-  }
-
-  template <class Ptr>
-  inline PyObject* pointer_shallow_arg_to_python<Ptr>::get_object(Ptr x)
-  {
-      to_python_indirect<Ptr,python::detail::make_reference_holder> convert;
-      return convert(x);
-  }
-}
-
-template <class T>
-inline arg_to_python<T>::arg_to_python(T const& x)
-    : base(x)
-{}
 
 }}} // namespace boost::python::converter
 

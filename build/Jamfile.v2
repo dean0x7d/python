@@ -96,7 +96,6 @@ rule lib_boost_python ( is-py3 ? )
         errors.cpp
         module.cpp
         converter/builtin_converters.cpp
-        converter/arg_to_python_base.cpp
         object/iterator.cpp
         object/stl_iterator.cpp
         object_protocol.cpp
