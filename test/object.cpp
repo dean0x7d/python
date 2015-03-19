@@ -15,7 +15,7 @@ class NotCopyable
 
 object ref_to_noncopyable()
 {
-  return object(std::ref(not_copyable));
+  return object(boost::ref(not_copyable));
 }
 
 object call_object_3(object f)

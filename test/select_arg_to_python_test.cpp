@@ -44,7 +44,7 @@ int main()
         );
 
     ASSERT_SAME(
-        select_arg_to_python_t<std::reference_wrapper<int> >, reference_arg_to_python<int>
+        select_arg_to_python_t<boost::reference_wrapper<int> >, reference_arg_to_python<int>
         );
     
     ASSERT_SAME(

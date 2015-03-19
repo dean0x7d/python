@@ -5,6 +5,7 @@
 #ifndef ARG_TO_PYTHON_DWA200265_HPP
 # define ARG_TO_PYTHON_DWA200265_HPP
 
+# include <boost/ref.hpp>
 # include <boost/python/ptr.hpp>
 # include <boost/python/to_python_indirect.hpp>
 # include <boost/python/object/function_handle.hpp>
@@ -113,7 +114,7 @@ namespace detail
                           pointer_shallow_arg_to_python<unwrapped_type>,
 
                           cpp14::conditional_t<
-                              python::detail::is_<std::reference_wrapper, T>::value,
+                              python::detail::is_<boost::reference_wrapper, T>::value,
                               reference_arg_to_python<unwrapped_type>,
                               value_arg_to_python<T>
                           >
