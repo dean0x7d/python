@@ -53,8 +53,6 @@ namespace detail
 
 template <class T>
 class handle {
-    using bool_type = T* (handle::*)() const;
-
 public: // types
     using element_type = T;
 
@@ -115,8 +113,7 @@ public: // member functions
         m_p = nullptr;
     }
     
-    operator bool_type() const noexcept { return m_p ? &handle<T>::get : nullptr; }
-    bool operator! () const noexcept { return m_p == nullptr; };
+    explicit operator bool() const noexcept { return m_p != nullptr; }
 
 public: // implementation details -- do not touch
     handle(detail::borrowed_reference x) noexcept : m_p{incref(downcast<T>((PyObject*)x))} {}

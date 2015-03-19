@@ -438,7 +438,7 @@ void function::add_to_namespace(
         else    
             dict = handle<>(PyObject_GetAttrString(ns, const_cast<char*>("__dict__")));
 
-        if (dict == 0)
+        if (!dict)
             throw_error_already_set();
 
         handle<> existing(allow_null(::PyObject_GetItem(dict.get(), name.ptr())));
