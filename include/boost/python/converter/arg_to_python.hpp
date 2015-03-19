@@ -156,11 +156,7 @@ namespace detail
   template <class T>
   inline void reject_raw_object_ptr(T*)
   {
-      using base_type_trait = base_type_traits<cpp14::remove_cv_t<T>>;
-      using python::detail::unspecialized;
-      
-      static_assert(std::is_convertible<T*, PyObject const volatile*>::value == false
-                    && std::is_convertible<base_type_trait*, unspecialized*>::value,
+      static_assert(!is_pyobject<T>::value,
                     "Passing a raw Python object pointer is not allowed");
   }
       

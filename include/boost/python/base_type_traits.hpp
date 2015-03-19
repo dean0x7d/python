@@ -6,37 +6,29 @@
 # define BASE_TYPE_TRAITS_DWA2002614_HPP
 
 # include <boost/python/detail/prefix.hpp>
+# include <boost/python/cpp14/type_traits.hpp>
 
 namespace boost { namespace python { 
 
-namespace detail
-{
-  struct unspecialized {};
-}
+template <class T>
+struct base_type_traits : std::false_type {};
 
-// Derive from unspecialized so we can detect whether traits are
-// specialized
-template <class T> struct base_type_traits
-  : detail::unspecialized
-{};
+template<>
+struct base_type_traits<PyObject> : std::true_type {};
+template<>
+struct base_type_traits<PyTypeObject> : std::true_type {};
+template<>
+struct base_type_traits<PyMethodObject> : std::true_type {};
 
-template <>
-struct base_type_traits<PyObject>
-{
-    typedef PyObject type;
-};
+// Test for PyObject or struct derived from PyObject using C-style inheritance
+template<class T>
+using is_c_pyobject = base_type_traits<cpp14::remove_cv_t<T>>;
 
-template <>
-struct base_type_traits<PyTypeObject>
-{
-    typedef PyObject type;
-};
-
-template <>
-struct base_type_traits<PyMethodObject>
-{
-    typedef PyObject type;
-};
+// Test for any kind of PyObject including C++ inheritance
+template<class T>
+using is_pyobject = std::integral_constant<bool,
+    is_c_pyobject<T>::value || std::is_base_of<PyObject, T>::value
+>;
 
 }} // namespace boost::python
 
