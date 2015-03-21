@@ -14,6 +14,9 @@
 #include <boost/python/converter/shared_ptr_deleter.hpp>
 #include <boost/python/converter/pytype_function.hpp>
 
+#include <boost/python/dict.hpp>
+#include <boost/python/str.hpp>
+
 #include <boost/cast.hpp>
 
 namespace boost { namespace python { namespace converter {
@@ -528,6 +531,10 @@ void initialize_builtin_converters()
 # endif 
     slot_rvalue_from_python<std::string, string_rvalue_from_python>();
 
+    converter::registry::set_class_object(python::type_id<python::dict>(), &PyDict_Type);
+    converter::registry::set_class_object(python::type_id<python::list>(), &PyList_Type);
+    converter::registry::set_class_object(python::type_id<python::str>(), &_PyString_Type);
+    converter::registry::set_class_object(python::type_id<python::tuple>(), &PyTuple_Type);
 }
 
 }}} // namespace boost::python::converter

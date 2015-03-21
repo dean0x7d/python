@@ -157,14 +157,4 @@ ssize_t list_base::count(object_cref value) const
     return result;
 }
 
-static struct register_list_pytype_ptr
-{
-    register_list_pytype_ptr()
-    {
-        const_cast<converter::registration &>(
-            converter::registry::lookup(boost::python::type_id<boost::python::list>())
-            ).m_class_object = &PyList_Type;
-    }
-}register_list_pytype_ptr_;
-
 }}} // namespace boost::python

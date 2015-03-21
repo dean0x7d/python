@@ -8,6 +8,9 @@
 ...   doc = obj.__doc__.splitlines()
 ...   return "\\n".join(["|"+doc[i] for i in args])
 
+>>> print selected_doc(doc_objects, 1)
+|doc_objects( (dict)arg1, (list)arg2, (tuple)arg3, (str)arg4) -> None :
+
 >>> print selected_doc(X.__init__, 1, 2, 3, 4, 5)
 |__init__( (object)self, (int)value) -> None :
 |    this is the __init__ function

@@ -191,11 +191,7 @@ enum_base::enum_base(
     )
     : object(new_enum_type(name, doc))
 {
-    converter::registration& converters
-        = const_cast<converter::registration&>(
-            converter::registry::lookup(id));
-
-    converters.m_class_object = downcast<PyTypeObject>(this->ptr());
+    converter::registry::set_class_object(id, downcast<PyTypeObject>(ptr()));
     converter::registry::insert(to_python, id);
     converter::registry::insert(convertible, construct, id);
 }

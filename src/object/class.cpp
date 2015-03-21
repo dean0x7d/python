@@ -583,21 +583,14 @@ namespace objects
       : object(new_class(name, num_types, types, doc))
   {
       // Insert the new class object in the registry
-      converter::registration& converters = const_cast<converter::registration&>(
-          converter::registry::lookup(types[0]));
-
       // Class object is leaked, for now
-      converters.m_class_object = (PyTypeObject*)incref(this->ptr());
+      converter::registry::set_class_object(types[0], downcast<PyTypeObject>(incref(ptr())));
   }
 
   BOOST_PYTHON_DECL void copy_class_object(type_info const& src, type_info const& dst)
   {
-      converter::registration& dst_converters
-          = const_cast<converter::registration&>(converter::registry::lookup(dst));
-      
-      converter::registration const& src_converters = converter::registry::lookup(src);
-
-      dst_converters.m_class_object = src_converters.m_class_object;
+      auto const& src_converters = converter::registry::lookup(src);
+      converter::registry::set_class_object(dst, src_converters.m_class_object);
   }
   
   void class_base::set_instance_size(std::size_t instance_size)

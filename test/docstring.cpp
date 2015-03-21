@@ -9,6 +9,10 @@
 #include <boost/python/docstring_options.hpp>
 #include <boost/python/scope.hpp>
 #include <boost/python/manage_new_object.hpp>
+#include <boost/python/dict.hpp>
+#include <boost/python/list.hpp>
+#include <boost/python/tuple.hpp>
+#include <boost/python/str.hpp>
 #include "test_class.hpp"
 
 // Just use math.h here; trying to use std::pow() causes too much
@@ -29,12 +33,16 @@ unsigned long fact(unsigned long n)
     return n <= 1 ? n : n * fact(n - 1);
 }
 
+void doc_objects(dict, list, tuple, str) {}
+
 BOOST_PYTHON_MODULE(docstring_ext)
 {
     scope().attr("__doc__") =
         "A simple test module for documentation strings\n"
         "Exercised by docstring.py"
         ;
+
+    def("doc_objects", doc_objects);
 
     class_<X>("X",
               "A simple class wrapper around a C++ int\n"

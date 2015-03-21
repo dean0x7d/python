@@ -183,6 +183,13 @@ namespace registry
 #  endif 
       return (p == entries().end() || p->target_type != cpptype) ? nullptr : &*p;
   }
+
+  void set_class_object(type_info cpptype, PyTypeObject* class_object)
+  {
+      auto& slot = get_registration(cpptype);
+      slot.m_class_object = class_object;
+  }
+
 } // namespace registry
 
 }}} // namespace boost::python::converter

@@ -17,7 +17,9 @@ namespace registry
 
   // Return a pointer to the corresponding registration, if one exists
   BOOST_PYTHON_DECL registration const* query(type_info);
-  
+
+  BOOST_PYTHON_DECL void set_class_object(type_info, PyTypeObject*);
+
   BOOST_PYTHON_DECL void insert(to_python_function, type_info, pytype_function = nullptr);
 
   // Insert an lvalue from_python converter
