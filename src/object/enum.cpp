@@ -183,7 +183,7 @@ namespace
 
 enum_base::enum_base(
     char const* name
-    , converter::to_python_function_t to_python
+    , converter::to_python_function to_python
     , converter::convertible_function convertible
     , converter::constructor_function construct
     , type_info id

@@ -4,13 +4,13 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 #ifndef AS_TO_PYTHON_FUNCTION_DWA2002121_HPP
 # define AS_TO_PYTHON_FUNCTION_DWA2002121_HPP
-# include <boost/python/converter/to_python_function_type.hpp>
+# include <boost/python/detail/prefix.hpp>
 # include <type_traits>
 
 namespace boost { namespace python { namespace converter { 
 
 // Given a typesafe to_python conversion function, produces a
-// to_python_function_t which can be registered in the usual way.
+// to_python_function which can be registered in the usual way.
 template <class T, class ToPython>
 struct as_to_python_function
 {

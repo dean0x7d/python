@@ -7,9 +7,7 @@
 
 # include <boost/python/object_core.hpp>
 # include <boost/python/type_id.hpp>
-# include <boost/python/converter/to_python_function_type.hpp>
-# include <boost/python/converter/convertible_function.hpp>
-# include <boost/python/converter/constructor_function.hpp>
+# include <boost/python/converter/registrations.hpp>
 
 namespace boost { namespace python { namespace objects { 
 
@@ -18,7 +16,7 @@ struct BOOST_PYTHON_DECL enum_base : python::api::object
  protected:
     enum_base(
         char const* name
-        , converter::to_python_function_t
+        , converter::to_python_function
         , converter::convertible_function
         , converter::constructor_function
         , type_info

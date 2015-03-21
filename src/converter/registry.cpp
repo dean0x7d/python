@@ -126,7 +126,7 @@ namespace // <unnamed>
 
 namespace registry
 {
-  void insert(to_python_function_t f, type_info source_t, pytype_function to_python_target_type)
+  void insert(to_python_function f, type_info source_t, pytype_function to_python_target_type)
   {
 #  ifdef BOOST_PYTHON_TRACE_REGISTRY
       std::cout << "inserting to_python " << source_t << "\n";

@@ -7,7 +7,6 @@
 
 # include <boost/python/detail/prefix.hpp>
 # include <boost/python/converter/registered.hpp>
-# include <boost/python/converter/pytype_function_fwd.hpp>
 
 namespace boost { namespace python {
 

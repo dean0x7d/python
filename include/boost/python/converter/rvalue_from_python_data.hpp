@@ -5,7 +5,7 @@
 #ifndef FROM_PYTHON_AUX_DATA_DWA2002128_HPP
 # define FROM_PYTHON_AUX_DATA_DWA2002128_HPP
 
-# include <boost/python/converter/constructor_function.hpp>
+# include <boost/python/converter/registrations.hpp>
 # include <boost/python/detail/referent_storage.hpp>
 # include <cstddef>
 

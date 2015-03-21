@@ -5,15 +5,9 @@
 #ifndef REGISTRY_DWA20011127_HPP
 # define REGISTRY_DWA20011127_HPP
 # include <boost/python/type_id.hpp>
-# include <boost/python/converter/to_python_function_type.hpp>
-# include <boost/python/converter/rvalue_from_python_data.hpp>
-# include <boost/python/converter/constructor_function.hpp>
-# include <boost/python/converter/convertible_function.hpp>
-# include <boost/python/converter/pytype_function_fwd.hpp>
+# include <boost/python/converter/registrations.hpp>
 
 namespace boost { namespace python { namespace converter {
-
-struct registration;
 
 // This namespace acts as a sort of singleton
 namespace registry
@@ -24,7 +18,7 @@ namespace registry
   // Return a pointer to the corresponding registration, if one exists
   BOOST_PYTHON_DECL registration const* query(type_info);
   
-  BOOST_PYTHON_DECL void insert(to_python_function_t, type_info,
+  BOOST_PYTHON_DECL void insert(to_python_function, type_info,
                                 pytype_function to_python_target_type = nullptr);
 
   // Insert an lvalue from_python converter

@@ -6,17 +6,23 @@
 # define REGISTRATIONS_DWA2002223_HPP
 
 # include <boost/python/detail/prefix.hpp>
-
 # include <boost/python/type_id.hpp>
-
-# include <boost/python/converter/convertible_function.hpp>
-# include <boost/python/converter/constructor_function.hpp>
-# include <boost/python/converter/to_python_function_type.hpp>
-# include <boost/python/converter/pytype_function_fwd.hpp>
-
 # include <forward_list>
 
-namespace boost { namespace python { namespace converter { 
+namespace boost { namespace python { namespace converter {
+
+// The type of stored function pointers which actually do conversion
+// by-value. The void* points to the object to be converted, and
+// type-safety is preserved through runtime registration.
+using to_python_function = PyObject* (*)(void const*);
+
+using pytype_function = PyTypeObject const* (*)();
+using convertible_function = void* (*)(PyObject*);
+
+// Declares the type of functions used to construct C++ objects for
+// rvalue from_python conversions.
+struct rvalue_from_python_stage1_data;
+using constructor_function = void (*)(PyObject* source, rvalue_from_python_stage1_data*);
 
 struct lvalue_from_python {
     convertible_function convert;
@@ -59,7 +65,7 @@ struct BOOST_PYTHON_DECL registration
     PyTypeObject* m_class_object = nullptr;
 
     // The unique to_python converter for the associated C++ type.
-    to_python_function_t m_to_python = nullptr;
+    to_python_function m_to_python = nullptr;
     pytype_function m_to_python_target_type = nullptr;
 
     // True iff this type is a shared_ptr.  Needed for special rvalue
