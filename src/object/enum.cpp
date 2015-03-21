@@ -70,11 +70,7 @@ extern "C"
         enum_object* self = downcast<enum_object>(self_);
         if (!self->name)
         {
-#if PY_VERSION_HEX >= 0x03000000
-            return PyLong_Type.tp_str(self_);
-#else
-            return PyInt_Type.tp_str(self_);
-#endif
+            return BOOST_PyInt_Type.tp_str(self_);
         }
         else
         {
@@ -148,11 +144,7 @@ namespace
       if (enum_type_object.tp_dict == 0)
       {
           Py_TYPE(&enum_type_object) = incref(&PyType_Type);
-#if PY_VERSION_HEX >= 0x03000000
-          enum_type_object.tp_base = &PyLong_Type;
-#else
-          enum_type_object.tp_base = &PyInt_Type;
-#endif
+          enum_type_object.tp_base = &BOOST_PyInt_Type;
           if (PyType_Ready(&enum_type_object))
               throw_error_already_set();
       }

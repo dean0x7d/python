@@ -127,12 +127,22 @@
 //
 // Python 2 and 3 compatibility
 //
-#if PY_VERSION_HEX >= 0x03000000
-# define _PyString_Type ::PyUnicode_Type
-# define _PyString_FromString ::PyUnicode_FromString
-# define _PyString_FromStringAndSize ::PyUnicode_FromStringAndSize
+#if PY_MAJOR_VERSION >= 3
+# define BOOST_PyInt_Type PyLong_Type
+# define BOOST_PyInt_AsLong PyLong_AsLong
+# define BOOST_PyInt_AS_LONG PyLong_AS_LONG
+# define BOOST_PyInt_AsSsize_t PyLong_AsSsize_t
+# define BOOST_PyString_Type PyUnicode_Type
+# define BOOST_PyString_FromString PyUnicode_FromString
+# define BOOST_PyString_FromStringAndSize PyUnicode_FromStringAndSize
+# define BOOST_PyString_PyString_InternFromString PyUnicode_InternFromString
 #else
-# define _PyString_Type ::PyString_Type
-# define _PyString_FromString ::PyString_FromString
-# define _PyString_FromStringAndSize ::PyString_FromStringAndSize
+# define BOOST_PyInt_Type PyInt_Type
+# define BOOST_PyInt_AsLong PyInt_AsLong
+# define BOOST_PyInt_AS_LONG PyInt_AS_LONG
+# define BOOST_PyInt_AsSsize_t PyInt_AsSsize_t
+# define BOOST_PyString_Type PyString_Type
+# define BOOST_PyString_FromString PyString_FromString
+# define BOOST_PyString_FromStringAndSize PyString_FromStringAndSize
+# define BOOST_PyString_PyString_InternFromString PyString_InternFromString
 #endif

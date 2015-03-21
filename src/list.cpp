@@ -48,11 +48,7 @@ void list_base::extend(object_cref sequence)
 long list_base::index(object_cref value) const
 {
     object result_obj(this->attr("index")(value));
-#if PY_VERSION_HEX >= 0x03000000
-    ssize_t result = PyLong_AsSsize_t(result_obj.ptr());
-#else
-    long result = PyInt_AsLong(result_obj.ptr());
-#endif
+    ssize_t result = BOOST_PyInt_AsSsize_t(result_obj.ptr());
     if (result == -1)
         throw_error_already_set();
     return result;
@@ -73,11 +69,7 @@ void list_base::insert(ssize_t index, object_cref item)
 
 void list_base::insert(object const& index, object_cref x)
 {
-#if PY_VERSION_HEX >= 0x03000000
-    ssize_t index_ = PyLong_AsSsize_t(index.ptr());
-#else
-    long index_ = PyInt_AsLong(index.ptr());
-#endif
+    ssize_t index_ = BOOST_PyInt_AsSsize_t(index.ptr());
     if (index_ == -1 && PyErr_Occurred())
         throw_error_already_set();
     this->insert(index_, x);
@@ -147,11 +139,7 @@ void list_base::sort(object_cref cmpfunc)
 ssize_t list_base::count(object_cref value) const
 {
     object result_obj(this->attr("count")(value));
-#if PY_VERSION_HEX >= 0x03000000
-    ssize_t result = PyLong_AsSsize_t(result_obj.ptr());
-#else
-    long result = PyInt_AsLong(result_obj.ptr());
-#endif
+    ssize_t result = BOOST_PyInt_AsSsize_t(result_obj.ptr());
     if (result == -1)
         throw_error_already_set();
     return result;

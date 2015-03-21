@@ -15,7 +15,7 @@ namespace boost { namespace python {
 template <typename R, typename... Args>
 R call_method(PyObject* self, char const* name, Args const&... args)
 {
-    handle<> method_name(_PyString_FromString(name));
+    handle<> method_name(BOOST_PyString_FromString(name));
     PyObject* const result = PyObject_CallMethodObjArgs(
         self,
         method_name.get(),

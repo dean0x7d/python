@@ -624,11 +624,7 @@ extern "C"
     {
         function* f = downcast<function>(op);
         if (f->name().is_none())
-#if PY_VERSION_HEX >= 0x03000000
-            return PyUnicode_InternFromString("<unnamed Boost.Python function>");
-#else
-            return PyString_InternFromString("<unnamed Boost.Python function>");
-#endif
+            return BOOST_PyString_PyString_InternFromString("<unnamed Boost.Python function>");
         else
             return python::incref(f->name().ptr());
     }

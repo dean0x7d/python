@@ -352,16 +352,9 @@ namespace objects
           PyObject* d = type_->tp_dict;
           PyObject* instance_size_obj = PyObject_GetAttrString(d, const_cast<char*>("__instance_size__"));
 
-          ssize_t instance_size = instance_size_obj ? 
-#if PY_VERSION_HEX >= 0x03000000
-              PyLong_AsSsize_t(instance_size_obj) : 0;
-#else
-              PyInt_AsLong(instance_size_obj) : 0;
-#endif
-          
+          ssize_t instance_size = instance_size_obj ? BOOST_PyInt_AsSsize_t(instance_size_obj) : 0;
           if (instance_size < 0)
               instance_size = 0;
-          
           PyErr_Clear(); // Clear any errors that may have occurred.
 
           instance<>* result = (instance<>*)type_->tp_alloc(type_, instance_size);

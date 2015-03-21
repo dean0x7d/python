@@ -24,17 +24,17 @@ namespace boost { namespace python {
 class str : public object
 {
 public:
-    str(const char* s = "") : object(detail::new_reference(_PyString_FromString(s))) {}
+    str(const char* s = "") : object(detail::new_reference(BOOST_PyString_FromString(s))) {}
 
     str(char const* start, char const* finish)
         : object(detail::new_reference(
-            _PyString_FromStringAndSize(start, str_size_as_py_ssize_t(finish - start))
+            BOOST_PyString_FromStringAndSize(start, str_size_as_py_ssize_t(finish - start))
         ))
     {}
 
     str(char const* start, std::size_t length)
         : object(detail::new_reference(
-            _PyString_FromStringAndSize(start, str_size_as_py_ssize_t(length))
+            BOOST_PyString_FromStringAndSize(start, str_size_as_py_ssize_t(length))
         ))
     {}
 
@@ -349,13 +349,13 @@ public: // implementation detail -- for internal use only
 private:
     static detail::new_reference call(object const& arg) {
         return detail::new_reference(
-            PyObject_CallFunctionObjArgs((PyObject*)&_PyString_Type, arg.ptr(), nullptr)
+            PyObject_CallFunctionObjArgs((PyObject*)&BOOST_PyString_Type, arg.ptr(), nullptr)
         );
     }
 
     template<class... Args>
     str str_call(char const* name, Args&&... args) const {
-        handle<> method_name(_PyString_FromString(name));
+        handle<> method_name(BOOST_PyString_FromString(name));
         return str(detail::new_reference(expect_non_null(
             PyObject_CallMethodObjArgs(
                 this->ptr(),
@@ -368,11 +368,7 @@ private:
 
     template<class... Args>
     long int_call(char const* name, Args&&... args) const {
-#if PY_VERSION_HEX >= 0x03000000
-        long result = PyLong_AsLong(this->attr(name)(std::forward<Args>(args)...).ptr());
-#else
-        long result = PyInt_AsLong(this->attr(name)(args...).ptr());
-#endif
+        long result = BOOST_PyInt_AsLong(attr(name)(std::forward<Args>(args)...).ptr());
         if (PyErr_Occurred())
             throw_error_already_set();
         return result;
@@ -392,7 +388,7 @@ private:
 namespace converter {
   template <>
   struct object_manager_traits<str>
-      : pytype_object_manager_traits<&_PyString_Type, str>
+      : pytype_object_manager_traits<&BOOST_PyString_Type, str>
   {};
 }
 

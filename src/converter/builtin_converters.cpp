@@ -376,7 +376,7 @@ namespace
           return std::string(PyString_AsString(intermediate),PyString_Size(intermediate));
 #endif
       }
-      static PyTypeObject const* get_pytype() { return &_PyString_Type;}
+      static PyTypeObject const* get_pytype() { return &BOOST_PyString_Type;}
   };
 
 #if defined(Py_USING_UNICODE) && !defined(BOOST_NO_STD_WSTRING)
@@ -463,12 +463,12 @@ namespace
 
 BOOST_PYTHON_DECL PyObject* do_return_to_python(char x)
 {
-    return _PyString_FromStringAndSize(&x, 1);
+    return BOOST_PyString_FromStringAndSize(&x, 1);
 }
   
 BOOST_PYTHON_DECL PyObject* do_return_to_python(char const* x)
 {
-    return x ? _PyString_FromString(x) : boost::python::detail::none();
+    return x ? BOOST_PyString_FromString(x) : boost::python::detail::none();
 }
 
 BOOST_PYTHON_DECL PyObject* do_return_to_python(PyObject* x)
@@ -523,7 +523,7 @@ void initialize_builtin_converters()
     slot_rvalue_from_python<std::complex<long double>,complex_rvalue_from_python>();
     
     // Add an lvalue converter for char which gets us char const*
-    registry::insert(convert_to_cstring,type_id<char>(),&converter::wrap_pytype<&_PyString_Type>::get_pytype);
+    registry::insert(convert_to_cstring,type_id<char>(),&converter::wrap_pytype<&BOOST_PyString_Type>::get_pytype);
 
     // Register by-value converters to std::string, std::wstring
 #if defined(Py_USING_UNICODE) && !defined(BOOST_NO_STD_WSTRING)
@@ -533,7 +533,7 @@ void initialize_builtin_converters()
 
     converter::registry::set_class_object(python::type_id<python::dict>(), &PyDict_Type);
     converter::registry::set_class_object(python::type_id<python::list>(), &PyList_Type);
-    converter::registry::set_class_object(python::type_id<python::str>(), &_PyString_Type);
+    converter::registry::set_class_object(python::type_id<python::str>(), &BOOST_PyString_Type);
     converter::registry::set_class_object(python::type_id<python::tuple>(), &PyTuple_Type);
 }
 
