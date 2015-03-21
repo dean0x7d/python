@@ -41,7 +41,7 @@ struct BOOST_PYTHON_DECL registration
         : target_type(target), is_shared_ptr(is_shared_ptr) {}
 
     // Convert the appropriately-typed data to Python
-    PyObject* to_python(void const volatile*) const;
+    PyObject* to_python(void const*) const;
 
     // Return the class object, or raise an appropriate Python
     // exception if no class has been registered.

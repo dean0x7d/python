@@ -3,7 +3,6 @@
 // accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 #include <boost/python/converter/registry.hpp>
-#include <boost/python/converter/registrations.hpp>
 #include <boost/python/converter/builtin_converters.hpp>
 
 #include <set>
@@ -12,14 +11,15 @@
 # include <iostream>
 #endif
 
-namespace boost { namespace python { namespace converter { 
+namespace boost { namespace python { namespace converter {
+
 BOOST_PYTHON_DECL PyTypeObject const* registration::expected_from_python_type() const
 {
     if (m_class_object)
         return m_class_object;
 
     std::set<PyTypeObject const*> pool;
-    for (const auto& rvalue_converter : rvalue_chain) {
+    for (auto const& rvalue_converter : rvalue_chain) {
         if (rvalue_converter.expected_pytype)
             pool.insert(rvalue_converter.expected_pytype());
     }
@@ -33,55 +33,41 @@ BOOST_PYTHON_DECL PyTypeObject const* registration::expected_from_python_type() 
 
 BOOST_PYTHON_DECL PyTypeObject const* registration::to_python_target_type() const
 {
-    if (this->m_class_object != 0)
-        return this->m_class_object;
+    if (m_class_object)
+        return m_class_object;
 
-    if (this->m_to_python_target_type != 0)
-        return this->m_to_python_target_type();
+    if (m_to_python_target_type)
+        return m_to_python_target_type();
 
-    return 0;
+    return nullptr;
 }
 
 BOOST_PYTHON_DECL PyTypeObject* registration::get_class_object() const
 {
-    if (this->m_class_object == 0)
-    {
-        ::PyErr_Format(
-            PyExc_TypeError
-            , const_cast<char*>("No Python class registered for C++ class %s")
-            , this->target_type.name());
-    
+    if (!m_class_object) {
+        PyErr_Format(PyExc_TypeError, "No Python class registered for C++ class %s",
+                     target_type.name());
         throw_error_already_set();
     }
     
-    return this->m_class_object;
+    return m_class_object;
 }
   
-BOOST_PYTHON_DECL PyObject* registration::to_python(void const volatile* source) const
+BOOST_PYTHON_DECL PyObject* registration::to_python(void const* source) const
 {
     if (!m_to_python) {
-        handle<> msg(
-#if PY_VERSION_HEX >= 0x3000000
-            ::PyUnicode_FromFormat
-#else
-            ::PyString_FromFormat
-#endif
-            ("No to_python (by-value) converter found for C++ type: %s", target_type.name())
-        );
-
-        PyErr_SetObject(PyExc_TypeError, msg.get());
+        PyErr_Format(PyExc_TypeError, "No to_python (by-value) converter found for C++ type: %s",
+                     target_type.name());
         throw_error_already_set();
     }
-        
-    return (source == nullptr)
-        ? incref(Py_None)
-        : m_to_python(const_cast<void*>(source));
+
+    return (source == nullptr) ? python::detail::none() : m_to_python(source);
 }
 
 
 namespace // <unnamed>
 {
-  typedef std::set<registration> registry_t;
+  using registry_t = std::set<registration>;
   
   registry_t& entries()
   {
@@ -99,8 +85,7 @@ namespace // <unnamed>
       }
 #  ifdef BOOST_PYTHON_TRACE_REGISTRY
       std::cout << "registry: ";
-      for (registry_t::iterator p = registry.begin(); p != registry.end(); ++p)
-      {
+      for (auto const& p : registry) {
           std::cout << p->target_type << "; ";
       }
       std::cout << '\n';
@@ -109,104 +94,94 @@ namespace // <unnamed>
       return registry;
   }
 
-  registration* get(type_info type, bool is_shared_ptr = false)
+  registration& get_registration(type_info cpptype, bool is_shared_ptr = false)
   {
 #  ifdef BOOST_PYTHON_TRACE_REGISTRY
-      registry_t::iterator p = entries().find(registration(type));
-      
-      std::cout << "looking up " << type << ": "
-                << (p == entries().end() || p->target_type != type
+      auto p = entries().find(registration(cpptype));
+      std::cout << "looking up " << cpptype << ": "
+                << (p == entries().end() || p->target_type != cpptype
                     ? "...NOT found\n" : "...found\n");
 #  endif
-      auto pos_ins = entries().emplace(type, is_shared_ptr);
-      
-      return const_cast<registration*>(&*pos_ins.first);
+      auto pos_ins = entries().emplace(cpptype, is_shared_ptr);
+      return const_cast<registration&>(*pos_ins.first);
   }
 } // namespace <unnamed>
 
 namespace registry
 {
-  void insert(to_python_function f, type_info source_t, pytype_function to_python_target_type)
+  void insert(to_python_function to_python, type_info cpptype, pytype_function target_pytype)
   {
 #  ifdef BOOST_PYTHON_TRACE_REGISTRY
-      std::cout << "inserting to_python " << source_t << "\n";
+      std::cout << "inserting to_python " << cpptype << "\n";
 #  endif 
-      registration* slot = get(source_t);
+      auto& slot = get_registration(cpptype);
       
-      assert(slot->m_to_python == 0); // we have a problem otherwise
-      if (slot->m_to_python != 0)
-      {
-          std::string msg = (
-              std::string("to-Python converter for ")
-              + source_t.name()
-              + " already registered; second conversion method ignored."
-          );
+      assert(slot.m_to_python == nullptr); // we have a problem otherwise
+      if (slot.m_to_python) {
+          auto msg = std::string("to-Python converter for ") + cpptype.name()
+              + " already registered; second conversion method ignored.";
           
-          if ( ::PyErr_Warn( NULL, const_cast<char*>(msg.c_str()) ) )
-          {
+          if (PyErr_WarnEx(nullptr, msg.c_str(), 1))
               throw_error_already_set();
-          }
       }
-      slot->m_to_python = f;
-      slot->m_to_python_target_type = to_python_target_type;
+
+      slot.m_to_python = to_python;
+      slot.m_to_python_target_type = target_pytype;
   }
 
   // Insert an lvalue from_python converter
-  void insert(convertible_function convert, type_info key, pytype_function exp_pytype)
+  void insert(convertible_function convertible, type_info cpptype, pytype_function exp_pytype)
   {
 #  ifdef BOOST_PYTHON_TRACE_REGISTRY
-      std::cout << "inserting lvalue from_python " << key << "\n";
+      std::cout << "inserting lvalue from_python " << cpptype << "\n";
 #  endif 
-      registration* found = get(key);
-      found->lvalue_chain.push_front({convert});
+      auto& slot = get_registration(cpptype);
+      slot.lvalue_chain.push_front({convertible});
       
-      insert(convert, 0, key,exp_pytype);
+      insert(convertible, nullptr, cpptype, exp_pytype);
   }
 
   // Insert an rvalue from_python converter
-  void insert(convertible_function convertible
-              , constructor_function construct
-              , type_info key
-              , pytype_function exp_pytype)
+  void insert(convertible_function convertible, constructor_function construct,
+              type_info cpptype, pytype_function exp_pytype)
   {
 #  ifdef BOOST_PYTHON_TRACE_REGISTRY
-      std::cout << "inserting rvalue from_python " << key << "\n";
+      std::cout << "inserting rvalue from_python " << cpptype << "\n";
 #  endif 
-      registration* found = get(key);
-      found->rvalue_chain.push_front({convertible, construct, exp_pytype});
+      auto& slot = get_registration(cpptype);
+      slot.rvalue_chain.push_front({convertible, construct, exp_pytype});
   }
 
   // Insert an rvalue from_python converter
-  void push_back(convertible_function convertible
-              , constructor_function construct
-              , type_info key
-              , pytype_function exp_pytype)
+  void push_back(convertible_function convertible, constructor_function construct,
+                 type_info cpptype, pytype_function exp_pytype)
   {
 #  ifdef BOOST_PYTHON_TRACE_REGISTRY
-      std::cout << "push_back rvalue from_python " << key << "\n";
+      std::cout << "push_back rvalue from_python " << cpptype << "\n";
 #  endif 
-      registration* found = get(key);
-      auto before_end = found->rvalue_chain.before_begin();
-      while (std::next(before_end) != found->rvalue_chain.end())
+      auto& slot = get_registration(cpptype);
+
+      auto before_end = slot.rvalue_chain.before_begin();
+      while (std::next(before_end) != slot.rvalue_chain.end())
           ++before_end;
 
-      found->rvalue_chain.insert_after(before_end, {convertible, construct, exp_pytype});
+      slot.rvalue_chain.insert_after(before_end, {convertible, construct, exp_pytype});
   }
 
-  registration const& lookup(type_info key, bool is_shared_ptr)
+  registration const& lookup(type_info cpptype, bool is_shared_ptr)
   {
-      return *get(key, is_shared_ptr);
+      return get_registration(cpptype, is_shared_ptr);
   }
 
-  registration const* query(type_info type)
+  registration const* query(type_info cpptype)
   {
-      registry_t::iterator p = entries().find(registration(type));
+      auto p = entries().find(registration(cpptype));
 #  ifdef BOOST_PYTHON_TRACE_REGISTRY
-      std::cout << "querying " << type
-                << (p == entries().end() || p->target_type != type
+      std::cout << "querying " << cpptype
+                << (p == entries().end() || p->target_type != cpptype
                     ? "...NOT found\n" : "...found\n");
 #  endif 
-      return (p == entries().end() || p->target_type != type) ? 0 : &*p;
+      return (p == entries().end() || p->target_type != cpptype) ? nullptr : &*p;
   }
 } // namespace registry
 

@@ -18,29 +18,19 @@ namespace registry
   // Return a pointer to the corresponding registration, if one exists
   BOOST_PYTHON_DECL registration const* query(type_info);
   
-  BOOST_PYTHON_DECL void insert(to_python_function, type_info,
-                                pytype_function to_python_target_type = nullptr);
+  BOOST_PYTHON_DECL void insert(to_python_function, type_info, pytype_function = nullptr);
 
   // Insert an lvalue from_python converter
-  BOOST_PYTHON_DECL void insert(convertible_function, type_info,
-                                pytype_function expected_pytype = nullptr);
+  BOOST_PYTHON_DECL void insert(convertible_function, type_info, pytype_function = nullptr);
 
   // Insert an rvalue from_python converter
-  BOOST_PYTHON_DECL void insert(
-      convertible_function
-      , constructor_function
-      , type_info
-      , pytype_function expected_pytype = nullptr
-      );
+  BOOST_PYTHON_DECL void insert(convertible_function, constructor_function, type_info,
+                                pytype_function = nullptr);
   
   // Insert an rvalue from_python converter at the tail of the
   // chain. Used for implicit conversions
-  BOOST_PYTHON_DECL void push_back(
-      convertible_function
-      , constructor_function
-      , type_info
-      , pytype_function expected_pytype = nullptr
-      );
+  BOOST_PYTHON_DECL void push_back(convertible_function, constructor_function, type_info,
+                                   pytype_function = nullptr);
 }
 
 }}} // namespace boost::python::converter
