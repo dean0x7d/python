@@ -12,14 +12,10 @@
 
 namespace boost { namespace python { 
 
-struct return_by_value
-{
+struct return_by_value {
     template <class R>
-    struct apply
-    {
-       typedef to_python_value<
-           detail::value_arg_t<R>
-       > type;
+    struct apply {
+        using type = make_to_python_value<R>;
     };
 };
 

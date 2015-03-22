@@ -10,17 +10,15 @@
 
 namespace boost { namespace python { 
 
-struct copy_non_const_reference
-{
+struct copy_non_const_reference {
     template <class T>
-    struct apply
-    {
-        using type = to_python_value<T>;
+    struct apply {
         static_assert(
             std::is_reference<T>::value &&
-            !std::is_const<cpp14::remove_reference_t<T>>::value, 
+            !std::is_const<cpp14::remove_reference_t<T>>::value,
             "copy_non_const_reference expects a non const reference return type"
         );
+        using type = make_to_python_value<T>;
     };
 };
 

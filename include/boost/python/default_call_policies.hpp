@@ -12,8 +12,6 @@
 
 namespace boost { namespace python { 
 
-template <class T> struct to_python_value;
-
 struct default_result_converter;
 
 struct default_call_policies
@@ -42,29 +40,24 @@ struct default_call_policies
     };
 };
 
-struct default_result_converter
-{
+struct default_result_converter {
     template <class R>
-    struct apply
-    {
+    struct apply {
         static_assert(!std::is_pointer<R>::value && !std::is_reference<R>::value,
                       "Specify a return value policy to wrap functions");
-
-        using type = boost::python::to_python_value<detail::value_arg_t<R>>;
+        using type = boost::python::make_to_python_value<R>;
     };
 };
 
 // Exceptions for c strings an PyObject*s
 template <>
-struct default_result_converter::apply<char const*>
-{
-    typedef boost::python::to_python_value<char const*const&> type;
+struct default_result_converter::apply<char const*> {
+    using type = boost::python::to_python_value<char const*>;
 };
 
 template <>
-struct default_result_converter::apply<PyObject*>
-{
-    typedef boost::python::to_python_value<PyObject*const&> type;
+struct default_result_converter::apply<PyObject*> {
+    using type = boost::python::to_python_value<PyObject*>;
 };
 
 }} // namespace boost::python

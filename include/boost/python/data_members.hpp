@@ -86,8 +86,7 @@ namespace detail
   // 
   template <class T>
   using default_getter_by_ref = std::integral_constant<bool,
-      to_python_value<value_arg_t<T>>::uses_registry &&
-      std::is_class<cpp14::remove_reference_t<value_arg_t<T>>>::value
+      make_to_python_value<T>::uses_registry && std::is_class<T>::value
   >;
 
   // Metafunction computing the default CallPolicy to use for reading

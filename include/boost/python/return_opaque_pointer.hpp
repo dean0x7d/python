@@ -1,4 +1,4 @@
-// Copyright Gottfried Ganßauge 2003.
+// Copyright Gottfried Ganï¿½auge 2003.
 // Distributed under the Boost Software License, Version 1.0. (See
 // accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
@@ -25,21 +25,15 @@ namespace detail
   }
 }
 
-struct return_opaque_pointer
-{
+struct return_opaque_pointer {
     template <class R>
-    struct apply
-    {        
-        struct type :  
-          boost::python::to_python_value<
-              detail::value_arg_t<R>
-          >
-        {
-            type() { detail::opaque_pointee(R()); }
-        };
-        
+    struct apply {
         static_assert(std::is_pointer<R>::value, 
                       "return_opaque_pointer expects a pointer type");
+
+        struct type : boost::python::make_to_python_value<R> {
+            type() { detail::opaque_pointee(R()); }
+        };
     };
 };
 
