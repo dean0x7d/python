@@ -6,8 +6,10 @@
 #include <boost/python/module.hpp>
 #include <boost/python/def.hpp>
 #include <boost/python/implicit.hpp>
+#include <boost/python/converter/shared_ptr.hpp>
 
 using namespace boost::python;
+using boost::python::converter::shared_ptr;
 
 struct X // a container element
 {
@@ -56,8 +58,8 @@ BOOST_PYTHON_MODULE(map_indexing_suite_ext)
 #endif 
 
     // Some more..
-    class_<std::map<std::string, boost::shared_ptr<X> > >("TestMap")
-        .def(map_indexing_suite<std::map<std::string, boost::shared_ptr<X> >, true>())
+    class_<std::map<std::string, shared_ptr<X> > >("TestMap")
+        .def(map_indexing_suite<std::map<std::string, shared_ptr<X> >, true>())
     ;
 
     void a_map_indexing_suite(); // moved to a_map_indexing_suite.cpp to 

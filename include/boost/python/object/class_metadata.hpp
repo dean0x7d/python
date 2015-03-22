@@ -3,7 +3,7 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 #ifndef CLASS_METADATA_DWA2004719_HPP
 # define CLASS_METADATA_DWA2004719_HPP
-# include <boost/python/converter/shared_ptr_from_python.hpp>
+# include <boost/python/converter/shared_ptr.hpp>
 
 # include <boost/python/object/inheritance.hpp>
 # include <boost/python/object/class_wrapper.hpp>

@@ -12,9 +12,8 @@
 # include <boost/python/converter/registered.hpp>
 # include <boost/python/converter/builtin_converters.hpp>
 # include <boost/python/converter/object_manager.hpp>
-# include <boost/python/converter/shared_ptr_to_python.hpp>
+# include <boost/python/converter/shared_ptr.hpp>
 
-# include <boost/python/detail/value_is_shared_ptr.hpp>
 # include <boost/python/detail/value_arg.hpp>
 
 namespace boost { namespace python { 
@@ -77,7 +76,7 @@ namespace detail
 // Only instantiate this template using the 'make_to_python_value' alias.
 template<class T>
 struct to_python_value : cpp14::conditional_t<
-    detail::value_is_shared_ptr<T>::value,
+    converter::is_shared_ptr<T>::value,
     detail::shared_ptr_to_python_value<T>,
     cpp14::conditional_t<
         converter::is_object_manager<T>::value,

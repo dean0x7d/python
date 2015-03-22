@@ -2,10 +2,17 @@
 // Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 #include <boost/python.hpp>
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/shared_ptr.hpp>
+#include <boost/python/converter/shared_ptr.hpp>
 
-using namespace boost;
+#ifdef BOOST_PYTHON_USE_STD_SHARED_PTR
+using std::enable_shared_from_this;
+#else
+#include <boost/enable_shared_from_this.hpp>
+using boost::enable_shared_from_this;
+#endif
+
+namespace python = boost::python;
+using boost::python::converter::shared_ptr;
 
 class A : public enable_shared_from_this<A> {
  public:
@@ -47,7 +54,7 @@ A::A_ptr get_b_a(shared_ptr<B> b)
 }
 
 BOOST_PYTHON_MODULE(andreas_beyer_ext) {
-  python::class_<A, noncopyable> ("A")
+  python::class_<A, boost::noncopyable> ("A")
     .def("self", &A::self)
     .def_readwrite("val", &A::val)
   ;

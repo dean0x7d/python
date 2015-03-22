@@ -2,9 +2,12 @@
 // Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 #include <boost/python.hpp>
+#include <boost/python/converter/shared_ptr.hpp>
 #include <iostream>
+
 using namespace boost::python;
 using namespace boost;
+using boost::python::converter::shared_ptr;
 
 struct Product {};
 typedef shared_ptr<Product> ProductPtr;

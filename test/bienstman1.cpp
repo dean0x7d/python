@@ -7,6 +7,9 @@
 #include <boost/python/reference_existing_object.hpp>
 #include <boost/python/return_value_policy.hpp>
 
+#include <boost/python/converter/shared_ptr.hpp>
+using boost::python::converter::shared_ptr;
+
 struct A {};
 
 struct V 
@@ -24,7 +27,6 @@ const A* outside(const V& v) {return &v.a;}
 BOOST_PYTHON_MODULE(bienstman1_ext)
 {
   using namespace boost::python;
-  using boost::shared_ptr;
   using boost::python::return_value_policy;
   using boost::python::reference_existing_object;
 

@@ -18,6 +18,9 @@
 #include "simple_type.hpp"
 #include "complicated.hpp"
 
+#include <boost/python/converter/shared_ptr.hpp>
+using boost::python::converter::shared_ptr;
+
 // Declare some straightforward extension types
 extern "C" void
 dealloc(PyObject* self)
@@ -260,9 +263,9 @@ B take_b(B& b) { return b; }
 C take_c(C* c) { return *c; }
 D take_d(D* const& d) { return *d; }
 
-D take_d_shared_ptr(boost::shared_ptr<D> d) { return *d; }
+D take_d_shared_ptr(shared_ptr<D> d) { return *d; }
 
-boost::shared_ptr<A> d_factory() { return boost::shared_ptr<B>(new D); }
+shared_ptr<A> d_factory() { return shared_ptr<B>(new D); }
 
 struct Unregistered {};
 Unregistered make_unregistered(int) { return Unregistered(); }
@@ -272,7 +275,6 @@ Unregistered* make_unregistered2(int) { return new Unregistered; }
 BOOST_PYTHON_MODULE(m1)
 {
     using namespace boost::python;
-    using boost::shared_ptr;
     
     simple_to_python();
 

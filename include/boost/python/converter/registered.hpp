@@ -6,10 +6,8 @@
 # define REGISTERED_DWA2002710_HPP
 # include <boost/python/converter/registry.hpp>
 # include <boost/python/converter/registrations.hpp>
+# include <boost/python/converter/shared_ptr_fwd.hpp>
 # include <boost/python/cpp14/type_traits.hpp>
-# include <boost/python/detail/is_xxx.hpp>
-
-# include <boost/shared_ptr.hpp>
 
 namespace boost { namespace python { namespace converter {
 
@@ -22,7 +20,7 @@ namespace detail
 
   template<class T>
   registration const& registered_base<T>::converters =
-      registry::lookup(type_id<T>(), python::detail::is_<shared_ptr, T>::value);
+      registry::lookup(type_id<T>(), is_shared_ptr<T>::value);
 }
 
 template <class T>

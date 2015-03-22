@@ -12,15 +12,22 @@
 #include <boost/shared_ptr.hpp>
 #include "test_class.hpp"
 
-#include <memory>
+#include <boost/python/converter/shared_ptr.hpp>
+
+#ifdef BOOST_PYTHON_USE_STD_SHARED_PTR
+using std::enable_shared_from_this;
+#else
+#include <boost/enable_shared_from_this.hpp>
+using boost::enable_shared_from_this;
+#endif
 
 using namespace boost::python;
-using boost::shared_ptr;
+using boost::python::converter::shared_ptr;
 
 class Test;
 typedef shared_ptr<Test> TestPtr;
 
-class Test : public boost::enable_shared_from_this<Test> {
+class Test : public enable_shared_from_this<Test> {
 public:
     static TestPtr construct() {
         return TestPtr(new Test);

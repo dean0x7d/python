@@ -8,13 +8,13 @@
 #include <boost/python/call_method.hpp>
 #include <boost/python/extract.hpp>
 #include <boost/python/def.hpp>
-#include <boost/shared_ptr.hpp>
+#include <boost/python/converter/shared_ptr_fwd.hpp>
 #include "test_class.hpp"
 
 #include <memory>
 
 using namespace boost::python;
-using boost::shared_ptr;
+using boost::python::converter::shared_ptr;
 
 typedef test_class<> X;
 typedef test_class<1> Y;
@@ -139,9 +139,9 @@ shared_ptr<Y> factory(int n)
         int f() { return 1; }
     };
 
-    boost::shared_ptr<A> New(bool make)
+    shared_ptr<A> New(bool make)
     {
-        return boost::shared_ptr<A>( make ? new B() : 0 );
+        return shared_ptr<A>( make ? new B() : 0 );
     }
 
     struct A_Wrapper: A
@@ -161,14 +161,14 @@ shared_ptr<Y> factory(int n)
 // from Neal Becker
 
 struct Test {
-  boost::shared_ptr<X> x;
+  shared_ptr<X> x;
 };
 // ------
 
 
 BOOST_PYTHON_MODULE(shared_ptr_ext)
 {
-    class_<A, boost::shared_ptr<A_Wrapper>, boost::noncopyable>("A")
+    class_<A, shared_ptr<A_Wrapper>, boost::noncopyable>("A")
         .def("call_f", &A::call_f)
         .staticmethod("call_f")
         ;
@@ -190,7 +190,7 @@ BOOST_PYTHON_MODULE(shared_ptr_ext)
         );
     
     functions<Y>::expose(
-        class_<Y, boost::shared_ptr<Y> >("Y", init<int>())
+        class_<Y, shared_ptr<Y> >("Y", init<int>())
             .def("value", &Y::value)
         );
     

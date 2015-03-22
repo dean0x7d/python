@@ -5,20 +5,21 @@
 #ifndef ARG_TO_PYTHON_DWA200265_HPP
 # define ARG_TO_PYTHON_DWA200265_HPP
 
-# include <boost/ref.hpp>
 # include <boost/python/ptr.hpp>
 # include <boost/python/to_python_indirect.hpp>
 # include <boost/python/object/function_handle.hpp>
 # include <boost/python/base_type_traits.hpp>
 
 # include <boost/python/converter/registered.hpp>
-# include <boost/python/converter/shared_ptr_to_python.hpp>
+# include <boost/python/converter/shared_ptr.hpp>
 // Bring in specializations
 # include <boost/python/converter/builtin_converters.hpp>
 
 # include <boost/python/detail/string_literal.hpp>
-# include <boost/python/detail/value_is_shared_ptr.hpp>
 # include <boost/python/detail/unwrap.hpp>
+# include <boost/python/detail/is_xxx.hpp>
+
+# include <boost/ref.hpp>
 
 namespace boost { namespace python { namespace converter { 
 
@@ -92,13 +93,13 @@ namespace detail
       arg_to_python<char const*>,
 
       cpp14::conditional_t<
-          python::detail::value_is_shared_ptr<T>::value,
+          is_shared_ptr<T>::value,
           shared_ptr_arg_to_python<T>,
 
           cpp14::conditional_t<
-              (std::is_function<T>::value ||
-                  std::is_function<cpp14::remove_pointer_t<T>>::value ||
-                  std::is_member_function_pointer<T>::value),
+              std::is_function<T>::value ||
+              std::is_function<cpp14::remove_pointer_t<T>>::value ||
+              std::is_member_function_pointer<T>::value,
               function_arg_to_python<T>,
 
               cpp14::conditional_t<

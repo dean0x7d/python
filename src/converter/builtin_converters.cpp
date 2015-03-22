@@ -11,7 +11,6 @@
 #include <boost/python/converter/builtin_converters.hpp>
 #include <boost/python/converter/rvalue_from_python_data.hpp>
 #include <boost/python/converter/registry.hpp>
-#include <boost/python/converter/shared_ptr_deleter.hpp>
 #include <boost/python/converter/pytype_function.hpp>
 
 #include <boost/python/dict.hpp>
