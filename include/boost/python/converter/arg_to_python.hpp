@@ -19,9 +19,19 @@
 # include <boost/python/detail/unwrap.hpp>
 # include <boost/python/detail/is_xxx.hpp>
 
-# include <boost/ref.hpp>
+# ifdef BOOST_PYTHON_USE_STD_REF
+#  include <functional>
+# else
+#  include <boost/ref.hpp>
+# endif
 
-namespace boost { namespace python { namespace converter { 
+namespace boost { namespace python { namespace converter {
+
+# ifdef BOOST_PYTHON_USE_STD_REF
+using std::reference_wrapper;
+# else
+using boost::reference_wrapper;
+# endif
 
 namespace detail
 {
@@ -115,7 +125,7 @@ namespace detail
                           pointer_shallow_arg_to_python<unwrapped_type>,
 
                           cpp14::conditional_t<
-                              python::detail::is_<boost::reference_wrapper, T>::value,
+                              python::detail::is_<reference_wrapper, T>::value,
                               reference_arg_to_python<unwrapped_type>,
                               value_arg_to_python<T>
                           >

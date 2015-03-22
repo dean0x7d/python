@@ -6,7 +6,6 @@
 #include <boost/python/module.hpp>
 #include <boost/python/def.hpp>
 #include <boost/python/class.hpp>
-#include <boost/ref.hpp>
 #include <boost/python/ptr.hpp>
 #include <boost/python/return_value_policy.hpp>
 #include <boost/python/reference_existing_object.hpp>
@@ -15,6 +14,16 @@
 #define BOOST_ENABLE_ASSERT_HANDLER
 #include <boost/assert.hpp>
 #include <boost/static_assert.hpp>
+
+#ifdef BOOST_PYTHON_USE_STD_REF
+# include <functional>
+using std::ref;
+using std::cref;
+#else
+# include <boost/ref.hpp>
+using boost::ref;
+using boost::cref;
+#endif
 
 using namespace boost::python;
 BOOST_STATIC_ASSERT(converter::is_object_manager<handle<> >::value);
@@ -53,7 +62,7 @@ X apply_X_X(PyObject* f, X x)
 
 void apply_void_X_ref(PyObject* f, X& x)
 {
-    call<void>(f, boost::ref(x));
+    call<void>(f, ref(x));
 }
 
 X& apply_X_ref_handle(PyObject* f, handle<> obj)
@@ -68,7 +77,7 @@ X* apply_X_ptr_handle_cref(PyObject* f, handle<> const& obj)
 
 void apply_void_X_cref(PyObject* f, X const& x)
 {
-    call<void>(f, boost::cref(x));
+    call<void>(f, cref(x));
 }
 
 void apply_void_X_ptr(PyObject* f, X* x)

@@ -7,6 +7,14 @@
 #include <boost/python/object.hpp>
 #include <boost/python/class.hpp>
 
+#ifdef BOOST_PYTHON_USE_STD_REF
+# include <functional>
+using std::ref;
+#else
+# include <boost/ref.hpp>
+using boost::ref;
+#endif
+
 using namespace boost::python;
 
 class NotCopyable
@@ -15,7 +23,7 @@ class NotCopyable
 
 object ref_to_noncopyable()
 {
-  return object(boost::ref(not_copyable));
+  return object(ref(not_copyable));
 }
 
 object call_object_3(object f)

@@ -14,6 +14,14 @@
 #define BOOST_ENABLE_ASSERT_HANDLER
 #include <boost/assert.hpp>
 
+#ifdef BOOST_PYTHON_USE_STD_REF
+# include <functional>
+using std::ref;
+#else
+# include <boost/ref.hpp>
+using boost::ref;
+#endif
+
 using namespace boost::python;
 
 struct X
@@ -62,12 +70,12 @@ struct abstract_callback : abstract
 
     int f(Y const& y)
     {
-        return call_method<int>(self, "f", boost::ref(y));
+        return call_method<int>(self, "f", ref(y));
     }
 
     abstract& g(Y const& y)
     {
-        return call_method<abstract&>(self, "g", boost::ref(y));
+        return call_method<abstract&>(self, "g", ref(y));
     }
 
     PyObject* self;
@@ -85,7 +93,7 @@ struct concrete_callback : concrete
 
     int f(Y const& y)
     {
-        return call_method<int>(self, "f", boost::ref(y));
+        return call_method<int>(self, "f", ref(y));
     }
 
     int f_impl(Y const& y)

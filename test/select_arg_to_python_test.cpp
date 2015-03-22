@@ -7,6 +7,7 @@
 #include <boost/python/object.hpp>
 #include <boost/static_assert.hpp>
 #include <iostream>
+using boost::python::converter::reference_wrapper;
 
 // gcc 2.95.x and MIPSpro 7.3.1.3 linker seem to demand this definition
 #if ((defined(__GNUC__) && __GNUC__ < 3)) \
@@ -44,7 +45,7 @@ int main()
         );
 
     ASSERT_SAME(
-        select_arg_to_python_t<boost::reference_wrapper<int> >, reference_arg_to_python<int>
+        select_arg_to_python_t<reference_wrapper<int> >, reference_arg_to_python<int>
         );
     
     ASSERT_SAME(
