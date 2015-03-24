@@ -113,57 +113,48 @@ public:
     using result_type = T;
 
     back_reference_arg_from_python(PyObject* p) : base(p), m_source(p) {}
-    T operator()() { return T(m_source, base::operator()()); }
+    result_type operator()() { return T(m_source, base::operator()()); }
 };
 
 // ==================
 
 // This metafunction selects the appropriate arg_from_python converter
 // type for an argument of type T.
-template <class T>
-struct select_arg_from_python {
-    using T_without_ref = cpp14::remove_reference_t<T>;
-    
-    using type = cpp14::conditional_t<
-        is_object_manager<T>::value,
-        object_manager_value_arg_from_python<T>,
-    
-        cpp14::conditional_t<
-            is_reference_to_object_manager<T>::value,
-            object_manager_ref_arg_from_python<T>,
-    
-            cpp14::conditional_t<
-                std::is_pointer<T>::value ||
-                (std::is_reference<T>::value &&
-                 std::is_pointer<T_without_ref>::value &&
-                 std::is_const<T_without_ref>::value &&
-                 !std::is_volatile<T_without_ref>::value),
-                pointer_arg_from_python<T>,
-    
-                cpp14::conditional_t<
-                    std::is_reference<T>::value &&
-                    (!std::is_const<T_without_ref>::value ||
-                     std::is_volatile<T_without_ref>::value),
-                    reference_arg_from_python<T>,
+template<class T, class T_without_ref = cpp14::remove_reference_t<T>>
+using select_arg_from_python_t = cpp14::conditional_t<
+    is_object_manager<T>::value,
+    object_manager_value_arg_from_python<T>,
 
-                    cpp14::conditional_t<
-                        boost::python::is_back_reference<T>::value,
-                        back_reference_arg_from_python<T>,
-                        arg_rvalue_from_python<T>
-                    >
+    cpp14::conditional_t<
+        is_reference_to_object_manager<T>::value,
+        object_manager_ref_arg_from_python<T>,
+
+        cpp14::conditional_t<
+            std::is_pointer<T>::value ||
+            (std::is_reference<T>::value &&
+             std::is_pointer<T_without_ref>::value &&
+             std::is_const<T_without_ref>::value &&
+             !std::is_volatile<T_without_ref>::value),
+            pointer_arg_from_python<T>,
+
+            cpp14::conditional_t<
+                std::is_reference<T>::value &&
+                (!std::is_const<T_without_ref>::value || std::is_volatile<T_without_ref>::value),
+                reference_arg_from_python<T>,
+
+                cpp14::conditional_t<
+                    boost::python::is_back_reference<T>::value,
+                    back_reference_arg_from_python<T>,
+                    arg_rvalue_from_python<T>
                 >
             >
         >
-    >;
-};
-
-template <class T>
-using select_arg_from_python_t = typename select_arg_from_python<T>::type;
+    >
+>;
 
 template <class T>
 struct arg_from_python : select_arg_from_python_t<T> {
-    using base = select_arg_from_python_t<T>;
-    using base::base;
+    using select_arg_from_python_t<T>::select_arg_from_python_t;
 };
 
 // specialization for PyObject*
