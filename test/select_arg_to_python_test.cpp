@@ -43,14 +43,6 @@ int main()
     ASSERT_SAME(
         select_arg_to_python_t<int>, value_arg_to_python<int>
         );
-
-    ASSERT_SAME(
-        select_arg_to_python_t<reference_wrapper<int> >, reference_arg_to_python<int>
-        );
-    
-    ASSERT_SAME(
-        select_arg_to_python_t<pointer_wrapper<int> >, pointer_shallow_arg_to_python<int>
-        );
     
     ASSERT_SAME(
         select_arg_to_python_t<int*>, pointer_deep_arg_to_python<int*>
@@ -62,10 +54,6 @@ int main()
 
     ASSERT_SAME(
         select_arg_to_python_t<object>, object_manager_arg_to_python<object>
-        );
-
-    ASSERT_SAME(
-        select_arg_to_python_t<char[20]>, arg_to_python<char const*>
         );
 
     return result;

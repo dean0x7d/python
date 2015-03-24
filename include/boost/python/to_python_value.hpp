@@ -53,37 +53,33 @@ namespace detail
       // but it will have to serve for now.
       static constexpr bool uses_registry = true;
   };
-
-  template <class T>
-  struct shared_ptr_to_python_value {
-      PyObject* operator()(value_arg_t<T> x) const {
-          return converter::shared_ptr_to_python(x);
-      }
-
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-      static PyTypeObject const* get_pytype() {
-          return converter::registered<typename T::element_type>::converters.to_python_target_type();
-      }
-#endif 
-      // This information helps make_getter() decide whether to try to
-      // return an internal reference or not. I don't like it much,
-      // but it will have to serve for now.
-      static constexpr bool uses_registry = false;
-  };
 }
 
 // Assumes that T is a cv-unqualified non-reference type.
 // Only instantiate this template using the 'make_to_python_value' alias.
 template<class T>
 struct to_python_value : cpp14::conditional_t<
-    converter::is_shared_ptr<T>::value,
-    detail::shared_ptr_to_python_value<T>,
-    cpp14::conditional_t<
-        converter::is_object_manager<T>::value,
-        detail::object_manager_to_python_value<T>,
-        detail::registry_to_python_value<T>
-    >
+    converter::is_object_manager<T>::value,
+    detail::object_manager_to_python_value<T>,
+    detail::registry_to_python_value<T>
 > {};
+
+template<class T>
+struct to_python_value<converter::shared_ptr<T>> {
+    PyObject* operator()(converter::shared_ptr<T> const& x) const {
+        return converter::shared_ptr_to_python(x);
+    }
+
+#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
+    static PyTypeObject const* get_pytype() {
+        return converter::registered<T>::converters.to_python_target_type();
+    }
+#endif
+    // This information helps make_getter() decide whether to try to
+    // return an internal reference or not. I don't like it much,
+    // but it will have to serve for now.
+    static constexpr bool uses_registry = false;
+};
 
 template<class T>
 using make_to_python_value = to_python_value<cpp14::remove_cv_t<cpp14::remove_reference_t<T>>>;
