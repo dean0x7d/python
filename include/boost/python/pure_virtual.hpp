@@ -33,11 +33,11 @@ namespace detail
   template <class Sig, class T1, class T2>
   using replace_front2_t = typename replace_front2<Sig, T1, T2>::type;
 
-  // Given an type_list representing a member function [object]
-  // signature, returns a new type_list whose return type is
-  // replaced by void, and whose first argument is replaced by C&.
-  template <class C, class S>
-  replace_front2_t<S, void, C&> error_signature(S) { return {}; }
+  // Given F representing a member function [object], returns a type_list
+  // whose return type is replaced by void, and whose first argument is
+  // replaced by C&.
+  template<class F, class C>
+  using error_signature = replace_front2_t<make_signature<F>, void, C&>;
 
   //
   // } 
@@ -82,7 +82,7 @@ namespace detail
             , make_function(
                   detail::nullary_function_adaptor<void(*)()>(pure_virtual_called)
                 , default_call_policies()
-                , detail::error_signature<held_type>(detail::get_signature(m_pmf))
+                , detail::error_signature<PointerToMemberFunction, held_type>{}
               )
           );
       }

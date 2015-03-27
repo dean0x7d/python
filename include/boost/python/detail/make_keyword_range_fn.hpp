@@ -13,53 +13,30 @@ namespace boost { namespace python { namespace detail {
 
 // Think of this as a version of make_function without a compile-time
 // check that the size of kw is no greater than the expected arity of
-// F. This version is needed when defining functions with default
+// Function. This version is needed when defining functions with default
 // arguments, because compile-time information about the number of
 // keywords is missing for all but the initial function definition.
-//
-// @group make_keyword_range_function {
-template <class F, class Policies>
-object make_keyword_range_function(
-    F f
-  , Policies const& policies
-  , keyword_range const& kw)
-{
-    return detail::make_function_aux(
-        f, policies, detail::get_signature(f), kw, std::integral_constant<int, 0>());
+template<class CallPolicies, class Function>
+object make_keyword_range_function(Function f, CallPolicies const& cp, keyword_range const& kw) {
+    return detail::make_function_aux<detail::make_signature<Function>, 0>(f, cp, kw);
 }
 
-template <class F, class Policies, class Signature>
-object make_keyword_range_function(
-    F f
-  , Policies const& policies
-  , keyword_range const& kw
-  , Signature const& sig)
-{
-    return detail::make_function_aux(
-        f, policies, sig, kw, std::integral_constant<int, 0>());
+template<class Signature, class CallPolicies, class Function>
+object make_keyword_range_function(Function f, CallPolicies const& cp, keyword_range const& kw) {
+    return detail::make_function_aux<Signature, 0>(f, cp, kw);
 }
-// }
 
 // Builds an '__init__' function which inserts the given Holder type
-// in a wrapped C++ class instance. ArgList is an MPL type sequence
-// describing the C++ argument types to be passed to Holder's
-// constructor.
-//
-// Holder and ArgList are intended to be explicitly specified. 
-template <class ArgList, class Holder, class CallPolicies>
-object make_keyword_range_constructor(
-    CallPolicies const& policies        // The CallPolicies with which to invoke the Holder's constructor
-    , detail::keyword_range const& kw   // The (possibly empty) set of associated argument keywords
-    , Holder* = 0                       
-    , ArgList* = 0)
-{
+// in a wrapped C++ class instance. Signature is a type_list describing
+// the C++ argument types to be passed to Holder's constructor.
+template<class Signature, class Holder, class CallPolicies>
+object make_keyword_range_constructor(CallPolicies const& cp, detail::keyword_range const& kw) {
 #if !defined( BOOST_PYTHON_NO_PY_SIGNATURES) && defined( BOOST_PYTHON_PY_SIGNATURES_PROPER_INIT_SELF_TYPE)
     python_class<typename Holder::value_type>::register_();
 #endif
     return detail::make_keyword_range_function(
-         objects::make_holder<Holder, ArgList>::execute
-        , policies
-        , kw);
+        objects::make_holder<Holder, Signature>::execute, cp, kw
+    );
 }
 
 }}} // namespace boost::python::detail

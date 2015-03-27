@@ -281,8 +281,8 @@ class class_ : public objects::class_base
     template <class T, class F>
     object make_fn_impl(T*, F const& f, std::false_type, void*, std::false_type)
     {
-        return python::make_function(f, default_call_policies(), detail::get_signature(f, (T*)0));
-    }
+        return python::make_function(f, default_call_policies{}, detail::make_signature<F, T>{});
+    };
 
     template <class T, class D, class B>
     object make_fn_impl(T*, D B::*pm_, std::false_type, char*, std::true_type)
@@ -353,8 +353,6 @@ class class_ : public objects::class_base
     //
     // These two overloads discriminate between def() as applied to a
     // generic visitor and everything else.
-    //
-    // @group def_impl {
     template <class T, class Helper, class LeafVisitor, class Visitor>
     inline void def_impl(
         T*
@@ -383,7 +381,7 @@ class class_ : public objects::class_base
                 fn
               , helper.policies()
               , helper.keywords()
-              , detail::get_signature(fn, (T*)0)
+              , detail::make_signature<Fn, T>{}
             )
           , helper.doc()
         );
@@ -391,7 +389,6 @@ class class_ : public objects::class_base
         this->def_default(name, fn, helper, 
                           std::integral_constant<bool, Helper::has_default_implementation>());
     }
-    // }
 
     //
     // These two overloads handle the definition of default
@@ -428,39 +425,19 @@ class class_ : public objects::class_base
     // regular functions and def() as applied to the result of
     // BOOST_PYTHON_FUNCTION_OVERLOADS(). The final argument is used to
     // discriminate.
-    //
-    // @group def_maybe_overloads {
-    template <class OverloadsT, class SigT>
-    void def_maybe_overloads(
-        char const* name
-        , SigT sig
-        , OverloadsT const& overloads
-        , detail::overloads_base const*)
-
+    template<class Function, class Overloads>
+    void def_maybe_overloads(char const* name, Function, Overloads const& overloads,
+                             detail::overloads_base const*)
     {
-        //  convert sig to a type_list (see detail::get_signature in signature.hpp)
-        //  before calling detail::define_with_defaults.
-        detail::define_with_defaults(
-            name, overloads, *this, detail::get_signature(sig));
+        detail::define_with_defaults<detail::make_signature<Function>>(name, overloads, *this);
     }
 
-    template <class Fn, class A1>
-    void def_maybe_overloads(
-        char const* name
-        , Fn fn
-        , A1 const& a1
-        , ...)
+    template<class Function, class A1>
+    void def_maybe_overloads(char const* name, Function f, A1 const& a1,
+                             ...)
     {
-        this->def_impl(
-            detail::unwrap_wrapper((W*)0)
-          , name
-          , fn
-          , detail::def_helper<A1>(a1)
-          , &fn
-        );
-
+        def_impl(detail::unwrap_wrapper((W*)0), name, f, detail::def_helper<A1>{a1}, &f);
     }
-    // }
 };
 
 

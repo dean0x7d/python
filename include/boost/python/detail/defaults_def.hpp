@@ -51,8 +51,7 @@ namespace detail
       
       objects::add_to_namespace(
           name_space, name,
-          detail::make_keyword_range_function(
-              f, policies, kw, get_signature(f, (wrapped_type*)0))
+          detail::make_keyword_range_function<make_signature<Func, wrapped_type>>(f, policies, kw)
         , doc
       );
   }
@@ -188,21 +187,16 @@ namespace detail
   //      void bar(int, int)  type_list<void, int, int>
   //      void C::foo(int)    type_list<void, C, int>
   //
-  template <class Overloads, class NameSpace, class Sig>
-  inline void define_with_defaults(
-      char const* name,
-      Overloads const& overloads,
-      NameSpace& name_space,
-      Sig const&)
-  {
+  template<class Signature, class Overloads, class Namespace>
+  inline void define_with_defaults(char const* name, Overloads const& overloads, Namespace& ns) {
       using overloads_t = typename Overloads::type;
-      static_assert(overloads_t::max_args <= Sig::size, "Too many arguments.");
+      static_assert(overloads_t::max_args <= Signature::size, "Too many arguments.");
 
-      define_with_defaults_helper<overloads_t, Sig, overloads_t::n_funcs-1>::def(
+      define_with_defaults_helper<overloads_t, Signature, overloads_t::n_funcs-1>::def(
           name
           , overloads.keywords()
           , overloads.call_policies()
-          , name_space
+          , ns
           , overloads.doc_string());
   }
 

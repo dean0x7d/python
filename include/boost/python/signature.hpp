@@ -102,6 +102,9 @@ using most_derived_t = cpp14::conditional_t<std::is_convertible<C1*, C2*>::value
 #  undef BOOST_PYTHON_FN_CC
 # endif
 
+template<class Function, class Target = void>
+using make_signature = decltype(get_signature(std::declval<Function>(), std::declval<Target*>()));
+
 }}} // namespace boost::python::detail
 
 # endif // SIGNATURE_JDG20020813_HPP

@@ -116,141 +116,89 @@ namespace detail
   template <class Sig>
   using outer_constructor_signature_t = typename outer_constructor_signature<Sig>::type;
   
-  //
   // These helper functions for make_constructor (below) do the raw work
   // of constructing a Python object from some invokable entity. See
   // <boost/python/detail/caller.hpp> for more information about how
-  // the Sig arguments is used.
-  //
-  // @group make_constructor_aux {
-  template <class F, class CallPolicies, class Sig>
-  object make_constructor_aux(
-      F f                             // An object that can be invoked by detail::invoke()
-    , CallPolicies const& p           // CallPolicies to use in the invocation
-    , Sig const&                      // An MPL sequence of argument types expected by F
-  )
-  {
-      typedef constructor_policy<CallPolicies> inner_policy;
+  // the Signature arguments is used.
+  template<class Signature, class Function, class CallPolicies>
+  object make_constructor_aux(Function f, CallPolicies const& cp) {
+      using inner_policy = constructor_policy<CallPolicies>;
       
       return objects::function_object(
-          objects::py_function(
-              detail::caller<F,inner_policy,Sig>(f)
-            , outer_constructor_signature_t<Sig>()
-          )
+          objects::py_function{
+              detail::caller<Function, inner_policy, Signature>{f},
+              outer_constructor_signature_t<Signature>{}
+          }
       );
   }
   
   // As above, except that it accepts argument keywords. NumKeywords
   // is used only for a compile-time assertion to make sure the user
   // doesn't pass more keywords than the function can accept. To
-  // disable all checking, pass std::integral_constant<int, 0> for NumKeywords.
-  template <class F, class CallPolicies, class Sig, class NumKeywords>
-  object make_constructor_aux(
-      F f
-      , CallPolicies const& p
-      , Sig const&
-      , detail::keyword_range const& kw // a [begin,end) pair of iterators over keyword names
-      , NumKeywords                     // An MPL integral type wrapper: the size of kw
-      )
-  {
-      static_assert(NumKeywords::value <= Sig::size, "More keywords than function arguments");
-    
-      typedef constructor_policy<CallPolicies> inner_policy;
+  // disable all checking, pass 0 for NumKeywords.
+  template<class Signature, int NumKeywords, class Function, class CallPolicies>
+  object make_constructor_aux(Function f, CallPolicies const& cp, detail::keyword_range const& kw) {
+      static_assert(NumKeywords <= Signature::size, "More keywords than function arguments");
+      using inner_policy = constructor_policy<CallPolicies>;
       
       return objects::function_object(
-          objects::py_function(
-              detail::caller<F,inner_policy,Sig>(f)
-            , outer_constructor_signature_t<Sig>()
-          )
-          , kw
+          objects::py_function{
+              detail::caller<Function, inner_policy, Signature>{f},
+              outer_constructor_signature_t<Signature>{}
+          },
+          kw
       );
   }
-  // }
 
-  //
   //   These dispatch functions are used to discriminate between the
   //   cases when the 3rd argument is keywords or when it is a
   //   signature.
-  //
-  //   @group Helpers for make_constructor when called with 3 arguments. {
-  //
-  template <class F, class CallPolicies, class Keywords>
-  object make_constructor_dispatch(F f, CallPolicies const& policies, 
-                                   Keywords const& kw, std::true_type)
+  template<class Function, class CallPolicies, class Keywords>
+  object make_constructor_dispatch(Function f, CallPolicies const& cp, Keywords const& kw,
+                                   std::true_type)
   {
-      return detail::make_constructor_aux(
-          f
-        , policies
-        , detail::get_signature(f)
-        , kw.range()
-        , std::integral_constant<int, Keywords::size>()
+      return detail::make_constructor_aux<
+          detail::make_signature<Function>, Keywords::size
+      >(
+          f, cp, kw.range()
       );
   }
 
-  template <class F, class CallPolicies, class Signature>
-  object make_constructor_dispatch(F f, CallPolicies const& policies, 
-                                   Signature const& sig, std::false_type)
+  template<class Function, class CallPolicies, class Signature>
+  object make_constructor_dispatch(Function f, CallPolicies const& cp, Signature const&,
+                                   std::false_type)
   {
-      return detail::make_constructor_aux(
-          f
-        , policies
-        , sig
-      );
+      return detail::make_constructor_aux<Signature>(f, cp);
   }
-  // }
 }
 
 //   These overloaded functions wrap a function or member function
 //   pointer as a Python object, using optional CallPolicies,
-//   Keywords, and/or Signature. @group {
-//
-template <class F>
-object make_constructor(F f)
-{
-    return detail::make_constructor_aux(
-        f,default_call_policies(), detail::get_signature(f));
-}
-
-template <class F, class CallPolicies>
-object make_constructor(F f, CallPolicies const& policies)
-{
-    return detail::make_constructor_aux(
-        f, policies, detail::get_signature(f));
-}
-
-template <class F, class CallPolicies, class KeywordsOrSignature>
-object make_constructor(
-    F f
-  , CallPolicies const& policies
-  , KeywordsOrSignature const& keywords_or_signature)
-{
-    return detail::make_constructor_dispatch(
-        f
-      , policies
-      , keywords_or_signature
-      , detail::is_keywords<KeywordsOrSignature>{}
+//   Keywords, and/or Signature.
+template<class Function>
+object make_constructor(Function f) {
+    return detail::make_constructor_aux<detail::make_signature<Function>>(
+        f, default_call_policies{}
     );
 }
 
-template <class F, class CallPolicies, class Keywords, class Signature>
-object make_constructor(
-    F f
-  , CallPolicies const& policies
-  , Keywords const& kw
-  , Signature const& sig
- )
-{
-    return detail::make_constructor_aux(
-          f
-        , policies
-        , sig
-        , kw.range()
-        , std::integral_constant<int, Keywords::size>()
-      );
+template<class Function, class CallPolicies>
+object make_constructor(Function f, CallPolicies const& cp) {
+    return detail::make_constructor_aux<detail::make_signature<Function>>(f, cp);
 }
-// }
 
-}} 
+template<class Function, class CallPolicies, class KeywordsOrSignature>
+object make_constructor(Function f, CallPolicies const& cp, KeywordsOrSignature const& kw_or_sig) {
+    return detail::make_constructor_dispatch(
+        f, cp, kw_or_sig, detail::is_keywords<KeywordsOrSignature>{}
+    );
+}
 
+template<class Function, class CallPolicies, class Keywords, class Signature>
+object make_constructor(Function f, CallPolicies const& cp, Keywords const& kw, Signature const&) {
+    return detail::make_constructor_aux<Signature, Keywords::size>(f, cp, kw.range());
+}
+
+}}
 
 #endif // MAKE_CONSTRUCTOR_DWA20011221_HPP
