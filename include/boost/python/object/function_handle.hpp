@@ -12,7 +12,7 @@
 
 namespace boost { namespace python { namespace objects { 
 
-BOOST_PYTHON_DECL handle<> function_handle_impl(py_function const& f);
+BOOST_PYTHON_DECL handle<> function_handle_impl(py_function f);
 
 // Just like function_object, but returns a handle<> instead. Using
 // this for arg_to_python<> allows us to break a circular dependency

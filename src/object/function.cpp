@@ -37,25 +37,16 @@ namespace boost { namespace python {
 #endif
 }}
 
-namespace boost { namespace python { namespace objects { 
-
-py_function_impl_base::~py_function_impl_base()
-{
-}
-
-unsigned py_function_impl_base::max_arity() const
-{
-    return this->min_arity();
-}
+namespace boost { namespace python { namespace objects {
 
 extern PyTypeObject function_type;
 
 function::function(
-    py_function const& implementation
+    py_function implementation
     , python::detail::keyword const* const names_and_defaults
     , unsigned num_keywords
     )
-    : m_fn(implementation)
+    : m_fn(std::move(implementation))
     , m_nkeyword_values(0)
 {
     if (names_and_defaults != 0)
@@ -714,26 +705,20 @@ PyTypeObject function_type = {
 };
 
 object function_object(
-    py_function const& f
+    py_function f
     , python::detail::keyword_range const& keywords)
 {
     return python::object(
         python::detail::new_non_null_reference(
             new function(
-                f, keywords.first, static_cast<unsigned>(keywords.second - keywords.first))));
+                std::move(f), keywords.first, static_cast<unsigned>(keywords.second - keywords.first))));
 }
 
-object function_object(py_function const& f)
-{
-    return function_object(f, python::detail::keyword_range());
-}
-
-
-handle<> function_handle_impl(py_function const& f)
+handle<> function_handle_impl(py_function f)
 {
     return python::handle<>(
         allow_null(
-            new function(f, 0, 0)));
+            new function(std::move(f), 0, 0)));
 }
 
 } // namespace objects
@@ -745,7 +730,7 @@ namespace detail
       static keyword k;
     
       return objects::function_object(
-          f
+          std::move(f)
           , keyword_range(&k,&k));
   }
   void BOOST_PYTHON_DECL pure_virtual_called()

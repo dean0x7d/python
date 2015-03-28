@@ -17,7 +17,7 @@ namespace boost { namespace python { namespace objects {
 struct BOOST_PYTHON_DECL function : PyObject
 {
     function(
-        py_function const&
+        py_function
         , python::detail::keyword const* names_and_defaults
         , unsigned num_keywords);
       
