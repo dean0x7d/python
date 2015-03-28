@@ -36,7 +36,7 @@ namespace detail
   void def_maybe_overloads(char const* name, Function f, A1 const& a1,
                            ...)
   {
-      def_from_helper(name, f, def_helper<A1>{a1});
+      def_from_helper(name, f, make_def_helper(a1));
   }
 
   template<class Function, class Overloads>
@@ -60,12 +60,12 @@ void def(char const* name, Function f, MaybeOverloads const& mo) {
 
 template <class F, class A1, class A2>
 void def(char const* name, F f, A1 const& a1, A2 const& a2) {
-    detail::def_from_helper(name, f, detail::def_helper<A1, A2>{a1, a2});
+    detail::def_from_helper(name, f, detail::make_def_helper(a1, a2));
 }
 
 template <class F, class A1, class A2, class A3>
 void def(char const* name, F f, A1 const& a1, A2 const& a2, A3 const& a3) {
-    detail::def_from_helper(name, f, detail::def_helper<A1, A2, A3>{a1, a2, a3});
+    detail::def_from_helper(name, f, detail::make_def_helper(a1, a2, a3));
 }
 
 }} // namespace boost::python

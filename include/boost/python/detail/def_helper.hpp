@@ -12,141 +12,117 @@
 # include <tuple>
 
 namespace boost { namespace python {
+    struct default_call_policies;
+}}
 
-struct default_call_policies;
+namespace boost { namespace python { namespace detail {
 
-namespace detail
-{
-  namespace impl {
-    template<template<class> class Predicate, class Tuple>
-    struct get_by_predicate;
-    
-    template<template<class> class Predicate, class... Args>
-    struct get_by_predicate<Predicate, std::tuple<Args...>>
-    {
-        // Predicate result is 'true', return the index.
-        template<bool result, int N, class... Tail>
-        struct find_index {
-            static constexpr auto value = N;
-        };
+template<template<class> class Predicate, class Tuple>
+struct tuple_find_if;
 
-        // Predicate result is 'false', test the next element.
-        template<int N, class T, class... Tail>
-        struct find_index<false, N, T, Tail...> {
-            static constexpr auto value = find_index<
-                Predicate<
-                    cpp14::remove_cv_t<cpp14::remove_reference_t<T>>
-                >::value, N + 1, Tail...
-            >::value;
-        };
-    
-        static constexpr auto index = find_index<false, -1, Args...>::value;
-        
-        using Tuple = std::tuple<Args...>;
-        static_assert(index < std::tuple_size<Tuple>::value, 
-                      "No tuple element satisfies the predicate");
-        
-        using type = typename std::tuple_element<index, Tuple>::type;
-        static type extract(const Tuple& t) {
-            return std::get<index>(t);
-        }
+template<template<class> class Predicate, class... Args>
+struct tuple_find_if<Predicate, std::tuple<Args...>> {
+    // Predicate result is 'true', return the index
+    template<bool result, int index, class...>
+    struct find_index {
+        static constexpr auto value = index;
     };
-  }
 
-  template<template<class> class Predicate, class Tuple>
-  using get_by_predicate_t = typename impl::get_by_predicate<Predicate, Tuple>::type;
+    // Predicate result is 'false', test the next element
+    template<int index, class T, class... Tail>
+    struct find_index<false, index, T, Tail...> {
+        using U = cpp14::remove_cv_t<cpp14::remove_reference_t<T>>;
+        static constexpr auto value = find_index<Predicate<U>::value, index + 1, Tail...>::value;
+    };
 
-  // Get the first tuple element that satisfies the predicate.
-  // References and cv qualifiers are removed from the element type 
-  // before passing it to the predicate.
-  template<template<class> class Predicate, class Tuple>
-  get_by_predicate_t<Predicate, Tuple> get_by_predicate(const Tuple& t) {
-      return impl::get_by_predicate<Predicate, Tuple>::extract(t);
-  }
+    // Not found
+    template<int index>
+    struct find_index<false, index> {
+        static constexpr auto value = -1;
+    };
 
-  //
-  // A helper class for decoding the optional arguments to def()
-  // invocations, which can be supplied in any order and are
-  // discriminated by their type properties. The template parameters
-  // are expected to be the types of the actual (optional) arguments
-  // passed to def().
-  //
-  template <class T1, class T2, class T3, class T4>
-  struct def_helper
-  {
-      // A tuple type which begins with references to the supplied
-      // arguments and ends with actual representatives of the default
-      // types.
-      using all_t = std::tuple<
-          T1 const&
-          , T2 const&
-          , T3 const&
-          , T4 const&
-          , default_call_policies
-          , detail::keywords<0>
-          , char const*
-          , void(not_specified::*)()   // A function pointer type which is never an
-                                       // appropriate default implementation
-      >;
+    static constexpr auto value = find_index<false, -1, Args...>::value;
+};
 
-      // Constructors; these initialize an member of the tuple type
-      // shown above.
-      def_helper(T1 const& a1) : def_helper(a1,m_nil,m_nil,m_nil) {}
-      def_helper(T1 const& a1, T2 const& a2) : def_helper(a1,a2,m_nil,m_nil) {}
-      def_helper(T1 const& a1, T2 const& a2, T3 const& a3) : def_helper(a1,a2,a3,m_nil) {}
-      def_helper(T1 const& a1, T2 const& a2, T3 const& a3, T4 const& a4) 
-      : m_all(a1,a2,a3,a4,{},{},{},{}) {}
-
-   private: // predicates
-      template<class T>
-      struct is_doc {
-          static constexpr bool value = !(std::is_class<T>::value || 
-                                          std::is_member_function_pointer<T>::value);
-      };
-      
-      template<class T>
-      struct is_policy {
-          static constexpr bool value = (!std::is_same<not_specified, T>::value &&
-                                         std::is_class<T>::value &&
-                                         !is_keywords<T>::value);
-      };
-      
-   public: // Constants which can be used for static assertions.
-
-      // Users must not supply a default implementation for non-class
-      // methods.
-      using default_implementation_t = get_by_predicate_t<std::is_member_function_pointer, all_t>;
-      static constexpr bool has_default_implementation = 
-              !std::is_same<default_implementation_t, void(not_specified::*)()>::value;
-      
-   public: // Extractor functions which pull the appropriate value out
-           // of the tuple
-      char const* doc() const
-      {
-          return get_by_predicate<is_doc>(m_all);
-      }
-      
-      get_by_predicate_t<is_keywords, all_t> keywords() const
-      {
-          return get_by_predicate<is_keywords>(m_all);
-      }
-      
-      get_by_predicate_t<is_policy, all_t> policies() const
-      {
-          return get_by_predicate<is_policy>(m_all);
-      }
-
-      default_implementation_t default_implementation() const
-      {
-          return get_by_predicate<std::is_member_function_pointer>(m_all);
-      }
-      
-   private: // data members
-      all_t m_all; 
-      not_specified m_nil; // for filling in not_specified slots
-  };
+template<int index, class Else, class Tuple>
+auto get_if_else_impl(Tuple const& t, std::true_type) -> decltype(std::get<index>(t)) {
+    return std::get<index>(t);
 }
 
-}} // namespace boost::python::detail
+template<int index, class Else, class Tuple>
+Else get_if_else_impl(Tuple const&, std::false_type) {
+    return {};
+}
+
+// Get the first tuple element that satisfies the Predicate template.
+// If no element is found, return a default constructed value of Else.
+// References and cv qualifiers are removed from the element type
+// before passing it to the predicate.
+template<template<class> class Predicate, class Else, class Tuple,
+    int index = tuple_find_if<Predicate, Tuple>::value, bool found = (index >= 0)>
+auto get_if_else(Tuple const& t)
+    -> decltype(get_if_else_impl<index, Else>(t, std::integral_constant<bool, found>{}))
+{
+    return get_if_else_impl<index, Else>(t, std::integral_constant<bool, found>{});
+}
+
+// A helper class for decoding the optional arguments to def()
+// invocations, which can be supplied in any order and are
+// discriminated by their type properties. The template parameters
+// are expected to be the types of the actual (optional) arguments
+// passed to def().
+template<class... Args>
+struct def_helper {
+    def_helper(Args const&... args) : args{args...} {}
+
+private:
+    using tuple = std::tuple<Args const&...>;
+
+    // A function pointer type which is never an appropriate default implementation
+    using invalid_default = void (def_helper::*)();
+
+    template<class T>
+    struct is_doc {
+        static constexpr bool value = !std::is_class<T>::value &&
+                                      !std::is_member_function_pointer<T>::value;
+    };
+
+    template<class T>
+    struct is_policy {
+        static constexpr bool value = std::is_class<T>::value && !is_keywords<T>::value;
+    };
+
+public: // Constants which can be used for static assertions.
+    // Users must not supply a default implementation for non-class methods.
+    static constexpr bool has_default_implementation =
+        tuple_find_if<std::is_member_function_pointer, tuple>::value >= 0;
+
+public: // Extractor functions which pull the appropriate value out of the tuple
+    char const* doc() const {
+        return get_if_else<is_doc, char const*>(args);
+    }
+
+    auto keywords() const -> decltype(get_if_else<is_keywords, detail::keywords<>>(std::declval<tuple>())) {
+        return get_if_else<is_keywords, detail::keywords<>>(args);
+    }
+
+    auto policies() const -> decltype(get_if_else<is_policy, default_call_policies>(std::declval<tuple>())) {
+        return get_if_else<is_policy, default_call_policies>(args);
+    }
+
+    auto default_implementation() const -> decltype(get_if_else<std::is_member_function_pointer, invalid_default>(std::declval<tuple>())) {
+        return get_if_else<std::is_member_function_pointer, invalid_default>(args);
+    }
+
+private:
+    tuple args;
+};
+
+template<class... Args>
+def_helper<Args...> make_def_helper(Args const&... args) {
+    return {args...};
+}
+
+}}} // namespace boost::python::detail
 
 #endif // DEF_HELPER_DWA200287_HPP

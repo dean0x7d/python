@@ -5,11 +5,9 @@
 #ifndef DEF_HELPER_FWD_DWA2003810_HPP
 # define DEF_HELPER_FWD_DWA2003810_HPP
 
-# include <boost/python/detail/not_specified.hpp>
-
 namespace boost { namespace python { namespace detail { 
 
-template <class T1, class T2 = not_specified, class T3 = not_specified, class T4 = not_specified>
+template<class... Ts>
 struct def_helper;
 
 }}} // namespace boost::python::detail

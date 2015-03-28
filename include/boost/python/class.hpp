@@ -405,7 +405,7 @@ class class_ : public objects::class_base
     {
         static_assert(std::is_polymorphic<W>::value &&
                       std::is_member_function_pointer<Fn>::value &&
-                      std::is_convertible<Fn, typename Helper::default_implementation_t>::value,
+                      std::is_convertible<Fn, decltype(helper.default_implementation())>::value,
                       "Virtual function default must be a derived class member");
 
         objects::add_to_namespace(
