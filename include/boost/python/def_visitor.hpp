@@ -7,10 +7,10 @@
 
 # include <boost/python/detail/prefix.hpp>
 
-namespace boost { namespace python { 
+namespace boost { namespace python {
 
 template <class DerivedVisitor> class def_visitor;
-template <class T, class X1, class X2, class X3> class class_;
+template<class W, class... Args> class class_;
 
 class def_visitor_access
 {
@@ -42,8 +42,8 @@ template <class DerivedVisitor>
 class def_visitor
 {
     friend class def_visitor_access;
-    template <class T, class X1, class X2, class X3> friend class class_;
-    
+    template<class W, class... Args> friend class class_;
+
     // unnamed visit, c.f. init<...>, container suites
     template <class classT>
     void visit(classT& c) const

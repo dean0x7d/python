@@ -38,20 +38,16 @@ template <class DerivedVisitor> class def_visitor;
 
 enum no_init_t { no_init };
 
-// This is the primary mechanism through which users will expose
-// C++ classes to Python.
-template <
-    class W // class being wrapped
-    , class X1 // = detail::not_specified
-    , class X2 // = detail::not_specified
-    , class X3 // = detail::not_specified
-    >
-class class_ : public objects::class_base
-{
- public: // types
+// This is the primary mechanism through which users will expose C++ classes to Python.
+// W is the class being wrapped. Args are arbitrarily-ordered optional arguments.
+template<class W, class... Args>
+class class_ : public objects::class_base {
+    static_assert(sizeof...(Args) <= 3, "Maximum of 3 optional arguments");
+
+public: // types
     typedef objects::class_base base;
-    typedef class_<W,X1,X2,X3> self;
-    typedef typename objects::class_metadata<W,X1,X2,X3> metadata;
+    typedef class_<W, Args...> self;
+    typedef typename objects::class_metadata<W, Args...> metadata;
     typedef W wrapped_type;
     
  private: // types
@@ -77,13 +73,26 @@ class class_ : public objects::class_base
  public: // constructors
     
     // Construct with the class name, with or without docstring, and default __init__() function
-    class_(char const* name, char const* doc = 0);
+    class_(char const* name, char const* doc = nullptr)
+        : base(name, id_vector::size, id_vector().ids, doc)
+    {
+        initialize(init<>{});
+        //  select_holder::assert_default_constructible();
+    }
 
     // Construct with class name, no docstring, and an uncallable __init__ function
-    class_(char const* name, no_init_t);
+    class_(char const* name, no_init_t)
+        : base(name, id_vector::size, id_vector().ids)
+    {
+        initialize(no_init);
+    }
 
     // Construct with class name, docstring, and an uncallable __init__ function
-    class_(char const* name, char const* doc, no_init_t);
+    class_(char const* name, char const* doc, no_init_t)
+        : base(name, id_vector::size, id_vector().ids, doc)
+    {
+        initialize(no_init);
+    }
 
     // Construct with class name and init<> function
     template <class DerivedT>
@@ -439,33 +448,6 @@ class class_ : public objects::class_base
         def_impl(detail::unwrap_wrapper((W*)0), name, f, detail::def_helper<A1>{a1}, &f);
     }
 };
-
-
-//
-// implementations
-//
-
-template <class W, class X1, class X2, class X3>
-inline class_<W,X1,X2,X3>::class_(char const* name, char const* doc)
-    : base(name, id_vector::size, id_vector().ids, doc)
-{
-    this->initialize(init<>());
-//  select_holder::assert_default_constructible();
-}
-
-template <class W, class X1, class X2, class X3>
-inline class_<W,X1,X2,X3>::class_(char const* name, no_init_t)
-    : base(name, id_vector::size, id_vector().ids)
-{
-    this->initialize(no_init);
-}
-
-template <class W, class X1, class X2, class X3>
-inline class_<W,X1,X2,X3>::class_(char const* name, char const* doc, no_init_t)
-    : base(name, id_vector::size, id_vector().ids, doc)
-{
-    this->initialize(no_init);
-}
 
 }} // namespace boost::python
 

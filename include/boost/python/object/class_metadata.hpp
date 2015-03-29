@@ -28,43 +28,33 @@ void copy_class_object(type_info const& src, type_info const& dst);
 //
 // Support for registering base/derived relationships
 //
-template <class Derived, class BasesPack>
+template<class Derived, class BasesPack>
 struct register_bases_of;
 
-template <class Derived, class Base, class... Tail>
-struct register_bases_of<Derived, bases<Base, Tail...>>
-{
-    static void execute()
-    {
-        static_assert(!std::is_same<Base, Derived>::value, 
-                      "Base cannot be the same as Derived");
-        
+template<class Derived, class... Bases>
+struct register_bases_of<Derived, bases<Bases...>> {
+    static void execute() {
+        // Use empty lambda to execute for all Bases
+        [](...){}((register_base<Bases>(), 0)...);
+    }
+
+private:
+    template<class Base>
+    static void register_base() {
+        static_assert(!std::is_same<Base, Derived>::value, "Base cannot be the same as Derived");
+
         // Register the Base class
         register_dynamic_id<Base>();
-
         // Register the up-cast
         register_conversion<Derived, Base>(false);
-
         // Register the down-cast, if appropriate.
-        register_downcast(std::is_polymorphic<Base>());
-        
-        // Repeat for the rest of the bases
-        register_bases_of<Derived, bases<Tail...>>::execute();
+        register_downcast<Base>(std::is_polymorphic<Base>{});
     }
 
- private:
-    static inline void register_downcast(std::false_type) {}
-    
-    static inline void register_downcast(std::true_type)
-    {
-        register_conversion<Base, Derived>(true);
-    }
-};
-
-template <class Derived>
-struct register_bases_of<Derived, bases<>>
-{
-    static void execute() {}
+    template<class Base>
+    static void register_downcast(std::false_type) {}
+    template<class Base>
+    static void register_downcast(std::true_type) { register_conversion<Base, Derived>(true); }
 };
 
 //
@@ -72,10 +62,9 @@ struct register_bases_of<Derived, bases<>>
 // need some registration of their own.
 //
 template <class T, class Bases>
-inline void register_shared_ptr_from_python_and_casts(T*, Bases)
-{
+inline void register_shared_ptr_from_python_and_casts(T*, Bases) {
     // Constructor performs registration
-    python::detail::force_instantiate(converter::shared_ptr_from_python<T>());
+    python::detail::force_instantiate(converter::shared_ptr_from_python<T>{});
 
     // Register all up/downcasts here
     register_dynamic_id<T>();
@@ -135,14 +124,9 @@ using is_noncopyable_type = std::integral_constant<bool,
     std::is_same<T, noncopyable>::value
 >;
 
-template <
-    class T // class being wrapped
-  , class X1 // = detail::not_specified
-  , class X2 // = detail::not_specified
-  , class X3 // = detail::not_specified
->
-struct class_metadata
-{
+// T is the class being wrapped. Args are arbitrarily-ordered optional arguments.
+template<class T, class... Args>
+struct class_metadata {
     //
     // Calculate the unnamed template arguments
     //
@@ -150,12 +134,12 @@ struct class_metadata
     // held_type_arg -- not_specified, [a class derived from] T or a
     // smart pointer to [a class derived from] T.  Preserving
     // not_specified allows us to give class_<T,T> a back-reference.
-    using held_type_arg = select_t<is_held_type, python::detail::not_specified, X1, X2, X3>;
+    using held_type_arg = select_t<is_held_type, python::detail::not_specified, Args...>;
 
     // bases
-    using bases = select_t<python::detail::specifies_bases, python::bases<>, X1, X2, X3>;
+    using bases = select_t<python::detail::specifies_bases, python::bases<>, Args...>;
 
-    using is_noncopyable = any_t<is_noncopyable_type, X1, X2, X3>;
+    using is_noncopyable = any_t<is_noncopyable_type, Args...>;
     
     //
     // Holder computation.
