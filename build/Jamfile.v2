@@ -81,7 +81,6 @@ rule lib_boost_python ( is-py3 ? )
         list.cpp
         long.cpp
         dict.cpp
-        tuple.cpp
         slice.cpp
 
         converter/from_python.cpp

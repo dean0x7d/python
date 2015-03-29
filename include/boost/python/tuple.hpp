@@ -3,71 +3,49 @@
 // accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 #ifndef TUPLE_20020706_HPP
-#define TUPLE_20020706_HPP
+# define TUPLE_20020706_HPP
 
 # include <boost/python/detail/prefix.hpp>
-
-#include <boost/python/object.hpp>
-#include <boost/python/converter/pytype_object_mgr_traits.hpp>
+# include <boost/python/object.hpp>
+# include <boost/python/converter/pytype_object_mgr_traits.hpp>
 
 namespace boost { namespace python {
 
-namespace detail
-{
-  struct BOOST_PYTHON_DECL tuple_base : object
-  {
-   protected:
-      tuple_base();
-      tuple_base(object_cref sequence);
-      
-      BOOST_PYTHON_FORWARD_OBJECT_CONSTRUCTORS(tuple_base, object)
-
-   private:
-      static detail::new_reference call(object const&);
-  };
-}
-
-class tuple : public detail::tuple_base
-{
-    using base = detail::tuple_base;
- public:
-    tuple() {}
+class tuple : public object {
+public:
+    tuple() : object{detail::new_reference(PyTuple_New(0))} {}
 
     template <class T>
-    explicit tuple(T const& sequence)
-        : base(object(sequence))
-    {
+    explicit tuple(T const& sequence) : object{call(object{sequence})} {}
+
+private:
+    static detail::new_reference call(object const& arg) {
+        return (detail::new_reference)PyObject_CallFunctionObjArgs(
+            upcast<PyObject>(&PyTuple_Type), arg.ptr(), nullptr
+        );
     }
 
- public: // implementation detail -- for internal use only
-    BOOST_PYTHON_FORWARD_OBJECT_CONSTRUCTORS(tuple, base)
+public: // implementation detail -- for internal use only
+    BOOST_PYTHON_FORWARD_OBJECT_CONSTRUCTORS(tuple, object)
 };
 
 //
-// Converter Specializations    // $$$ JDG $$$ moved here to prevent
-//                              // G++ bug complaining specialization
-                                // provided after instantiation
-namespace converter
-{
-  template <>
-  struct object_manager_traits<tuple>
-      : pytype_object_manager_traits<&PyTuple_Type,tuple>
-  {
-  };
+// Converter Specializations
+//
+namespace converter {
+    template <>
+    struct object_manager_traits<tuple>
+        : pytype_object_manager_traits<&PyTuple_Type, tuple>
+    {};
 }
 
 template <class... Args>
-tuple make_tuple(Args const&... args)
-{
-    return tuple(detail::new_reference(
-        PyTuple_Pack(
-            sizeof...(Args), 
-            python::incref(python::object(args).ptr())...
-        )
-    ));
-}
+tuple make_tuple(Args const&... args) {
+    return tuple{detail::new_reference(
+        PyTuple_Pack(sizeof...(Args), incref(object{args}.ptr())...)
+    )};
+};
 
 }}  // namespace boost::python
 
 #endif
-
