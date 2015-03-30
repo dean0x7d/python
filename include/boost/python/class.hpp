@@ -68,7 +68,7 @@ public: // types
 		std::array<type_info, size> id_array;
 		type_info const* const ids = id_array.data();
     };
-    using id_vector = id_vector_impl<W, typename metadata::bases>;
+    using id_vector = id_vector_impl<W, typename metadata::base_list>;
 
  public: // constructors
     

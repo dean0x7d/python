@@ -7,22 +7,12 @@
 
 # include <boost/python/detail/prefix.hpp>
 # include <boost/python/detail/type_list.hpp>
-# include <type_traits>
 
 namespace boost { namespace python { 
 
-  // A type list for specifying bases
-  template <typename... Bases>
-  struct bases : detail::type_list<Bases...> {};
-
-  namespace detail
-  {
-    template <class T> 
-    struct specifies_bases : std::false_type {};
-    
-    template <class... Bases>
-    struct specifies_bases<bases<Bases...>> : std::true_type {};
-  }
+// A type list for specifying bases
+template<class... Bases>
+struct bases : detail::type_list<Bases...> {};
 
 }} // namespace boost::python
 

@@ -11,24 +11,24 @@ struct B;
 
 template <class... Ts>
 using choose_bases_t = boost::python::objects::select_t<
-  boost::python::detail::specifies_bases, boost::python::bases<>, Ts...
+  boost::python::objects::is_bases, boost::python::bases<>, Ts...
 >;
 
 int main()
 {
-    static_assert(boost::python::detail::specifies_bases<
+    static_assert(boost::python::objects::is_bases<
                   boost::python::bases<A,B> >::value, "");
 
-    static_assert(!boost::python::detail::specifies_bases<
+    static_assert(!boost::python::objects::is_bases<
                   boost::python::bases<A,B>& >::value, "");
 
-    static_assert(!boost::python::detail::specifies_bases<
+    static_assert(!boost::python::objects::is_bases<
                   void* >::value, "");
 
-    static_assert(!boost::python::detail::specifies_bases<
+    static_assert(!boost::python::objects::is_bases<
                   int >::value, "");
 
-    static_assert(!boost::python::detail::specifies_bases<
+    static_assert(!boost::python::objects::is_bases<
                   int[5] >::value, "");
 
     using collected1 = choose_bases_t<int, char*>;

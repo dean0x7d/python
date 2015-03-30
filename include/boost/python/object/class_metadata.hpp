@@ -13,6 +13,7 @@
 # include <boost/python/object/make_ptr_instance.hpp>
 
 # include <boost/python/detail/force_instantiate.hpp>
+# include <boost/python/detail/unwrap_wrapper.hpp>
 
 # include <boost/python/has_back_reference.hpp>
 # include <boost/python/bases.hpp>
@@ -61,7 +62,7 @@ private:
 // need some registration of their own.
 //
 template <class T, class Bases>
-inline void register_shared_ptr_from_python_and_casts(T*, Bases) {
+inline void register_shared_ptr_from_python_and_casts() {
     // Constructor performs registration
     python::detail::force_instantiate(converter::shared_ptr_from_python<T>{});
 
@@ -69,7 +70,7 @@ inline void register_shared_ptr_from_python_and_casts(T*, Bases) {
     register_dynamic_id<T>();
     register_bases_of<T, Bases>::execute();
 }
-  
+
 namespace detail {
     template<template<class> class Predicate, class Default, class... Args>
     struct select;
@@ -111,146 +112,122 @@ template<template<class> class Predicate, class... Args>
 using any_t = std::integral_constant<bool, detail::any<Predicate, Args...>::value>;
 
 //
-// Helper for choosing the unnamed held_type argument
+// Helpers for choosing the optional arguments
 //
 template<class T>
-using is_held_type = std::integral_constant<bool, 
-    !python::detail::specifies_bases<T>::value && !std::is_same<T, noncopyable>::value
->;
+using is_bases = python::detail::is_<bases, T>;
 
 template<class T>
-using is_noncopyable_type = std::integral_constant<bool, 
-    std::is_same<T, noncopyable>::value
->;
+using is_noncopyable = std::is_same<T, noncopyable>;
 
-// T is the class being wrapped. Args are arbitrarily-ordered optional arguments.
-template<class T, class... Args>
+template<class T>
+using is_held = std::integral_constant<bool, !is_bases<T>::value && !is_noncopyable<T>::value>;
+
+// W is the class being wrapped. Args are arbitrarily-ordered optional arguments.
+template<class W, class... Args>
 struct class_metadata {
-    // base classes of T
-    using bases = select_t<python::detail::specifies_bases, python::bases<>, Args...>;
-    // [a class derived from] T or a smart pointer to [a class derived from] T
-    using held_type = select_t<is_held_type, T, Args...>;
-    using is_noncopyable = any_t<is_noncopyable_type, Args...>;
-    
-    // Hold by value if held_type is T or derived from T. (Otherwise held_type is a pointer.)
-    using use_value_holder = std::is_base_of<T, held_type>;
-    
-    // Compute the "wrapped type", that is, if held_type is a smart
-    // pointer, we're talking about the pointee.
-    using wrapped = cpp14::conditional_t<
+    // base classes of W
+    using base_list = select_t<is_bases, bases<>, Args...>;
+    // [a class derived from] W or a smart pointer to [a class derived from] W
+    using held_type = select_t<is_held, W, Args...>;
+    using is_noncopyable = any_t<is_noncopyable, Args...>;
+
+private:
+    // Hold by value if held_type is W or derived from W. (Otherwise held_type is a pointer.)
+    using use_value_holder = std::is_base_of<W, held_type>;
+
+    // Unwrap the held type if it's a pointer, i.e. get the pointee
+    using unwapped_held_type = cpp14::conditional_t<
         use_value_holder::value,
         held_type,
         pointee_t<held_type>
     >;
 
     // Determine whether to use a "back-reference holder"
-    template<class Other>
-    using is_self = std::is_same<T, Other>;
+    template<class T>
+    using is_self = std::is_same<W, T>;
 
     using use_back_reference = std::integral_constant<bool,
-        has_back_reference<T>::value || 
-        any_t<is_self, Args...>::value || // class_<T, T> has a back-reference
-        (std::is_base_of<T, wrapped>::value && !std::is_same<T, wrapped>::value)
+        has_back_reference<W>::value ||
+        any_t<is_self, Args...>::value || // class_<W, W> has a back-reference
+        (std::is_base_of<W, unwapped_held_type>::value &&
+         !std::is_same<W, unwapped_held_type>::value)
     >;
 
+public:
     using holder = cpp14::conditional_t<
         use_value_holder::value,
-        value_holder<T, wrapped, use_back_reference::value>,
-        pointer_holder<held_type, wrapped, T, use_back_reference::value>
+        value_holder<W, unwapped_held_type, use_back_reference::value>,
+        pointer_holder<held_type, unwapped_held_type, W, use_back_reference::value>
     >;
 
-    inline static void register_() // Register the runtime metadata.
-    {
-        class_metadata::register_aux((T*)0);
+    // Register the runtime metadata.
+    static void register_() {
+        register_aux((W*)nullptr);
     }
 
- private:
-    template <class T2>
-    inline static void register_aux(python::wrapper<T2>*) 
-    {
-        class_metadata::register_aux2<T2, !std::is_same<T2, wrapped>::value>();
+private:
+    template<class T>
+    static void register_aux(wrapper<T>*) {
+        register_helper<T, !std::is_same<T, unwapped_held_type>::value>::execute();
     }
 
-    inline static void register_aux(void*) 
-    {
-        class_metadata::register_aux2<
-            T, 
-            std::is_base_of<T, wrapped>::value && !std::is_same<T, wrapped>::value
-        >();
+    static void register_aux(void*) {
+        register_helper<W, std::is_base_of<W, unwapped_held_type>::value &&
+                           !std::is_same<W, unwapped_held_type>::value>::execute();
     }
 
-    template <class T2, bool use_callback>
-    inline static void register_aux2() 
-    {
-        objects::register_shared_ptr_from_python_and_casts((T2*)0, bases());
-        
-        class_metadata::maybe_register_callback_class((T2*)0, 
-            std::integral_constant<bool, use_callback>());
+    template<class T, bool use_callback>
+    struct register_helper {
+        static void execute() {
+            register_shared_ptr_from_python_and_casts<T, base_list>();
 
-        class_metadata::maybe_register_class_to_python((T2*)0, is_noncopyable());
-        
-        class_metadata::maybe_register_pointer_to_python(
-            (T2*)0, (use_value_holder*)0, (use_back_reference*)0);
-    }
+            maybe_register_callback_class(std::integral_constant<bool, use_callback>{});
+            maybe_register_class_to_python(is_noncopyable{});
+            maybe_register_pointer_to_python(use_back_reference{}, use_value_holder{});
+        };
 
+        // Support for registering callback classes
+        static void maybe_register_callback_class(std::false_type /*use_callback*/) {}
+        static void maybe_register_callback_class(std::true_type  /*use_callback*/) {
+            register_shared_ptr_from_python_and_casts<unwapped_held_type, bases<T>>();
+            copy_class_object(type_id<T>(), type_id<unwapped_held_type>());
+        }
 
-    //
-    // Support for converting smart pointers to python
-    //
-    inline static void maybe_register_pointer_to_python(...) {}
+        // Support for registering to-python converters
+        static void maybe_register_class_to_python(std::true_type  /*is_noncopyable*/) {}
+        static void maybe_register_class_to_python(std::false_type /*is_noncopyable*/) {
+            python::detail::force_instantiate(class_cref_wrapper<T, make_instance<T, holder>>{});
+#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
+            copy_class_object(type_id<T>(), type_id<held_type>());
+#endif
+        }
+
+        // Support for converting smart pointers to python
+        static void maybe_register_pointer_to_python(...) {}
 
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    inline static void maybe_register_pointer_to_python(void*,void*,std::true_type*) 
-    {
-        objects::copy_class_object(python::type_id<T>(), python::type_id<back_reference<T const &> >());
-        objects::copy_class_object(python::type_id<T>(), python::type_id<back_reference<T &> >());
-    }
+        static void maybe_register_pointer_to_python(std::true_type /*use_back_reference*/,
+                                                     ...            /*use_value_holder*/)
+        {
+            copy_class_object(type_id<W>(), type_id<back_reference<W const&>>());
+            copy_class_object(type_id<W>(), type_id<back_reference<W&>>());
+        }
 #endif
 
-    template <class T2>
-    inline static void maybe_register_pointer_to_python(T2*, std::false_type*, std::false_type*)
-    {
-        python::detail::force_instantiate(
-            objects::class_value_wrapper<
-                held_type
-              , make_ptr_instance<T2, pointer_holder<held_type, T2> >
-            >()
-        );
+        static void maybe_register_pointer_to_python(std::false_type /*use_back_reference*/,
+                                                     std::false_type /*use_value_holder*/)
+        {
+            python::detail::force_instantiate(
+                class_value_wrapper<
+                    held_type, make_ptr_instance<T, pointer_holder<held_type, T>>
+                >()
+            );
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-        // explicit qualification of type_id makes msvc6 happy
-        objects::copy_class_object(python::type_id<T2>(), python::type_id<held_type>());
+            copy_class_object(type_id<T>(), type_id<held_type>());
 #endif
-    }
-    //
-    // Support for registering to-python converters
-    //
-    inline static void maybe_register_class_to_python(void*, std::true_type) {}
-    
-
-    template <class T2>
-    inline static void maybe_register_class_to_python(T2*, std::false_type)
-    {
-        python::detail::force_instantiate(class_cref_wrapper<T2, make_instance<T2, holder> >());
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-        // explicit qualification of type_id makes msvc6 happy
-        objects::copy_class_object(python::type_id<T2>(), python::type_id<held_type>());
-#endif
-    }
-
-    //
-    // Support for registering callback classes
-    //
-    inline static void maybe_register_callback_class(void*, std::false_type) {}
-
-    template <class T2>
-    inline static void maybe_register_callback_class(T2*, std::true_type)
-    {
-        objects::register_shared_ptr_from_python_and_casts(
-            (wrapped*)0, python::bases<T2>());
-
-        // explicit qualification of type_id makes msvc6 happy
-        objects::copy_class_object(python::type_id<T2>(), python::type_id<wrapped>());
-    }
+        }
+    };
 };
 
 }}} // namespace boost::python::object
