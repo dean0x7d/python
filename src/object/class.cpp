@@ -521,22 +521,19 @@ namespace objects
     //             corresponding to the class being created, and the
     //             rest corresponding to its declared bases.
     //
-    inline object
-    new_class(char const* name, std::size_t num_types, type_info const* const types, char const* doc)
-    {
-      assert(num_types >= 1);
+    inline object new_class(char const* name, std::vector<type_info> const& types, char const* doc) {
+      assert(types.size() >= 1);
       
       // Build a tuple of the base Python type objects. If no bases
       // were declared, we'll use our class_type() as the single base
       // class.
-      ssize_t const num_bases = (std::max)(num_types - 1, static_cast<std::size_t>(1));
-      handle<> bases(PyTuple_New(num_bases));
+      auto const num_bases = static_cast<ssize_t>(std::max(types.size() - 1, std::size_t{1}));
+      auto bases = handle<>{PyTuple_New(num_bases)};
 
-      for (ssize_t i = 1; i <= num_bases; ++i)
-      {
-          type_handle c = (i >= static_cast<ssize_t>(num_types)) ? class_type() : get_class(types[i]);
+      for (ssize_t i = 0; i < num_bases; ++i) {
+          auto c = (types.size() == 1) ? class_type() : get_class(types[i + 1]);
           // PyTuple_SET_ITEM steals this reference
-          PyTuple_SET_ITEM(bases.get(), static_cast<ssize_t>(i - 1), upcast<PyObject>(c.release()));
+          PyTuple_SET_ITEM(bases.get(), i, upcast<PyObject>(c.release()));
       }
 
       // Call the class metatype to create a new class
@@ -562,9 +559,8 @@ namespace objects
     }
   }
   
-  class_base::class_base(
-      char const* name, std::size_t num_types, type_info const* const types, char const* doc)
-      : object(new_class(name, num_types, types, doc))
+  class_base::class_base(char const* name, std::vector<type_info> const& types, char const* doc)
+      : object(new_class(name, types, doc))
   {
       // Insert the new class object in the registry
       // Class object is leaked, for now

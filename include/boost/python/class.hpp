@@ -27,10 +27,7 @@
 # include <boost/python/detail/overloads_fwd.hpp>
 # include <boost/python/detail/operator_id.hpp>
 # include <boost/python/detail/def_helper.hpp>
-# include <boost/python/detail/force_instantiate.hpp>
 # include <boost/python/detail/unwrap_wrapper.hpp>
-
-# include <array>
 
 namespace boost { namespace python {
 
@@ -44,391 +41,265 @@ template<class W, class... Args>
 class class_ : public objects::class_base {
     static_assert(sizeof...(Args) <= 3, "Maximum of 3 optional arguments");
 
-public: // types
-    typedef objects::class_base base;
-    typedef class_<W, Args...> self;
-    typedef typename objects::class_metadata<W, Args...> metadata;
-    typedef W wrapped_type;
-    
- private: // types
+public:
+    using base = objects::class_base;
+    using self = class_<W, Args...>;
+    using metadata = typename objects::class_metadata<W, Args...>;
+    using wrapped_type = W;
 
+private:
     // A helper class which will contain an array of id objects to be
     // passed to the base class constructor
-    template<class Derived, class BasesPack>
+    template<class BasesPack>
     struct id_vector_impl;
     
-    template<class Derived, class... Bases>
-    struct id_vector_impl<Derived, bases<Bases...>> {
-        id_vector_impl()
-		    : id_array({{ type_id<detail::unwrap_wrapper_t<Derived>>(), type_id<Bases>()... }})
-        {}
-        
-        static constexpr auto size = sizeof...(Bases) + 1;
-        // This could be a [] array, but std::array is needed for VS14 CTP3
-		std::array<type_info, size> id_array;
-		type_info const* const ids = id_array.data();
+    template<class... Bases>
+    struct id_vector_impl<bases<Bases...>> {
+        id_vector_impl() : ids{type_id<detail::unwrap_wrapper_t<W>>(), type_id<Bases>()...} {}
+		std::vector<type_info> ids;
     };
-    using id_vector = id_vector_impl<W, typename metadata::base_list>;
 
- public: // constructors
-    
-    // Construct with the class name, with or without docstring, and default __init__() function
-    class_(char const* name, char const* doc = nullptr)
-        : base(name, id_vector::size, id_vector().ids, doc)
+    using id_vector = id_vector_impl<typename metadata::base_list>;
+
+public:
+    // Construct with default __init__() function
+    class_(char const* name, char const* docstring = nullptr)
+        : class_{name, nullptr, init<>{}}
+    {}
+
+    // Construct with init<> function
+    template<class Derived>
+    class_(char const* name, init_base<Derived> const& init_function)
+        : class_{name, nullptr, init_function}
+    {}
+
+    template<class Derived>
+    class_(char const* name, char const* docstring, init_base<Derived> const& init_function)
+        : base(name, id_vector{}.ids, docstring)
     {
-        initialize(init<>{});
-        //  select_holder::assert_default_constructible();
+        metadata::register_(); // set up runtime metadata/conversions
+        base::set_instance_size(objects::additional_instance_size<typename metadata::holder>::value);
+        def(init_function);
     }
 
-    // Construct with class name, no docstring, and an uncallable __init__ function
+    // Construct with uncallable __init__ function
     class_(char const* name, no_init_t)
-        : base(name, id_vector::size, id_vector().ids)
+        : class_{name, nullptr, no_init}
+    {}
+
+    class_(char const* name, char const* docstring, no_init_t)
+        : base{name, id_vector{}.ids, docstring}
     {
-        initialize(no_init);
+        metadata::register_(); // set up runtime metadata/conversions
+        base::def_no_init();
     }
 
-    // Construct with class name, docstring, and an uncallable __init__ function
-    class_(char const* name, char const* doc, no_init_t)
-        : base(name, id_vector::size, id_vector().ids, doc)
-    {
-        initialize(no_init);
+public:
+    // Wrap a member function or a non-member function which can take
+    // a T, T cv&, or T cv* as its first parameter, a callable
+    // python object, or a generic visitor.
+    template<class Function>
+    self& def(char const* name, Function f) {
+        def_impl(name, f, detail::def_helper<char const*>(nullptr), &f);
+        return *this;
     }
 
-    // Construct with class name and init<> function
-    template <class DerivedT>
-    inline class_(char const* name, init_base<DerivedT> const& i)
-        : base(name, id_vector::size, id_vector().ids)
-    {
-        this->initialize(i);
+    template<class Function, class MaybeOverloads>
+    self& def(char const* name, Function f, MaybeOverloads const& mo) {
+        def_maybe_overloads(name, f, mo, &mo);
+        return *this;
     }
 
-    // Construct with class name, docstring and init<> function
-    template <class DerivedT>
-    inline class_(char const* name, char const* doc, init_base<DerivedT> const& i)
-        : base(name, id_vector::size, id_vector().ids, doc)
-    {
-        this->initialize(i);
+    template<class Function, class A1, class A2>
+    self& def(char const* name, Function f, A1 const& a1, A2 const& a2) {
+        def_impl(name, f, detail::make_def_helper(a1, a2), &f);
+        return *this;
     }
 
- public: // member functions
-    
+    template<class Function, class A1, class A2, class A3>
+    self& def(char const* name, Function f, A1 const& a1, A2 const& a2, A3 const& a3) {
+        def_impl(name, f, detail::make_def_helper(a1, a2, a3), &f);
+        return *this;
+    }
+
     // Generic visitation
-    template <class Derived>
-    self& def(def_visitor<Derived> const& visitor)
-    {
+    template<class Derived>
+    self& def(def_visitor<Derived> const& visitor) {
         visitor.visit(*this);
         return *this;
     }
 
-    // Wrap a member function or a non-member function which can take
-    // a T, T cv&, or T cv* as its first parameter, a callable
-    // python object, or a generic visitor.
-    template <class F>
-    self& def(char const* name, F f)
-    {
-        this->def_impl(
-            detail::unwrap_wrapper((W*)0)
-          , name, f, detail::def_helper<char const*>(0), &f);
+    self& staticmethod(char const* name) {
+        make_method_static(name);
         return *this;
     }
 
-    template <class A1, class A2>
-    self& def(char const* name, A1 a1, A2 const& a2)
-    {
-        this->def_maybe_overloads(name, a1, a2, &a2);
-        return *this;
+public: // Data member access
+    template<class D, class B>
+    self& def_readonly(char const* name, D B::*pm, char const* docstring = nullptr) {
+        return add_property(name, pm, docstring);
     }
 
-    template <class Fn, class A1, class A2>
-    self& def(char const* name, Fn fn, A1 const& a1, A2 const& a2)
-    {
-        //  The arguments are definitely:
-        //      def(name, function, policy, doc_string)
-        //      def(name, function, doc_string, policy)
-
-        this->def_impl(
-            detail::unwrap_wrapper((W*)0)
-          , name, fn
-          , detail::def_helper<A1,A2>(a1,a2)
-          , &fn);
-
-        return *this;
+    template<class D>
+    self& def_readonly(char const* name, D const& d, char const* = nullptr) {
+        return add_static_property(name, python::make_getter(d));
     }
 
-    template <class Fn, class A1, class A2, class A3>
-    self& def(char const* name, Fn fn, A1 const& a1, A2 const& a2, A3 const& a3)
-    {
-        this->def_impl(
-            detail::unwrap_wrapper((W*)0)
-          , name, fn
-          , detail::def_helper<A1,A2,A3>(a1,a2,a3)
-          , &fn);
-
-        return *this;
-    }
-
-    //
-    // Data member access
-    //
-    template <class D>
-    self& def_readonly(char const* name, D const& d, char const* doc=0)
-    {
-        return this->def_readonly_impl(name, d, doc);
+    template<class D, class B>
+    self& def_readwrite(char const* name, D B::*pm, char const* docstring = nullptr) {
+        return add_property(name, pm, pm, docstring);
     }
 
     template <class D>
-    self& def_readwrite(char const* name, D const& d, char const* doc=0)
-    {
-        return this->def_readwrite_impl(name, d, doc);
-    }
-    
-    template <class D>
-    self& def_readonly(char const* name, D& d, char const* doc=0)
-    {
-        return this->def_readonly_impl(name, d, doc);
+    self& def_readwrite(char const* name, D&& d, char const* = nullptr) {
+        return add_static_property(name, python::make_getter(d), python::make_setter(d));
     }
 
-    template <class D>
-    self& def_readwrite(char const* name, D& d, char const* doc=0)
-    {
-        return this->def_readwrite_impl(name, d, doc);
-    }
-
-    // Property creation
-    template <class Get>
-    self& add_property(char const* name, Get fget, char const* docstr = 0)
-    {
-        base::add_property(name, this->make_getter(fget), docstr);
+public: // Property creation
+    template<class Get>
+    self& add_property(char const* name, Get fget, char const* docstring = nullptr) {
+        base::add_property(name, make_getter_for_this(fget), docstring);
         return *this;
     }
 
-    template <class Get, class Set>
-    self& add_property(char const* name, Get fget, Set fset, char const* docstr = 0)
-    {
-        base::add_property(
-            name, this->make_getter(fget), this->make_setter(fset), docstr);
+    template<class Get, class Set>
+    self& add_property(char const* name, Get fget, Set fset, char const* docstring = nullptr) {
+        base::add_property(name, make_getter_for_this(fget), make_setter_for_this(fset), docstring);
         return *this;
     }
-        
-    template <class Get>
-    self& add_static_property(char const* name, Get fget)
-    {
+
+    template<class Get>
+    self& add_static_property(char const* name, Get fget) {
         base::add_static_property(name, object(fget));
         return *this;
     }
 
-    template <class Get, class Set>
-    self& add_static_property(char const* name, Get fget, Set fset)
-    {
+    template<class Get, class Set>
+    self& add_static_property(char const* name, Get fget, Set fset) {
         base::add_static_property(name, object(fget), object(fset));
         return *this;
     }
-        
-    template <class U>
-    self& setattr(char const* name, U const& x)
-    {
-        this->base::setattr(name, object(x));
+
+    template<class U>
+    self& setattr(char const* name, U const& x) {
+        base::setattr(name, object(x));
         return *this;
     }
 
-    // Pickle support
-    template <typename PickleSuiteType>
-    self& def_pickle(PickleSuiteType const& x)
-    {
-      error_messages::must_be_derived_from_pickle_suite(x);
-      detail::pickle_suite_finalize<PickleSuiteType>::register_(
-        *this,
-        &PickleSuiteType::getinitargs,
-        &PickleSuiteType::getstate,
-        &PickleSuiteType::setstate,
-        PickleSuiteType::getstate_manages_dict());
-      return *this;
-    }
+public: // Pickle support
+    template<class PickleSuiteType>
+    self& def_pickle(PickleSuiteType const& x) {
+        static_assert(std::is_base_of<pickle_suite, PickleSuiteType>::value, "");
 
-    self& enable_pickling()
-    {
-        this->base::enable_pickling_(false);
+        detail::pickle_suite_finalize<PickleSuiteType>::register_(
+            *this,
+            &PickleSuiteType::getinitargs,
+            &PickleSuiteType::getstate,
+            &PickleSuiteType::setstate,
+            PickleSuiteType::getstate_manages_dict()
+        );
         return *this;
     }
 
-    self& staticmethod(char const* name)
-    {
-        this->make_method_static(name);
+    self& enable_pickling() {
+        base::enable_pickling_(false);
         return *this;
     }
- private: // helper functions
 
+private:
     // Builds a method for this class around the given [member]
     // function pointer or object, appropriately adjusting the type of
     // the first signature argument so that if f is a member of a
     // (possibly not wrapped) base class of T, an lvalue argument of
     // type T will be required.
-    //
-    // @group PropertyHelpers {
-    template <class F>
-    object make_getter(F f)
-    {
-        typedef typename api::is_object_operators<F>::type is_obj_or_proxy;
-        
-        return this->make_fn_impl(
-            detail::unwrap_wrapper((W*)0)
-          , f, is_obj_or_proxy(), (char*)0, std::is_member_object_pointer<F>()
+    template<class F>
+    object make_getter_for_this(F f) {
+        using is_obj_or_proxy = typename api::is_object_operators<F>::type;
+        using unwrapped = detail::unwrap_wrapper_t<W>;
+
+        return make_fn_impl<unwrapped>(
+            f, is_obj_or_proxy{}, std::is_member_object_pointer<F>{}, std::true_type{}
         );
     }
     
-    template <class F>
-    object make_setter(F f)
-    {
-        typedef typename api::is_object_operators<F>::type is_obj_or_proxy;
+    template<class F>
+    object make_setter_for_this(F f) {
+        using is_obj_or_proxy = typename api::is_object_operators<F>::type;
+        using unwrapped = detail::unwrap_wrapper_t<W>;
         
-        return this->make_fn_impl(
-            detail::unwrap_wrapper((W*)0)
-          , f, is_obj_or_proxy(), (int*)0, std::is_member_object_pointer<F>()
+        return make_fn_impl<unwrapped>(
+            f, is_obj_or_proxy{}, std::is_member_object_pointer<F>{}, std::false_type{}
         );
     }
     
-    template <class T, class F>
-    object make_fn_impl(T*, F const& f, std::false_type, void*, std::false_type)
+    template<class T, class F>
+    object make_fn_impl(F const& f, std::false_type /*is_object*/,
+                        std::false_type /*is_member*/, ...)
     {
         return python::make_function(f, default_call_policies{}, detail::make_signature<F, T>{});
     };
 
     template <class T, class D, class B>
-    object make_fn_impl(T*, D B::*pm_, std::false_type, char*, std::true_type)
+    object make_fn_impl(D B::*pm, std::false_type /*is_object*/,
+                        std::true_type /*is_member*/, std::true_type /*is_getter*/)
     {
-        D T::*pm = pm_;
-        return python::make_getter(pm);
+        return python::make_getter(static_cast<D T::*>(pm));
     }
 
     template <class T, class D, class B>
-    object make_fn_impl(T*, D B::*pm_, std::false_type, int*, std::true_type)
+    object make_fn_impl(D B::*pm, std::false_type /*is_object*/,
+                        std::true_type /*is_member*/, std::false_type /*is_getter*/)
     {
-        D T::*pm = pm_;
-        return python::make_setter(pm);
+        return python::make_setter(static_cast<D T::*>(pm));
     }
 
     template <class T, class F>
-    object make_fn_impl(T*, F const& x, std::true_type, void*, std::false_type)
-    {
+    object make_fn_impl(F x, std::true_type /*is_object*/, std::false_type /*is_member*/, ...) {
         return x;
     }
-    // }
-    
-    template <class D, class B>
-    self& def_readonly_impl(
-        char const* name, D B::*pm_, char const* doc)
-    {
-        return this->add_property(name, pm_, doc);
-    }
 
-    template <class D, class B>
-    self& def_readwrite_impl(
-        char const* name, D B::*pm_, char const* doc)
-    {
-        return this->add_property(name, pm_, pm_, doc);
-    }
-
-    template <class D>
-    self& def_readonly_impl(
-        char const* name, D& d, char const*)
-    {
-        return this->add_static_property(name, python::make_getter(d));
-    }
-
-    template <class D>
-    self& def_readwrite_impl(
-        char const* name, D& d, char const*)
-    {
-        return this->add_static_property(name, python::make_getter(d), python::make_setter(d));
-    }
-
-    template <class DefVisitor>
-    inline void initialize(DefVisitor const& i)
-    {
-        metadata::register_(); // set up runtime metadata/conversions
-        
-        typedef typename metadata::holder holder;
-        this->set_instance_size( objects::additional_instance_size<holder>::value );
-        
-        this->def(i);
-    }
-    
-    inline void initialize(no_init_t)
-    {
-        metadata::register_(); // set up runtime metadata/conversions
-        this->def_no_init();
-    }
-    
-    //
+private:
     // These two overloads discriminate between def() as applied to a
     // generic visitor and everything else.
-    template <class T, class Helper, class LeafVisitor, class Visitor>
-    inline void def_impl(
-        T*
-      , char const* name
-      , LeafVisitor
-      , Helper const& helper
-      , def_visitor<Visitor> const* v
-    )
-    {
+    template<class Helper, class _, class Visitor>
+    void def_impl(char const* name, _, Helper const& helper, def_visitor<Visitor> const* v) {
         v->visit(*this, name,  helper);
     }
 
-    template <class T, class Fn, class Helper>
-    inline void def_impl(
-        T*
-      , char const* name
-      , Fn fn
-      , Helper const& helper
-      , ...
-    )
-    {
+    template<class Function, class Helper>
+    void def_impl(char const* name, Function f, Helper const& helper, ...) {
+        using target = detail::unwrap_wrapper_t<W>;
         objects::add_to_namespace(
-            *this
-          , name
-          , make_function(
-                fn
-              , helper.policies()
-              , helper.keywords()
-              , detail::make_signature<Fn, T>{}
-            )
-          , helper.doc()
+            *this, name,
+            make_function(f, helper.policies(), helper.keywords(),
+                          detail::make_signature<Function, target>{}),
+            helper.doc()
         );
 
-        this->def_default(name, fn, helper, 
-                          std::integral_constant<bool, Helper::has_default_implementation>());
+        def_default<Function>(name, helper,
+                              std::integral_constant<bool, Helper::has_default_implementation>{});
     }
 
     //
     // These two overloads handle the definition of default
     // implementation overloads for virtual functions. The second one
     // handles the case where no default implementation was specified.
-    //
-    // @group def_default {
-    template <class Fn, class Helper>
-    inline void def_default(
-        char const* name
-        , Fn
-        , Helper const& helper
-        , std::true_type)
-    {
+    template<class Function, class Helper>
+    void def_default(char const* name, Helper const& helper, std::true_type){
         static_assert(std::is_polymorphic<W>::value &&
-                      std::is_member_function_pointer<Fn>::value &&
-                      std::is_convertible<Fn, decltype(helper.default_implementation())>::value,
+                      std::is_member_function_pointer<Function>::value &&
+                      std::is_convertible<Function, decltype(helper.default_implementation())>::value,
                       "Virtual function default must be a derived class member");
 
         objects::add_to_namespace(
             *this, name,
-            make_function(
-                helper.default_implementation(), helper.policies(), helper.keywords())
-            );
+            make_function(helper.default_implementation(), helper.policies(), helper.keywords())
+        );
     }
     
-    template <class Fn, class Helper>
-    inline void def_default(char const*, Fn, Helper const&, std::false_type)
-    { }
-    // }
-    
+    template<class Function, class Helper>
+    void def_default(char const*, Helper const&, std::false_type) {}
+
     //
     // These two overloads discriminate between def() as applied to
     // regular functions and def() as applied to the result of
@@ -445,7 +316,7 @@ public: // types
     void def_maybe_overloads(char const* name, Function f, A1 const& a1,
                              ...)
     {
-        def_impl(detail::unwrap_wrapper((W*)0), name, f, detail::def_helper<A1>{a1}, &f);
+        def_impl(name, f, detail::make_def_helper(a1), &f);
     }
 };
 

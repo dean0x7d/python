@@ -7,105 +7,68 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #ifndef INIT_JDG20020820_HPP
-#define INIT_JDG20020820_HPP
+# define INIT_JDG20020820_HPP
 
 # include <boost/python/detail/prefix.hpp>
 
-#include <boost/python/detail/type_list.hpp>
-#include <boost/python/detail/type_list_utils.hpp>
-#include <boost/python/args_fwd.hpp>
-#include <boost/python/detail/make_keyword_range_fn.hpp>
-#include <boost/python/def_visitor.hpp>
+# include <boost/python/args_fwd.hpp>
+# include <boost/python/def_visitor.hpp>
+
+# include <boost/python/detail/type_list.hpp>
+# include <boost/python/detail/type_list_utils.hpp>
+# include <boost/python/detail/make_keyword_range_fn.hpp>
 
 namespace boost { namespace python {
 
-template <class... Ts>
+template<class... Ts>
 class init; // forward declaration
 
-
-template <class... Ts>
+template<class... Ts>
 using optional = detail::type_list<Ts...>;
 
-
-namespace detail
-{
-  namespace error
-  {
-    template <int keywords, int init_args>
-    struct more_keywords_than_init_arguments
-    {
-        typedef char too_many_keywords[init_args - keywords >= 0 ? 1 : -1];
-    };
-  }
-
-  //  is_optional<T>::value
-  //
-  //      This metaprogram checks if T is an optional
-  //
-  template <class T>
-  struct is_optional : std::false_type {};
-
-  template <class... Ts>
-  struct is_optional<optional<Ts...>> : std::true_type {};
-
-
+namespace detail {
   template <int NDefaults>
   struct define_class_init_helper;
+}
 
-} // namespace detail
-
-template <class DerivedT>
-struct init_base : def_visitor<DerivedT>
-{
-    init_base(char const* doc_, detail::keyword_range const& keywords_)
-        : m_doc(doc_), m_keywords(keywords_)
-    {}
-        
-    init_base(char const* doc_)
-        : m_doc(doc_)
+template<class Derived>
+struct init_base : def_visitor<Derived> {
+    init_base(char const* docstring, detail::keyword_range const& keywords)
+        : m_doc(docstring), m_keywords(keywords)
     {}
 
-    DerivedT const& derived() const
-    {
-        return *static_cast<DerivedT const*>(this);
+    init_base(char const* docstring)
+        : m_doc(docstring)
+    {}
+
+    Derived const& derived() const {
+        return *static_cast<Derived const*>(this);
     }
     
-    char const* doc_string() const
-    {
-        return m_doc;
-    }
+    char const* doc_string() const { return m_doc; }
 
-    detail::keyword_range const& keywords() const
-    {
-        return m_keywords;
-    }
+    detail::keyword_range const& keywords() const { return m_keywords; }
 
-    static default_call_policies call_policies()
-    {
-        return default_call_policies();
-    }
+    static default_call_policies call_policies() { return {}; }
 
- private:
+private:
     //  visit
     //
     //      Defines a set of n_defaults + 1 constructors for its
     //      class_<...> argument. Each constructor after the first has
-    //      one less argument to its right. Example:
-    //
+    //      one less argument to its right.
+    //      Example:
     //          init<int, optional<char, long, double> >
-    //
     //      Defines:
-    //
     //          __init__(int, char, long, double)
     //          __init__(int, char, long)
     //          __init__(int, char)
     //          __init__(int)
-    template <class classT>
-    void visit(classT& cl) const
-    {
-        typedef typename DerivedT::signature signature;
-        typedef typename DerivedT::n_defaults n_defaults;
-    
+    template<class Class>
+    void visit(Class& cl) const {
+        using signature = typename Derived::signature;
+        using n_defaults = typename Derived::n_defaults;
+
         detail::define_class_init_helper<n_defaults::value>::template apply<signature>(
             cl
           , derived().call_policies()
@@ -115,80 +78,58 @@ struct init_base : def_visitor<DerivedT>
     
     friend class python::def_visitor_access;
     
- private: // data members
+private:
     char const* m_doc;
     detail::keyword_range m_keywords;
 };
 
-template <class CallPoliciesT, class InitT>
-class init_with_call_policies
-    : public init_base<init_with_call_policies<CallPoliciesT, InitT> >
-{
-    typedef init_base<init_with_call_policies<CallPoliciesT, InitT> > base;
- public:
-    typedef typename InitT::n_arguments n_arguments;
-    typedef typename InitT::n_defaults n_defaults;
-    typedef typename InitT::signature signature;
+template<class CallPolicies, class Init>
+class init_with_call_policies : public init_base<init_with_call_policies<CallPolicies, Init>> {
+    using base = init_base<init_with_call_policies<CallPolicies, Init>>;
 
-    init_with_call_policies(
-        CallPoliciesT const& policies_
-        , char const* doc_
-        , detail::keyword_range const& keywords
-        )
-        : base(doc_, keywords)
-        , m_policies(policies_)
+public:
+    using n_arguments = typename Init::n_arguments;
+    using n_defaults = typename Init::n_defaults;
+    using signature = typename Init::signature;
+
+    init_with_call_policies(CallPolicies const& cp, char const* docstring,
+                            detail::keyword_range const& keywords)
+        : base(docstring, keywords), m_policies(cp)
     {}
 
-    CallPoliciesT const& call_policies() const
-    {
-        return this->m_policies;
-    }
+    CallPolicies const& call_policies() const { return m_policies; }
     
- private: // data members
-    CallPoliciesT m_policies;
+private:
+    CallPolicies m_policies;
 };
 
 
-template <class... Ts>
-class init : public init_base<init<Ts...> >
-{
-    typedef init_base<init<Ts...> > base;
- public:
-    typedef init<Ts...> self_t;
+template<class... Ts>
+class init : public init_base<init<Ts...>> {
+    using base = init_base<init<Ts...>>;
+public:
+    using self_t = init<Ts...>;
 
-    init(char const* doc_ = 0)
-        : base(doc_)
-    {
-    }
+    init(char const* docstring = nullptr) : base{docstring} {}
 
     template <std::size_t N>
-    init(char const* doc_, detail::keywords<N> const& kw)
-        : base(doc_, kw.range())
+    init(detail::keywords<N> const& kw, char const* docstring = nullptr)
+        : base{docstring, kw.range()}
     {
-        typedef typename detail::error::more_keywords_than_init_arguments<
-            N, n_arguments::value + 1
-            >::too_many_keywords assertion;
+        static_assert(N <= n_arguments::value + 1, "More keywords than init arguments.");
     }
 
-    template <std::size_t N>
-    init(detail::keywords<N> const& kw, char const* doc_ = 0)
-        : base(doc_, kw.range())
-    {
-        typedef typename detail::error::more_keywords_than_init_arguments<
-            N, n_arguments::value + 1
-            >::too_many_keywords assertion;
-    }
+    template<std::size_t N>
+    init(char const* docstring, detail::keywords<N> const& kw) : init{kw, docstring} {}
 
-    template <class CallPoliciesT>
-    init_with_call_policies<CallPoliciesT, self_t>
-    operator[](CallPoliciesT const& policies) const
-    {
-        return init_with_call_policies<CallPoliciesT, self_t>(
-            policies, this->doc_string(), this->keywords());
+    template<class CallPolicies>
+    init_with_call_policies<CallPolicies, self_t>
+    operator[](CallPolicies const& policies) const {
+        return {policies, this->doc_string(), this->keywords()};
     }
 
     using signature_ = detail::type_list<Ts...>;
-    using back_is_optional = detail::is_optional<detail::back_t<signature_>>;
+    using back_is_optional = detail::is_<detail::type_list, detail::back_t<signature_>>;
     
     using optional_args = cpp14::conditional_t<
         back_is_optional::value,
@@ -219,19 +160,13 @@ class init : public init_base<init<Ts...> >
 namespace detail
 {
   template<class Signature, class Class, class CallPolicies>
-  inline void def_init_aux(
-      Class& cl
-      , CallPolicies const& policies
-      , char const* doc
-      , detail::keyword_range const& keywords_
-      )
+  inline void def_init_aux(Class& cl, CallPolicies const& cp, char const* docstring,
+                           detail::keyword_range const& kw)
   {
       cl.def(
-          "__init__"
-        , detail::make_keyword_range_constructor<Signature, typename Class::metadata::holder>(
-              policies, keywords_
-          )
-        , doc
+          "__init__",
+          make_keyword_range_constructor<Signature, typename Class::metadata::holder>(cp, kw),
+          docstring
       );
   }
 
@@ -248,23 +183,18 @@ namespace detail
   //
   ///////////////////////////////////////////////////////////////////////////////
   template <int NDefaults>
-  struct define_class_init_helper
-  {
-      template<class Signature, class ClassT, class CallPoliciesT>
-      static void apply(
-          ClassT& cl
-          , CallPoliciesT const& policies
-          , char const* doc
-          , detail::keyword_range keywords)
+  struct define_class_init_helper {
+      template<class Signature, class Class, class CallPolicies>
+      static void apply(Class& cl, CallPolicies const& cp, char const* docstring,
+                        detail::keyword_range kw)
       {
-          detail::def_init_aux<Signature>(cl, policies, doc, keywords);
+          def_init_aux<Signature>(cl, cp, docstring, kw);
 
-          if (keywords.second > keywords.first)
-              --keywords.second;
+          if (kw.second > kw.first)
+              --kw.second;
 
           using sig = detail::drop_t<Signature, 1>;
-          define_class_init_helper<NDefaults-1>::template apply<sig>(
-              cl, policies, doc, keywords);
+          define_class_init_helper<NDefaults-1>::template apply<sig>(cl, cp, docstring, kw);
       }
   };
 
@@ -279,16 +209,12 @@ namespace detail
   //
   ///////////////////////////////////////////////////////////////////////////////
   template <>
-  struct define_class_init_helper<0> 
-  {
-      template<class Signature, class ClassT, class CallPoliciesT>
-      static void apply(
-          ClassT& cl
-        , CallPoliciesT const& policies
-        , char const* doc
-        , detail::keyword_range const& keywords)
+  struct define_class_init_helper<0> {
+      template<class Signature, class Class, class CallPolicies>
+      static void apply(Class& cl, CallPolicies const& cp, char const* docstring,
+                        detail::keyword_range const& kw)
       {
-          detail::def_init_aux<Signature>(cl, policies, doc, keywords);
+          detail::def_init_aux<Signature>(cl, cp, docstring, kw);
       }
   };
 }

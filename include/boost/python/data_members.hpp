@@ -197,10 +197,9 @@ namespace detail
 // retrieves data through the first argument and is appropriate for
 // use as the `get' function in Python properties .  The second,
 // policies argument, is optional.
-template <class D, class Policies = detail::not_specified>
-inline object make_getter(D&& d, Policies policies = {})
-{
-    return detail::make_getter(std::forward<D>(d), std::forward<Policies>(policies));
+template <class D, class CallPolicies = detail::not_specified>
+inline object make_getter(D const& d, CallPolicies const& cp = {}) {
+    return detail::make_getter(d, cp);
 }
 
 //
@@ -208,10 +207,9 @@ inline object make_getter(D&& d, Policies policies = {})
 // writes data through the first argument and is appropriate for
 // use as the `set' function in Python properties .  The second,
 // policies argument, is optional.
-template <class D, class Policies = default_call_policies>
-inline object make_setter(D&& d, Policies policies = {})
-{
-    return detail::make_setter(std::forward<D>(d), std::forward<Policies>(policies));
+template <class D, class CallPolicies = default_call_policies>
+inline object make_setter(D&& d, CallPolicies const& cp = {}) {
+    return detail::make_setter(d, cp);
 }
 
 }} // namespace boost::python
