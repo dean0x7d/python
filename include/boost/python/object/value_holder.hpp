@@ -6,92 +6,76 @@
 # ifndef VALUE_HOLDER_DWA20011215_HPP
 #  define VALUE_HOLDER_DWA20011215_HPP 
 
-#  include <boost/python/instance_holder.hpp>
-#  include <boost/python/type_id.hpp>
-#  include <boost/python/wrapper.hpp>
+# include <boost/python/instance_holder.hpp>
+# include <boost/python/type_id.hpp>
+# include <boost/python/wrapper.hpp>
 
-#  include <boost/python/object/inheritance_query.hpp>
+# include <boost/python/object/inheritance_query.hpp>
 
-#  include <boost/python/detail/force_instantiate.hpp>
+# include <boost/python/detail/force_instantiate.hpp>
 
-namespace boost { namespace python { namespace objects { 
+namespace boost { namespace python { namespace objects {
 
-template <class Value, class Held = Value, bool has_back_reference = false>
-struct value_holder : instance_holder
-{
-    typedef Value held_type;
-    typedef Value value_type;
+// Without back-reference
+template<class Value, class = Value, bool has_back_reference = false>
+struct value_holder : instance_holder {
+    using value_type = Value;
 
-    // Forward construction to the held object
-    template <class... As>
-    value_holder(PyObject* self, As&&... as)
-        : m_held(std::forward<As>(as)...)
+    template<class... Args>
+    value_holder(PyObject* self, Args&&... args)
+        : m_held(std::forward<Args>(args)...)
     {
-        python::detail::initialize_wrapper(self, std::addressof(this->m_held));
+        python::detail::initialize_wrapper(self, std::addressof(m_held));
     }
 
+private: // required holder implementation
+    virtual void* holds(type_info dst_t, bool /*null_ptr_only*/) final {
+        auto p = std::addressof(m_held);
+        if (auto wrapped = holds_wrapped(dst_t, p, p))
+            return wrapped;
 
- private: // required holder implementation
-    void* holds(type_info, bool null_ptr_only);
-    
+        auto src_t = python::type_id<Value>();
+        return (src_t == dst_t) ? p : find_static_type(p, src_t, dst_t);
+    }
+
+private:
     template <class T>
-    inline void* holds_wrapped(type_info dst_t, wrapper<T>*,T* p)
-    {
-        return python::type_id<T>() == dst_t ? p : 0;
+    static void* holds_wrapped(type_info dst_t, wrapper<T>*, T* p) {
+        return python::type_id<T>() == dst_t ? p : nullptr;
     }
     
-    inline void* holds_wrapped(type_info, ...)
-    {
-        return 0;
+    static void* holds_wrapped(type_info, ...) {
+        return nullptr;
     }
- private: // data members
+
+private:
     Value m_held;
 };
 
-template <class Value, class Held>
-struct value_holder<Value, Held, true> : instance_holder
-{
-    typedef Held held_type;
-    typedef Value value_type;
+// With back-reference
+template<class Value, class Held>
+struct value_holder<Value, Held, true> : instance_holder {
+    using value_type = Value;
     
-    // Forward construction to the held object
-    template <class... As>
-    value_holder(PyObject* p, As&&... as)
-        : m_held(p, std::forward<As>(as)...)
+    template <class... Args>
+    value_holder(PyObject* p, Args&&... args)
+        : m_held(p, std::forward<Args>(args)...)
     {}
 
 private: // required holder implementation
-    void* holds(type_info, bool null_ptr_only);
+    virtual void* holds(type_info dst_t, bool /*null_ptr_only*/) final {
+        auto p = &m_held;
+        auto src_t = python::type_id<Value>();
 
- private: // data members
+        if (dst_t == src_t || dst_t == python::type_id<Held>())
+            return p;
+        else
+            return find_static_type(p, src_t, dst_t);
+    }
+
+private:
     Held m_held;
 };
-
-
-template <class Value, class Held, bool has_back_reference>
-void* value_holder<Value, Held, has_back_reference>::holds(type_info dst_t, bool /*null_ptr_only*/)
-{
-    if (void* wrapped = holds_wrapped(dst_t, std::addressof(m_held), std::addressof(m_held)))
-        return wrapped;
-    
-    type_info src_t = python::type_id<Value>();
-    return src_t == dst_t ? std::addressof(m_held)
-        : find_static_type(std::addressof(m_held), src_t, dst_t);
-}
-
-template <class Value, class Held>
-void* value_holder<Value,Held,true>::holds(type_info dst_t, bool /*null_ptr_only*/)
-{
-    type_info src_t = python::type_id<Value>();
-    Value* x = &m_held;
-    
-    if (dst_t == src_t)
-        return x;
-    else if (dst_t == python::type_id<Held>())
-        return &m_held;
-    else
-        return find_static_type(x, src_t, dst_t);
-}
 
 }}} // namespace boost::python::objects
 

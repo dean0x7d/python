@@ -6,22 +6,21 @@
 # define INSTANCE_HOLDER_DWA2002517_HPP
 
 # include <boost/python/detail/prefix.hpp>
-
 # include <boost/python/type_id.hpp>
 
 namespace boost { namespace python { 
 
 // Base class for all holders
-struct BOOST_PYTHON_DECL instance_holder
-{
- public:
-    instance_holder();
-    virtual ~instance_holder();
+struct BOOST_PYTHON_DECL instance_holder {
+public:
+    instance_holder() = default;
+    virtual ~instance_holder() = default;
+
     instance_holder(instance_holder const&) = delete;
     instance_holder& operator=(instance_holder const&) = delete;
     
     // return the next holder in a chain
-    instance_holder* next() const;
+    instance_holder* next() const { return m_next; }
 
     // When the derived holder actually holds by [smart] pointer and
     // null_ptr_only is set, only report that the type is held when
@@ -31,7 +30,7 @@ struct BOOST_PYTHON_DECL instance_holder
     // that always holds the Python object.
     virtual void* holds(type_info, bool null_ptr_only) = 0;
 
-    void install(PyObject* inst) throw();
+    void install(PyObject* inst) noexcept;
 
     // These functions should probably be located elsewhere.
     
@@ -42,18 +41,11 @@ struct BOOST_PYTHON_DECL instance_holder
 
     // Deallocate storage from the heap if it was not carved out of
     // the given Python object by allocate(), above.
-    static void deallocate(PyObject*, void* storage) throw();
- private:
-    instance_holder* m_next;
-};
+    static void deallocate(PyObject*, void* storage) noexcept;
 
-//
-// implementation
-//
-inline instance_holder* instance_holder::next() const
-{
-    return m_next;
-}
+private:
+    instance_holder* m_next = nullptr;
+};
 
 }} // namespace boost::python
 

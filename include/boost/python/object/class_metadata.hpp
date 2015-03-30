@@ -13,7 +13,6 @@
 # include <boost/python/object/make_ptr_instance.hpp>
 
 # include <boost/python/detail/force_instantiate.hpp>
-# include <boost/python/detail/not_specified.hpp>
 
 # include <boost/python/has_back_reference.hpp>
 # include <boost/python/bases.hpp>
@@ -127,58 +126,39 @@ using is_noncopyable_type = std::integral_constant<bool,
 // T is the class being wrapped. Args are arbitrarily-ordered optional arguments.
 template<class T, class... Args>
 struct class_metadata {
-    //
-    // Calculate the unnamed template arguments
-    //
-    
-    // held_type_arg -- not_specified, [a class derived from] T or a
-    // smart pointer to [a class derived from] T.  Preserving
-    // not_specified allows us to give class_<T,T> a back-reference.
-    using held_type_arg = select_t<is_held_type, python::detail::not_specified, Args...>;
-
-    // bases
+    // base classes of T
     using bases = select_t<python::detail::specifies_bases, python::bases<>, Args...>;
-
+    // [a class derived from] T or a smart pointer to [a class derived from] T
+    using held_type = select_t<is_held_type, T, Args...>;
     using is_noncopyable = any_t<is_noncopyable_type, Args...>;
     
-    //
-    // Holder computation.
-    //
-    // Workaround note: Using alias templates (e.g. conditional_t 
-    // instead of conditional) in the following section causes
-    // problems with abstract classes on VS14 CTP3. The full
-    // typename ::type form keeps it happy.
-    
-    // Compute the actual type that will be held in the Holder.
-	using held_type = typename std::conditional<
-	    std::is_same<held_type_arg, python::detail::not_specified>::value, T, held_type_arg
-	>::type;
-
-    // Determine if the object will be held by value
-    using use_value_holder = std::is_convertible<held_type*, T*>;
+    // Hold by value if held_type is T or derived from T. (Otherwise held_type is a pointer.)
+    using use_value_holder = std::is_base_of<T, held_type>;
     
     // Compute the "wrapped type", that is, if held_type is a smart
     // pointer, we're talking about the pointee.
-    using wrapped = typename pointee<held_type, !use_value_holder::value>::type;
+    using wrapped = cpp14::conditional_t<
+        use_value_holder::value,
+        held_type,
+        pointee_t<held_type>
+    >;
 
     // Determine whether to use a "back-reference holder"
+    template<class Other>
+    using is_self = std::is_same<T, Other>;
+
     using use_back_reference = std::integral_constant<bool,
         has_back_reference<T>::value || 
-        std::is_same<held_type_arg, T>::value || 
+        any_t<is_self, Args...>::value || // class_<T, T> has a back-reference
         (std::is_base_of<T, wrapped>::value && !std::is_same<T, wrapped>::value)
     >;
 
-    // Select the holder.
-    using holder = typename std::conditional<
+    using holder = cpp14::conditional_t<
         use_value_holder::value,
         value_holder<T, wrapped, use_back_reference::value>,
-        cpp14::conditional_t<
-            use_back_reference::value,
-            pointer_holder_back_reference<held_type, T>,
-            pointer_holder<held_type, wrapped>
-        >
-    >::type;
-    
+        pointer_holder<held_type, wrapped, T, use_back_reference::value>
+    >;
+
     inline static void register_() // Register the runtime metadata.
     {
         class_metadata::register_aux((T*)0);

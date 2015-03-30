@@ -27,25 +27,18 @@ namespace boost { namespace python
 }} // namespace boost::python
 
 template <class T, class U>
-void assert_same(U* = 0, T* = 0)
+void assert_same()
 {
     BOOST_STATIC_ASSERT((boost::is_same<T,U>::value));
     
 }
 
-template <class T, class Held, class Holder>
-void assert_holder(T* = 0, Held* = 0, Holder* = 0)
-{
-    using namespace boost::python::detail;
+template<class Holder, class T, class... Args>
+void assert_holder(){
     using namespace boost::python::objects;
     
-    typedef typename class_metadata<
-       T,Held,not_specified,not_specified
-           >::holder h;
-    
-    assert_same<Holder>(
-        (h*)0
-    );
+    using h = typename class_metadata<T, Args...>::holder;
+    assert_same<Holder, h>();
 }
 
 int test_main(int, char * [])
@@ -53,23 +46,43 @@ int test_main(int, char * [])
     using namespace boost::python::detail;
     using namespace boost::python::objects;
 
-    assert_holder<Base,not_specified,value_holder<Base> >();
+    assert_holder<
+    	value_holder<Base>, 
+    	Base
+    >();
 
-    assert_holder<BR,not_specified,value_holder<BR,BR,true> >();
-    assert_holder<Base,Base,value_holder<Base,Base,true> >();
-    assert_holder<BR,BR,value_holder<BR,BR,true> >();
+    assert_holder<
+    	value_holder<BR, BR, true>,
+    	BR
+    >();
+    assert_holder<
+    	value_holder<Base, Base, true>, 
+    	Base, Base
+    >();
+    assert_holder<
+    	value_holder<BR, BR, true>, 
+    	BR, BR
+    >();
 
-    assert_holder<Base,Derived
-        ,value_holder<Base,Derived,true> >();
+    assert_holder<
+    	value_holder<Base, Derived, true>,
+    	Base, Derived
+    >();
 
-    assert_holder<Base,std::auto_ptr<Base>
-        ,pointer_holder<std::auto_ptr<Base>,Base> >();
+    assert_holder<
+    	pointer_holder<std::auto_ptr<Base>, Base>, 
+    	Base, std::auto_ptr<Base>
+    >();
     
-    assert_holder<Base,std::auto_ptr<Derived>
-        ,pointer_holder_back_reference<std::auto_ptr<Derived>,Base> >();
+    assert_holder<
+    	pointer_holder<std::auto_ptr<Derived>, Derived, Base, true>,
+    	Base, std::auto_ptr<Derived>
+    >();
 
-    assert_holder<BR,std::auto_ptr<BR>
-        ,pointer_holder_back_reference<std::auto_ptr<BR>,BR> > ();
+    assert_holder<
+    	pointer_holder<std::auto_ptr<BR>, BR, BR, true>,
+    	BR, std::auto_ptr<BR>
+    >();
 
     return 0;
 }
