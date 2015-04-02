@@ -10,20 +10,10 @@
 
 # include <boost/python/detail/prefix.hpp>
 # include <boost/python/opaque_pointer_converter.hpp>
-# include <boost/python/detail/force_instantiate.hpp>
 # include <boost/python/to_python_value.hpp>
 # include <boost/python/detail/value_arg.hpp>
 
 namespace boost { namespace python {
-
-namespace detail
-{
-  template <class Pointee>
-  static void opaque_pointee(Pointee const volatile*)
-  {
-      force_instantiate(opaque<Pointee>::instance);
-  }
-}
 
 struct return_opaque_pointer {
     template <class R>
@@ -32,7 +22,10 @@ struct return_opaque_pointer {
                       "return_opaque_pointer expects a pointer type");
 
         struct type : boost::python::make_to_python_value<R> {
-            type() { detail::opaque_pointee(R()); }
+            type() {
+                using pointee = cpp14::remove_cv_t<cpp14::remove_pointer_t<R>>;
+                [](...){}(opaque<pointee>::instance); // lambda to ignore unused variable warning
+            }
         };
     };
 };

@@ -12,7 +12,6 @@
 # include <boost/python/object/pointer_holder.hpp>
 # include <boost/python/object/make_ptr_instance.hpp>
 
-# include <boost/python/detail/force_instantiate.hpp>
 # include <boost/python/detail/unwrap_wrapper.hpp>
 
 # include <boost/python/has_back_reference.hpp>
@@ -64,7 +63,7 @@ private:
 template <class T, class Bases>
 inline void register_shared_ptr_from_python_and_casts() {
     // Constructor performs registration
-    python::detail::force_instantiate(converter::shared_ptr_from_python<T>{});
+    converter::shared_ptr_from_python<T>{};
 
     // Register all up/downcasts here
     register_dynamic_id<T>();
@@ -197,7 +196,7 @@ private:
         // Support for registering to-python converters
         static void maybe_register_class_to_python(std::true_type  /*is_noncopyable*/) {}
         static void maybe_register_class_to_python(std::false_type /*is_noncopyable*/) {
-            python::detail::force_instantiate(class_cref_wrapper<T, make_instance<T, holder>>{});
+            class_cref_wrapper<T, make_instance<T, holder>>{};
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
             copy_class_object(type_id<T>(), type_id<held_type>());
 #endif
@@ -218,11 +217,9 @@ private:
         static void maybe_register_pointer_to_python(std::false_type /*use_back_reference*/,
                                                      std::false_type /*use_value_holder*/)
         {
-            python::detail::force_instantiate(
-                class_value_wrapper<
-                    held_type, make_ptr_instance<T, pointer_holder<held_type, T>>
-                >()
-            );
+            class_value_wrapper<
+                held_type, make_ptr_instance<T, pointer_holder<held_type, T>>
+            >();
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
             copy_class_object(type_id<T>(), type_id<held_type>());
 #endif

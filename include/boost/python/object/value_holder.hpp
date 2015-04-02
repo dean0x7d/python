@@ -12,8 +12,6 @@
 
 # include <boost/python/object/inheritance_query.hpp>
 
-# include <boost/python/detail/force_instantiate.hpp>
-
 namespace boost { namespace python { namespace objects {
 
 // Without back-reference
