@@ -12,7 +12,6 @@
 # include <boost/python/lvalue_from_pytype.hpp>
 # include <boost/python/to_python_converter.hpp>
 # include <boost/python/converter/registrations.hpp>
-# include <boost/python/detail/dealloc.hpp>
 # include <boost/python/detail/none.hpp>
 # include <boost/python/type_id.hpp>
 # include <boost/python/errors.hpp>
@@ -115,7 +114,7 @@ PyTypeObject opaque<Pointee>::type_object =
     0,
     sizeof( typename opaque<Pointee>::python_instance ),
     0,
-    ::boost::python::detail::dealloc,
+    (destructor)PyObject_Del,
     0,          /* tp_print */
     0,          /* tp_getattr */
     0,          /* tp_setattr */
