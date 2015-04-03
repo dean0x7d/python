@@ -122,11 +122,9 @@ namespace detail
   // the Signature arguments is used.
   template<class Signature, class Function, class CallPolicies>
   object make_constructor_aux(Function f, CallPolicies const& cp) {
-      using inner_policy = constructor_policy<CallPolicies>;
-      
       return objects::function_object(
           objects::py_function{
-              detail::caller<Function, inner_policy, Signature>{f},
+              detail::caller<Function, constructor_policy<CallPolicies>, Signature>{f, cp},
               outer_constructor_signature_t<Signature>{}
           }
       );
@@ -139,11 +137,10 @@ namespace detail
   template<class Signature, int NumKeywords, class Function, class CallPolicies>
   object make_constructor_aux(Function f, CallPolicies const& cp, detail::keyword_range const& kw) {
       static_assert(NumKeywords <= Signature::size, "More keywords than function arguments");
-      using inner_policy = constructor_policy<CallPolicies>;
       
       return objects::function_object(
           objects::py_function{
-              detail::caller<Function, inner_policy, Signature>{f},
+              detail::caller<Function, constructor_policy<CallPolicies>, Signature>{f, cp},
               outer_constructor_signature_t<Signature>{}
           },
           kw

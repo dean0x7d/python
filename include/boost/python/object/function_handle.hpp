@@ -20,7 +20,7 @@ BOOST_PYTHON_DECL handle<> function_handle_impl(py_function f);
 template<class Signature, class Function>
 inline handle<> function_handle(Function const& f) {
     return objects::function_handle_impl(
-        python::detail::caller<Function, default_call_policies, Signature>{f}
+        python::detail::caller<Function, default_call_policies, Signature>{f, {}}
     );
 }
 

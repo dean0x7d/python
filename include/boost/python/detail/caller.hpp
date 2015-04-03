@@ -106,8 +106,10 @@ template<class Function, class CallPolicies, class Signature,
 struct caller;
 
 template<class Function, class CallPolicies, class Result, class... Args, std::size_t... Is>
-struct caller<Function, CallPolicies, type_list<Result, Args...>, cpp14::index_sequence<Is...>> {
-    caller(Function f) : m_function(f) {}
+struct caller<Function, CallPolicies, type_list<Result, Args...>, cpp14::index_sequence<Is...>>
+    : CallPolicies // inherit to take advantage of empty base class optimisation
+{
+    caller(Function f, CallPolicies const& cp) : CallPolicies(cp), m_function(f) {}
 
     PyObject* operator()(PyObject* args, PyObject* /*kwargs*/) {
         auto inner_args = argument_package{args};

@@ -25,7 +25,7 @@ namespace detail
   // the Sig arguments is used.
   template<class Signature, class CallPolicies, class Function>
   object make_function_aux(Function f, CallPolicies const& cp) {
-      return objects::function_object(detail::caller<Function, CallPolicies, Signature>{f});
+      return objects::function_object(detail::caller<Function, CallPolicies, Signature>{f, cp});
   }
 
   // As above, except that it accepts argument keywords. NumKeywords
@@ -36,7 +36,7 @@ namespace detail
   object make_function_aux(Function f, CallPolicies const& cp, detail::keyword_range const& kw) {
       static_assert(NumKeywords <= Signature::size - 1, "More keywords than function arguments");
 
-      return objects::function_object(detail::caller<Function, CallPolicies, Signature>{f}, kw);
+      return objects::function_object(detail::caller<Function, CallPolicies, Signature>{f, cp}, kw);
   }
 
   //   Helpers for make_function when called with 3 arguments.  These
