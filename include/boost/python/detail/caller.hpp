@@ -19,15 +19,6 @@
 
 namespace boost { namespace python { namespace detail { 
 
-template <int N>
-inline PyObject* get(PyObject* const& args) {
-    return PyTuple_GET_ITEM(args, N);
-}
-
-inline Py_ssize_t arity(PyObject* const& args) {
-    return PyTuple_GET_SIZE(args);
-}
-
 // This "result converter" is really just used as
 // a dispatch tag to invoke(...), selecting the appropriate
 // implementation
@@ -112,8 +103,8 @@ struct caller<Function, CallPolicies, type_list<Result, Args...>, cpp14::index_s
     caller(Function f, CallPolicies const& cp) : CallPolicies(cp), m_function(f) {}
 
     PyObject* operator()(PyObject* args, PyObject* /*kwargs*/) {
-        auto inner_args = argument_package{args};
-        return call_impl(args, inner_args, converter::arg_from_python<Args>(get<Is>(inner_args))...);
+        auto arg_pack = argument_package{args};
+        return call_impl(arg_pack, converter::arg_from_python<Args>(arg_pack.get(Is))...);
     }
     
     static unsigned min_arity() { return sizeof...(Args); }
@@ -143,7 +134,7 @@ private:
     using argument_package = typename CallPolicies::argument_package;
 
     template<class... Converters>
-    PyObject* call_impl(PyObject* args, argument_package inner_args, Converters... converters) {
+    PyObject* call_impl(argument_package arg_pack, Converters... converters) {
         // The 'true' at the end is not needed, but it keeps VS14 CTP3 happy
         bool check_converters[] = { converters.convertible()..., true };
         for (auto is_convertible : check_converters) {
@@ -151,18 +142,18 @@ private:
                 return nullptr;
         }
 
-        if (!CallPolicies::precall(inner_args))
+        if (!CallPolicies::precall(arg_pack))
             return nullptr;
 
         using result_converter = select_result_converter_t<CallPolicies, Result>;
         PyObject* result = detail::invoke(
             detail::make_invoke_tag<Result, Function>{},
-            create_result_converter<result_converter>(args),
+            create_result_converter<result_converter>(arg_pack.base_args),
             m_function,
             converters...
         );
 
-        return CallPolicies::postcall(inner_args, result);
+        return CallPolicies::postcall(arg_pack, result);
     }
 
 private:

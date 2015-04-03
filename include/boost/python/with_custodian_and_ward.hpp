@@ -9,107 +9,71 @@
 
 # include <boost/python/default_call_policies.hpp>
 # include <boost/python/object/life_support.hpp>
-# include <algorithm>
 
 namespace boost { namespace python { 
 
-namespace detail
-{
-  template <std::size_t N>
-  struct get_prev
-  {
-      template <class ArgumentPackage>
-      static PyObject* execute(ArgumentPackage const& args, PyObject* = 0)
-      {
-          return detail::get<N-1>(args);
-      }
-  };
-  template <>
-  struct get_prev<0>
-  {
-      template <class ArgumentPackage>
-      static PyObject* execute(ArgumentPackage const&, PyObject* zeroth)
-      {
-          return zeroth;
-      }
-  };
-}
-template <
-    std::size_t custodian
-  , std::size_t ward
-  , class BasePolicy_ = default_call_policies
->
-struct with_custodian_and_ward : BasePolicy_
-{
+template<std::size_t custodian, std::size_t ward, class BasePolicy = default_call_policies>
+struct with_custodian_and_ward : BasePolicy {
     static_assert(custodian != ward, "");
     static_assert(custodian > 0, "");
     static_assert(ward > 0, "");
 
     template <class ArgumentPackage>
-    static bool precall(ArgumentPackage const& args_)
-    {
-        unsigned arity_ = detail::arity(args_);
-        if (custodian > arity_ || ward > arity_)
-        {
+    static bool precall(ArgumentPackage const& args) {
+        auto arity = args.arity();
+        if (custodian > arity || ward > arity) {
             PyErr_SetString(
-                PyExc_IndexError
-              , "boost::python::with_custodian_and_ward: argument index out of range"
+                PyExc_IndexError,
+                "boost::python::with_custodian_and_ward: argument index out of range"
             );
             return false;
         }
 
-        PyObject* patient = detail::get_prev<ward>::execute(args_);
-        PyObject* nurse = detail::get_prev<custodian>::execute(args_);
+        PyObject* patient = args.get(ward - 1);
+        PyObject* nurse = args.get(custodian - 1);
 
         PyObject* life_support = python::objects::make_nurse_and_patient(nurse, patient);
         if (life_support == 0)
             return false;
     
-        bool result = BasePolicy_::precall(args_);
+        bool result = BasePolicy::precall(args);
+        if (!result)
+            decref(life_support);
 
-        if (!result) {
-            Py_DECREF(life_support);
-        }
-    
         return result;
     }
 };
 
-template <std::size_t custodian, std::size_t ward, class BasePolicy_ = default_call_policies>
-struct with_custodian_and_ward_postcall : BasePolicy_
-{
+template<std::size_t custodian, std::size_t ward, class BasePolicy = default_call_policies>
+struct with_custodian_and_ward_postcall : BasePolicy {
     static_assert(custodian != ward, "");
     
     template <class ArgumentPackage>
-    static PyObject* postcall(ArgumentPackage const& args_, PyObject* result)
-    {
-        std::size_t arity_ = detail::arity(args_);
-        // check if either custodian or ward exceeds the arity
-        // (this weird formulation avoids "always false" warnings
-        // for arity_ = 0)
-        if ( (std::max)(custodian, ward) > arity_ )
-        {
+    static PyObject* postcall(ArgumentPackage const& args, PyObject* result) {
+        auto arity = args.arity();
+        if (custodian > arity || ward > arity) {
             PyErr_SetString(
-                PyExc_IndexError
-              , "boost::python::with_custodian_and_ward_postcall: argument index out of range"
+                PyExc_IndexError,
+                "boost::python::with_custodian_and_ward_postcall: argument index out of range"
             );
-            return 0;
+            return nullptr;
         }
         
-        PyObject* patient = detail::get_prev<ward>::execute(args_, result);
-        PyObject* nurse = detail::get_prev<custodian>::execute(args_, result);
+        PyObject* patient = (ward > 0) ? args.get(ward - 1) : result;
+        PyObject* nurse = (custodian > 0) ? args.get(custodian - 1) : result;
 
-        if (nurse == 0) return 0;
-    
-        result = BasePolicy_::postcall(args_, result);
-        if (result == 0)
-            return 0;
-            
-        if (python::objects::make_nurse_and_patient(nurse, patient) == 0)
-        {
-            Py_XDECREF(result);
-            return 0;
+        if (nurse == nullptr)
+            return nullptr;
+
+        result = BasePolicy::postcall(args, result);
+        if (result == nullptr)
+            return nullptr;
+
+        if (python::objects::make_nurse_and_patient(nurse, patient) == nullptr) {
+            xdecref(result);
+            return nullptr;
         }
+
         return result;
     }
 };

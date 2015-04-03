@@ -13,13 +13,12 @@
 
 namespace boost { namespace python { 
 
-template <std::size_t owner_arg = 1, class BasePolicy_ = default_call_policies>
+template<std::size_t owner_arg = 1, class BasePolicy = default_call_policies>
 struct return_internal_reference
-    : with_custodian_and_ward_postcall<0, owner_arg, BasePolicy_>
+    : with_custodian_and_ward_postcall<0, owner_arg, BasePolicy>
 {
+    static_assert(owner_arg > 0, "The result can't own itself");
     using result_converter = reference_existing_object;
-    static_assert(owner_arg > 0, 
-        "return_internal_reference owner arg must be positive");
 };
 
 }} // namespace boost::python

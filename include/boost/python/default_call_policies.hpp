@@ -14,29 +14,38 @@ namespace boost { namespace python {
 
 struct default_result_converter;
 
-struct default_call_policies
-{
-    // Ownership of this argument tuple will ultimately be adopted by
-    // the caller.
+template<int offset>
+struct offset_args {
+    PyObject* base_args;
+
+    PyObject* get(int n) const {
+        return PyTuple_GET_ITEM(base_args, n + offset);
+    }
+
+    ssize_t arity() const {
+        return PyTuple_GET_SIZE(base_args) - offset;
+    }
+};
+
+struct default_call_policies {
+    // Ownership of this argument tuple will ultimately be adopted by the caller.
     template <class ArgumentPackage>
-    static bool precall(ArgumentPackage const&)
-    {
+    static bool precall(ArgumentPackage const&) {
         return true;
     }
 
     // Pass the result through
     template <class ArgumentPackage>
-    static PyObject* postcall(ArgumentPackage const&, PyObject* result)
-    {
+    static PyObject* postcall(ArgumentPackage const&, PyObject* result) {
         return result;
     }
 
-    typedef default_result_converter result_converter;
-    typedef PyObject* argument_package;
+    using result_converter = default_result_converter;
+    using argument_package = offset_args<0>;
 
-    template <class Sig>
+    template<class Signature>
     struct extract_return_type {
-        using type = detail::front_t<Sig>;
+        using type = detail::front_t<Signature>;
     };
 };
 

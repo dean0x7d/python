@@ -16,65 +16,50 @@
 
 namespace boost { namespace python { 
 
-namespace detail
-{
-  struct return_none
-  {
-      template <class T> struct apply
-      {
-          struct type
-          {
-              static bool convertible()
-              {
-                  return true;
-              }
-              
-              PyObject *operator()(value_arg_t<T>) const
-              {
-                  return none();
-              }
+namespace detail {
+    struct return_none {
+        template <class T>
+        struct apply {
+            struct type {
+                static bool convertible() { return true; }
+                PyObject* operator()(value_arg_t<T>) const { return none(); }
+
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-              PyTypeObject const *get_pytype() const {
-                  return converter::expected_pytype_for_arg<T>::get_pytype();
-              }
+                static PyTypeObject const* get_pytype() {
+                    return converter::expected_pytype_for_arg<T>::get_pytype();
+                }
 #endif
-          };
-      };
-  };
+            };
+        };
+    };
 }
-    
-template <
-    std::size_t arg_pos=1
-  , class Base = default_call_policies
-> 
-struct return_arg : Base
-{
+
+template<std::size_t arg_pos = 1, class BasePolicy = default_call_policies>
+struct return_arg : BasePolicy {
+    static_assert(arg_pos > 0, "arg_pos == 0 is the result");
+    // We could default to the base result_converter in case of arg_pos == 0
+    // since return arg 0 means return result, but I think it is better to
+    // issue an error instead, cause it can lead to confusions
+
     using result_converter = detail::return_none;
-    static_assert(arg_pos > 0, "return_arg pos must be positive");
-        // we could default to the base result_converter in case or
-        // arg_pos==0 since return arg 0 means return result, but I
-        // think it is better to issue an error instead, cause it can
-        // lead to confusions
 
     template <class ArgumentPackage>
-    static PyObject* postcall(ArgumentPackage const& args, PyObject* result)
-    {
-        result = Base::postcall(args,result);
+    static PyObject* postcall(ArgumentPackage const& args, PyObject* result) {
+        result = BasePolicy::postcall(args, result);
         if (!result)
-            return 0;
-        Py_DECREF(result);
-        return incref( detail::get<arg_pos-1>(args) );
+            return nullptr;
+        decref(result);
+        return incref(args.get(arg_pos - 1));
     }
 
-    template <class Sig>
+    template<class Signature>
     struct extract_return_type {
-        using type = detail::get_t<Sig, arg_pos>;
+        using type = detail::get_t<Signature, arg_pos>;
     };
 };
 
-template <class Base = default_call_policies>
-struct return_self : return_arg<1,Base>
-{};
+template<class BasePolicy = default_call_policies>
+struct return_self : return_arg<1, BasePolicy> {};
 
 }} // namespace boost::python
 

@@ -62,48 +62,25 @@ namespace detail
       PyObject* m_self;
   };
   
-  struct constructor_result_converter
-  {
-      template <class T>
-      struct apply
-      {
-          typedef install_holder<T> type;
+  struct constructor_result_converter {
+      template<class T>
+      struct apply {
+          using type = install_holder<T>;
       };
   };
 
-  template <class BaseArgs, class Offset>
-  struct offset_args
-  {
-      offset_args(BaseArgs base_) : base(base_) {}
-      BaseArgs base;
-  };
-
-  template <int N, class BaseArgs, class Offset>
-  inline PyObject* get(offset_args<BaseArgs,Offset> const& args_)
-  {
-      return get<N+Offset::value>(args_.base);
-  }
-  
-  template <class BaseArgs, class Offset>
-  inline unsigned arity(offset_args<BaseArgs,Offset> const& args_)
-  {
-      return arity(args_.base) - Offset::value;
-  }
-
-  template <class BasePolicy_ = default_call_policies>
-  struct constructor_policy : BasePolicy_
-  {
-      constructor_policy(BasePolicy_ base) : BasePolicy_(base) {}
+  template<class BasePolicy = default_call_policies>
+  struct constructor_policy : BasePolicy {
+      constructor_policy(BasePolicy base) : BasePolicy(base) {}
       
-      // If the BasePolicy_ supplied a result converter it would be
+      // If the BasePolicy supplied a result converter it would be
       // ignored; issue an error if it's not the default.
-      static_assert(std::is_same<typename BasePolicy_::result_converter,
+      static_assert(std::is_same<typename BasePolicy::result_converter,
                                  default_result_converter>::value, 
                     "make_constructor supplies its own result converter that would override yours");
       
       using result_converter = constructor_result_converter;
-      using argument_package = 
-          offset_args<typename BasePolicy_::argument_package, std::integral_constant<int, 1>>;
+      using argument_package = offset_args<1>;
   };
 
   template <class InnerSignature> struct outer_constructor_signature;
