@@ -16,9 +16,19 @@ inline T* incref(T* p) noexcept {
     return p;
 }
 
+inline PyObject* incref(PyObject* p) noexcept {
+    Py_INCREF(p);
+    return p;
+}
+
 template <class T>
 inline T* xincref(T* p) noexcept {
     Py_XINCREF(python::upcast<PyObject>(p));
+    return p;
+}
+
+inline PyObject* xincref(PyObject* p) noexcept {
+    Py_XINCREF(p);
     return p;
 }
 
@@ -27,9 +37,17 @@ inline void decref(T* p) noexcept {
     Py_DECREF(python::upcast<PyObject>(p));
 }
 
+inline void decref(PyObject* p) noexcept {
+    Py_DECREF(p);
+}
+
 template <class T>
 inline void xdecref(T* p) noexcept {
     Py_XDECREF(python::upcast<PyObject>(p));
+}
+
+inline void xdecref(PyObject* p) noexcept {
+    Py_XDECREF(p);
 }
 
 }} // namespace boost::python
