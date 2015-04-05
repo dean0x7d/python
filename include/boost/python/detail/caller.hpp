@@ -19,14 +19,7 @@
 
 namespace boost { namespace python { namespace detail { 
 
-// This "result converter" is really just used as
-// a dispatch tag to invoke(...), selecting the appropriate
-// implementation
-using void_result_to_python = int;
-
-// Given a model of CallPolicies and a C++ result type, this
-// metafunction selects the appropriate converter to use for
-// converting the result to python.
+// A dummy converter is required for void.
 template <class CallPolicies, class Result>
 struct select_result_converter {
     using type = typename CallPolicies::result_converter::template apply<Result>::type;
@@ -34,44 +27,33 @@ struct select_result_converter {
 
 template <class CallPolicies>
 struct select_result_converter<CallPolicies, void> {
-    using type = void_result_to_python;
+    struct type {
+#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
+        static PyTypeObject const* get_pytype() { return nullptr; }
+#endif
+    };
 };
 
 template <class CallPolicies, class Result>
 using select_result_converter_t = typename select_result_converter<CallPolicies, Result>::type;
 
 
-template <class ResultConverter, class ArgPackage>
-inline ResultConverter create_result_converter(ArgPackage const& args, std::true_type) {
+template<class ResultConverter>
+inline ResultConverter create_result_converter_impl(PyObject* args, std::true_type) {
     return {args};
 }
 
-template <class ResultConverter, class ArgPackage>
-inline ResultConverter create_result_converter(ArgPackage const&, std::false_type) {
+template<class ResultConverter>
+inline ResultConverter create_result_converter_impl(PyObject* /*args*/, std::false_type) {
     return {};
 }
 
-template <class ResultConverter, class ArgPackage>
-inline ResultConverter create_result_converter(ArgPackage const& args) {
+template<class CallPolicies, class Result,
+         class ResultConverter = select_result_converter_t<CallPolicies, Result>>
+inline ResultConverter create_result_converter(PyObject* args) {
     using pick = std::is_base_of<converter::context_result_converter, ResultConverter>;
-    return create_result_converter<ResultConverter>(args, pick{});
+    return create_result_converter_impl<ResultConverter>(args, pick{});
 }
-
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-template <class ResultConverter>
-struct converter_target_type {
-    static PyTypeObject const* get_pytype() {
-        return create_result_converter<ResultConverter>(nullptr).get_pytype();
-    }
-};
-
-template < >
-struct converter_target_type<void_result_to_python> {
-    static PyTypeObject const* get_pytype() {
-        return nullptr;
-    }
-};
-#endif
 
 
 // A function object type which wraps C++ objects as Python callable
@@ -115,11 +97,10 @@ struct caller<Function, CallPolicies, type_list<Result, Args...>, cpp14::index_s
 
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
         using rtype = typename CallPolicies::template extract_return_type<Sig>::type;
-        using result_converter = select_result_converter_t<CallPolicies, rtype>;
-        
+
         static const signature_element ret = {
             std::is_same<void, rtype>::value ? "void" : type_id<rtype>().name(),
-            &detail::converter_target_type<result_converter>::get_pytype,
+            &select_result_converter_t<CallPolicies, Result>::get_pytype,
             std::is_reference<rtype>::value &&
                 !std::is_const<cpp14::remove_reference_t<rtype>>::value
         };
@@ -145,10 +126,9 @@ private:
         if (!CallPolicies::precall(arg_pack))
             return nullptr;
 
-        using result_converter = select_result_converter_t<CallPolicies, Result>;
         PyObject* result = detail::invoke(
             detail::make_invoke_tag<Result, Function>{},
-            create_result_converter<result_converter>(arg_pack.base_args),
+            create_result_converter<CallPolicies, Result>(arg_pack.base_args),
             m_function,
             converters...
         );

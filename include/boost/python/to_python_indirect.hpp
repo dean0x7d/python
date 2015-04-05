@@ -32,9 +32,7 @@ struct to_python_indirect
         return this->execute(const_cast<U&>(ref), std::is_pointer<U>());
     }
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    inline PyTypeObject const*
-    get_pytype()const
-    {
+    static PyTypeObject const* get_pytype() {
         return converter::registered_pytype<T>::get_pytype();
     }
 #endif

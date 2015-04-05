@@ -52,7 +52,7 @@ struct to_python_value<T> : detail::builtin_to_python {         \
     PyObject* operator()(T const& x) const {                    \
         return (expr);                                          \
     }                                                           \
-    PyTypeObject const* get_pytype() const {                    \
+    static PyTypeObject const* get_pytype() {                   \
         return (pytype);                                        \
     }                                                           \
 };
