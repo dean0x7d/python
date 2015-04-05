@@ -26,7 +26,7 @@ template<class Pointer, class Pointee, class = Pointee, bool has_back_reference 
 struct pointer_holder : instance_holder {
     using value_type = Pointee;
 
-    pointer_holder(Pointer p) : m_p(p) {}
+    pointer_holder(Pointer p) : m_p(std::move(p)) {}
 
     template<class... Args>
     pointer_holder(PyObject* self, Args&&... args)
@@ -74,7 +74,7 @@ struct pointer_holder<Pointer, Pointee, Base, true> : instance_holder {
 
     // Not sure about this one -- can it work? The source object
     // undoubtedly does not carry the correct back reference pointer.
-    pointer_holder(Pointer p) : m_p(p) {}
+    pointer_holder(Pointer p) : m_p(std::move(p)) {}
 
     template <class... Args>
     pointer_holder(PyObject* p, Args&&... args)

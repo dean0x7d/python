@@ -8,61 +8,37 @@
 # include <boost/python/object/make_instance.hpp>
 # include <boost/python/converter/registry.hpp>
 # include <boost/python/detail/get_pointer.hpp>
-# include <typeinfo>
 
 namespace boost { namespace python { namespace objects { 
 
-template <class T, class Holder>
-struct make_ptr_instance
-    : make_instance_impl<T, Holder, make_ptr_instance<T,Holder> >
-{
-    template <class Arg>
-    static inline Holder* construct(void* storage, PyObject*, Arg& x)
-    {
-        return new (storage) Holder(x);
+template<class T, class Holder>
+struct make_ptr_instance : make_instance_impl<T, Holder, make_ptr_instance<T, Holder>> {
+    template<class Arg>
+    static Holder* construct(void* storage, PyObject* /*instance*/, Arg&& x) {
+        return new (storage) Holder(std::forward<Arg>(x));
     }
     
-    template <class Ptr>
-    static inline PyTypeObject* get_class_object(Ptr const& x)
-    {
-        return get_class_object_impl(get_pointer(x));
-    }
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    static inline PyTypeObject const* get_pytype()
-    {
-        return converter::registered<T>::converters.get_class_object();
-    }
-#endif
- private:
-    template <class U>
-    static inline PyTypeObject* get_class_object_impl(U const volatile* p)
-    {
+    template<class Ptr>
+    static PyTypeObject* get_class_object(Ptr const& x) {
+        auto p = get_pointer(x);
         if (p == nullptr)
             return nullptr; // means "return None".
 
-        PyTypeObject* derived = get_derived_class_object(std::is_polymorphic<U>(), p);
-        
-        if (derived)
-            return derived;
+        using pointee = cpp14::remove_pointer_t<decltype(p)>;
+        if (std::is_polymorphic<pointee>::value) {
+            if (auto r = converter::registry::query(typeid(*p)))
+                return r->m_class_object;
+        }
+
         return converter::registered<T>::converters.get_class_object();
     }
-    
-    template <class U>
-    static inline PyTypeObject* get_derived_class_object(std::true_type, U const volatile* x)
-    {
-        converter::registration const* r = converter::registry::query(
-            type_info(typeid(*get_pointer(x)))
-        );
-        return r ? r->m_class_object : nullptr;
+
+#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
+    static PyTypeObject const* get_pytype() {
+        return converter::registered<T>::converters.get_class_object();
     }
-    
-    template <class U>
-    static inline PyTypeObject* get_derived_class_object(std::false_type, U*)
-    {
-        return nullptr;
-    }
+#endif
 };
-  
 
 }}} // namespace boost::python::object
 

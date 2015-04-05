@@ -23,71 +23,45 @@
 namespace boost { namespace python {
 
 template <class T, class MakeHolder>
-struct to_python_indirect
-{
-    template <class U>
-    inline PyObject*
-    operator()(U const& ref) const
-    {
-        return this->execute(const_cast<U&>(ref), std::is_pointer<U>());
+struct to_python_indirect {
+    template<class U>
+    PyObject* operator()(U* ptr) const {
+        return (ptr == nullptr) ? detail::none() : operator()(*ptr);
     }
+
+    template<class U>
+    PyObject* operator()(U const& x) const {
+        if (std::is_polymorphic<U>::value) {
+            if (auto owner = detail::wrapper_base_::owner(&x))
+                return incref(owner);
+        }
+        return MakeHolder::execute(&x);
+    }
+
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
     static PyTypeObject const* get_pytype() {
         return converter::registered_pytype<T>::get_pytype();
     }
 #endif
- private:
-    template <class U>
-    inline PyObject* execute(U* ptr, std::true_type) const
-    {
-        // No special NULL treatment for references
-        if (ptr == 0)
-            return python::detail::none();
-        else
-            return this->execute(*ptr, std::false_type());
-    }
-    
-    template <class U>
-    inline PyObject* execute(U const& x, std::false_type) const
-    {
-        U* const p = &const_cast<U&>(x);
-        if (std::is_polymorphic<U>::value)
-        {
-            if (PyObject* o = detail::wrapper_base_::owner(p))
-                return incref(o);
-        }
-        return MakeHolder::execute(p);
-    }
 };
 
-//
-// implementations
-//
-namespace detail
-{
-  struct make_owning_holder
-  {
-      template <class T>
-      static PyObject* execute(T* p)
-      {
-          using smart_pointer = std::auto_ptr<T>;
-          using holder_t = objects::pointer_holder<smart_pointer, T>;
+namespace detail {
+    struct make_owning_holder {
+        template<class T>
+        static PyObject* execute(T* p) {
+            using smart_pointer = std::unique_ptr<T>;
+            using holder_t = objects::pointer_holder<smart_pointer, T>;
+            return objects::make_ptr_instance<T, holder_t>::execute(smart_pointer{p});
+        }
+    };
 
-          smart_pointer ptr(const_cast<T*>(p));
-          return objects::make_ptr_instance<T, holder_t>::execute(ptr);
-      }
-  };
-
-  struct make_reference_holder
-  {
-      template <class T>
-      static PyObject* execute(T* p)
-      {
-          typedef objects::pointer_holder<T*, T> holder_t;
-          T* q = const_cast<T*>(p);
-          return objects::make_ptr_instance<T, holder_t>::execute(q);
-      }
-  };
+    struct make_reference_holder {
+        template<class T>
+        static PyObject* execute(T* p) {
+            using holder_t = objects::pointer_holder<T*, T>;
+            return objects::make_ptr_instance<T, holder_t>::execute(p);
+        }
+    };
 }
 
 }} // namespace boost::python
