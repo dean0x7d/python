@@ -55,8 +55,7 @@ namespace boost { namespace python { namespace converter {
 // rvalue converters may return any non-singular pointer; the actual
 // target object will only be available once the converter's
 // construct() function is called.
-struct rvalue_from_python_stage1_data
-{
+struct rvalue_from_python_stage1_data {
     void* convertible;
     constructor_function construct;
 };
@@ -68,8 +67,7 @@ struct rvalue_from_python_stage1_data
 // appropriate instantiation of this template in order to access that
 // storage.
 template <class T>
-struct rvalue_from_python_storage
-{
+struct rvalue_from_python_storage {
     rvalue_from_python_stage1_data stage1;
 
     // Storage for the result, in case an rvalue must be constructed
@@ -82,45 +80,29 @@ struct rvalue_from_python_storage
 // should will be destroyed in ~rvalue_from_python_data(). It is
 // crucial that successful rvalue conversions establish this equality
 // and that unsuccessful ones do not.
-template <class T>
-struct rvalue_from_python_data : rvalue_from_python_storage<T>
-{
+template<class T>
+struct rvalue_from_python_data : rvalue_from_python_storage<T> {
     static_assert(std::is_pod<rvalue_from_python_storage<T>>::value, 
         "This must always be a POD struct");
-    
-    // The usual constructor 
-    rvalue_from_python_data(rvalue_from_python_stage1_data const&);
+
+    // The usual constructor
+    rvalue_from_python_data(rvalue_from_python_stage1_data const& stage1) {
+        this->stage1 = stage1;
+    }
 
     // This constructor just sets m_convertible -- used by
     // implicitly_convertible<> to perform the final step of the
     // conversion, where the construct() function is already known.
-    rvalue_from_python_data(void* convertible);
+    rvalue_from_python_data(void* convertible) {
+        this->stage1.convertible = convertible;
+    }
 
     // Destroys any object constructed in the storage.
-    ~rvalue_from_python_data();
+    ~rvalue_from_python_data() {
+        if (this->stage1.convertible == this->storage.bytes)
+            python::detail::destroy_stored<T>(this->storage.bytes);
+    }
 };
-
-//
-// Implementataions
-//
-template <class T>
-inline rvalue_from_python_data<T>::rvalue_from_python_data(rvalue_from_python_stage1_data const& _stage1)
-{
-    this->stage1 = _stage1;
-}
-
-template <class T>
-inline rvalue_from_python_data<T>::rvalue_from_python_data(void* convertible)
-{
-    this->stage1.convertible = convertible;
-}
-
-template <class T>
-inline rvalue_from_python_data<T>::~rvalue_from_python_data()
-{
-    if (this->stage1.convertible == this->storage.bytes)
-        python::detail::destroy_stored<T>(this->storage.bytes);
-}
 
 }}} // namespace boost::python::converter
 

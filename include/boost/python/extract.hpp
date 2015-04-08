@@ -20,222 +20,134 @@
 
 namespace boost { namespace python {
 
-namespace api
-{
-  class object;
-}
+namespace converter {
+    template<class T>
+    struct extract_rvalue {
+        using result_type = cpp14::conditional_t<
+            python::detail::copy_ctor_mutates_rhs<T>::value,
+            T&,
+            T const&
+        >;
 
-namespace converter
-{
-  template <class Ptr>
-  struct extract_pointer
-  {
-      typedef Ptr result_type;
-      extract_pointer(PyObject*);
-      
-      bool check() const;
-      Ptr operator()() const;
-      
-   private:
-      PyObject* m_source;
-      void* m_result;
-  };
-  
-  template <class Ref>
-  struct extract_reference
-  {
-      typedef Ref result_type;
-      extract_reference(PyObject*);
-      
-      bool check() const;
-      Ref operator()() const;
-      
-   private:
-      PyObject* m_source;
-      void* m_result;
-  };
-  
-  template <class T>
-  struct extract_rvalue
-  {
-      extract_rvalue(const extract_rvalue&) = delete;
-      extract_rvalue& operator=(const extract_rvalue&) = delete;
-      
-      using result_type = cpp14::conditional_t<
-          python::detail::copy_ctor_mutates_rhs<T>::value,
-          T&,
-          T const&
-      >;
+        extract_rvalue(const extract_rvalue&) = delete;
+        extract_rvalue& operator=(const extract_rvalue&) = delete;
 
-      extract_rvalue(PyObject*);
+        extract_rvalue(PyObject* p)
+            : m_source(p),
+              m_data(rvalue_from_python_stage1(p, registered<T>::converters))
+        {}
 
-      bool check() const;
-      result_type operator()() const;
-   private:
-      PyObject* m_source;
-      mutable rvalue_from_python_data<T> m_data;
-  };
-  
-  template <class T>
-  struct extract_object_manager
-  {
-      typedef T result_type;
-      extract_object_manager(PyObject*);
+        bool check() const { return m_data.stage1.convertible != nullptr; }
 
-      bool check() const;
-      result_type operator()() const;
-   private:
-      PyObject* m_source;
-  };
-  
-  template <class T>
-  using select_extract_t = cpp14::conditional_t<
-      is_object_manager<T>::value,
-      extract_object_manager<T>,
-      cpp14::conditional_t<
-          std::is_pointer<T>::value,
-          extract_pointer<T>,
-          cpp14::conditional_t<
-              std::is_reference<T>::value,
-              extract_reference<T>,
-              extract_rvalue<T>
-          >
-      >
-  >;
-}
+        result_type operator()() const {
+            return *static_cast<T*>(
+                // Only do the stage2 conversion once
+                (m_data.stage1.convertible == m_data.storage.bytes)
+                ? m_data.storage.bytes
+                : rvalue_from_python_stage2(m_source, m_data.stage1, registered<T>::converters)
+            );
+        }
 
-template <class T>
-struct extract
-    : converter::select_extract_t<T>
-{
- private:
-    using base = converter::select_extract_t<T>;
- public:
+    private:
+        PyObject* m_source;
+        mutable rvalue_from_python_data<T> m_data;
+    };
+
+    template<class T>
+    struct extract_object_manager {
+        using result_type = T;
+
+        extract_object_manager(PyObject* p) : m_source(p) {}
+
+        bool check() const { return object_manager_traits<result_type>::check(m_source); }
+
+        result_type operator()() const {
+            return static_cast<result_type>(
+                object_manager_traits<result_type>::adopt(incref(m_source))
+            );
+        }
+
+    private:
+        PyObject* m_source;
+    };
+
+    template<class T>
+    using select_extract_t = cpp14::conditional_t<
+        is_object_manager<T>::value,
+        extract_object_manager<T>,
+        extract_rvalue<T>
+    >;
+
+    template<class T>
+    struct extract_base : select_extract_t<T> {
+        using select_extract_t<T>::select_extract_t;
+    };
+
+    template<class T>
+    struct extract_base<T*> {
+        using result_type = T*;
+
+        extract_base(PyObject* p)
+            : m_source(p),
+              m_result(
+                  (p == Py_None)
+                  ? nullptr
+                  : get_lvalue_from_python(p, registered<T>::converters)
+              )
+        {}
+
+        bool check() const { return m_source == Py_None || m_result != nullptr; }
+
+        result_type operator()() const {
+            if (m_result == nullptr && m_source != Py_None)
+                throw_no_pointer_from_python(m_source, registered<T>::converters);
+
+            return static_cast<result_type>(m_result);
+        }
+
+    private:
+        PyObject* m_source;
+        void* m_result;
+    };
+
+    template<class T>
+    struct extract_base<T&> {
+        using result_type = T&;
+
+        extract_base(PyObject* p)
+            : m_source(p),
+              m_result(get_lvalue_from_python(p, registered<T>::converters))
+        {}
+
+        bool check() const { return m_result != nullptr; }
+
+        result_type operator()() const {
+            if (m_result == nullptr)
+                throw_no_reference_from_python(m_source, registered<T>::converters);
+
+            return python::detail::void_ptr_to_reference<result_type>(m_result);
+        }
+
+    private:
+        PyObject* m_source;
+        void* m_result;
+    };
+} // namespace converter
+
+template<class T>
+struct extract : converter::extract_base<T> {
+private:
+    using base = converter::extract_base<T>;
+
+public:
     using result_type = typename base::result_type;
+
+    operator result_type() const { return (*this)(); }
     
-    operator result_type() const
-    {
-        return (*this)();
-    }
-    
-    extract(PyObject*);
-    extract(api::object const&);
+    extract(PyObject* p) : base(p) {}
+    extract(object const& x) : base(x.ptr()) {}
 };
 
-//
-// Implementations
-//
-template <class T>
-inline extract<T>::extract(PyObject* o)
-    : base(o)
-{
-}
-
-template <class T>
-inline extract<T>::extract(api::object const& o)
-    : base(o.ptr())
-{
-}
-
-namespace converter
-{
-  template <class T>
-  inline extract_rvalue<T>::extract_rvalue(PyObject* x)
-      : m_source(x)
-      , m_data(
-          (rvalue_from_python_stage1)(x, registered<T>::converters)
-          )
-  {
-  }
-  
-  template <class T>
-  inline bool
-  extract_rvalue<T>::check() const
-  {
-      return m_data.stage1.convertible;
-  }
-
-  template <class T>
-  inline typename extract_rvalue<T>::result_type
-  extract_rvalue<T>::operator()() const
-  {
-      return *(T*)(
-          // Only do the stage2 conversion once
-          m_data.stage1.convertible ==  m_data.storage.bytes
-             ? m_data.storage.bytes
-             : (rvalue_from_python_stage2)(m_source, m_data.stage1, registered<T>::converters)
-          );
-  }
-
-  template <class Ref>
-  inline extract_reference<Ref>::extract_reference(PyObject* obj)
-      : m_source(obj)
-      , m_result(
-          (get_lvalue_from_python)(obj, registered<Ref>::converters)
-          )
-  {
-  }
-
-  template <class Ref>
-  inline bool extract_reference<Ref>::check() const
-  {
-      return m_result != 0;
-  }
-
-  template <class Ref>
-  inline Ref extract_reference<Ref>::operator()() const
-  {
-      if (m_result == 0)
-          (throw_no_reference_from_python)(m_source, registered<Ref>::converters);
-      
-      return python::detail::void_ptr_to_reference<Ref>(m_result);
-  }
-
-  template <class Ptr>
-  inline extract_pointer<Ptr>::extract_pointer(PyObject* obj)
-      : m_source(obj)
-      , m_result(
-          obj == Py_None ? 0 : (get_lvalue_from_python)(obj, registered_pointee<Ptr>::converters)
-          )
-  {
-  }
-
-  template <class Ptr>
-  inline bool extract_pointer<Ptr>::check() const
-  {
-      return m_source == Py_None || m_result != 0;
-  }
-
-  template <class Ptr>
-  inline Ptr extract_pointer<Ptr>::operator()() const
-  {
-      if (m_result == 0 && m_source != Py_None)
-          (throw_no_pointer_from_python)(m_source, registered_pointee<Ptr>::converters);
-      
-      return Ptr(m_result);
-  }
-
-  template <class T>
-  inline extract_object_manager<T>::extract_object_manager(PyObject* obj)
-      : m_source(obj)
-  {
-  }
-
-  template <class T>
-  inline bool extract_object_manager<T>::check() const
-  {
-      return object_manager_traits<T>::check(m_source);
-  }
-
-  template <class T>
-  inline T extract_object_manager<T>::operator()() const
-  {
-      return T(
-          object_manager_traits<T>::adopt(python::incref(m_source))
-          );
-  }
-}
-  
 }} // namespace boost::python::converter
 
 #endif // EXTRACT_DWA200265_HPP

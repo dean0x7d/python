@@ -4,14 +4,8 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 
 #include <boost/python/converter/from_python.hpp>
-#include <boost/python/converter/registrations.hpp>
-#include <boost/python/converter/rvalue_from_python_data.hpp>
-
 #include <boost/python/object/find_instance.hpp>
-
 #include <boost/python/handle.hpp>
-#include <boost/python/detail/raw_pyobject.hpp>
-#include <boost/python/cast.hpp>
 
 #include <vector>
 #include <algorithm>
@@ -36,25 +30,27 @@ namespace boost { namespace python { namespace converter {
 //      in y.storage.bytes and then sets y.convertible == y.storage.bytes,
 //      or else throws an exception and has no effect.
 BOOST_PYTHON_DECL rvalue_from_python_stage1_data rvalue_from_python_stage1(
-    PyObject* source
-    , registration const& converters)
-{
+    PyObject* source, registration const& converters
+) {
     rvalue_from_python_stage1_data data;
 
     // First check to see if it's embedded in an extension class
     // instance, as a special case.
-    data.convertible = objects::find_instance_impl(source, converters.target_type, converters.is_shared_ptr);
+    data.convertible = objects::find_instance_impl(
+        source, converters.target_type, converters.is_shared_ptr
+    );
     data.construct = nullptr;
-    if (!data.convertible)
-    {
-        for (auto& rvalue_converter : converters.rvalue_chain) {
-            if (void* result = rvalue_converter.convertible(source)) {
+
+    if (!data.convertible) {
+        for (auto const& rvalue_converter : converters.rvalue_chain) {
+            if (auto result = rvalue_converter.convertible(source)) {
                 data.convertible = result;
                 data.construct = rvalue_converter.construct;
                 break;
             }
         }
     }
+
     return data;
 }
 
@@ -69,53 +65,43 @@ BOOST_PYTHON_DECL rvalue_from_python_stage1_data rvalue_from_python_stage1(
 //
 // Requires: data.convertible == &registered<T>::converters
 //
-BOOST_PYTHON_DECL void* rvalue_result_from_python(
-    PyObject* src, rvalue_from_python_stage1_data& data)
+BOOST_PYTHON_DECL void* rvalue_result_from_python(PyObject* src,
+                                                  rvalue_from_python_stage1_data& data)
 {
     // Retrieve the registration
     // Cast in two steps for less-capable compilers
-    void const* converters_ = data.convertible;
-    registration const& converters = *static_cast<registration const*>(converters_);
+    auto& converters = *static_cast<registration const*>(data.convertible);
 
     // Look for an eligible converter
     data = rvalue_from_python_stage1(src, converters);
     return rvalue_from_python_stage2(src, data, converters);
 }
 
-BOOST_PYTHON_DECL void* rvalue_from_python_stage2(
-    PyObject* source, rvalue_from_python_stage1_data& data, registration const& converters)
+BOOST_PYTHON_DECL void* rvalue_from_python_stage2(PyObject* source,
+                                                  rvalue_from_python_stage1_data& data,
+                                                  registration const& converters)
 {
-    if (!data.convertible)
-    {
-        handle<> msg(
-#if PY_VERSION_HEX >= 0x03000000
-            ::PyUnicode_FromFormat
-#else
-            ::PyString_FromFormat
-#endif
-                (
-                "No registered converter was able to produce a C++ rvalue of type %s from this Python object of type %s"
-                , converters.target_type.name()
-                , source->ob_type->tp_name
-                ));
-              
-        PyErr_SetObject(PyExc_TypeError, msg.get());
+    if (!data.convertible) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "No registered converter was able to produce a C++ rvalue of type %s"
+            " from this Python object of type %s",
+            converters.target_type.name(),
+            source->ob_type->tp_name
+        );
         throw_error_already_set();
     }
 
     // If a construct function was registered (i.e. we found an
     // rvalue conversion), call it now.
-    if (data.construct != 0)
+    if (data.construct)
         data.construct(source, &data);
 
     // Return the address of the resulting C++ object
     return data.convertible;
 }
 
-BOOST_PYTHON_DECL void* get_lvalue_from_python(
-    PyObject* source
-    , registration const& converters)
-{
+BOOST_PYTHON_DECL void* get_lvalue_from_python(PyObject* source, registration const& converters) {
     // Check to see if it's embedded in a class instance
     void* x = objects::find_instance_impl(source, converters.target_type);
     if (x)
@@ -128,9 +114,8 @@ BOOST_PYTHON_DECL void* get_lvalue_from_python(
     return nullptr;
 }
 
-BOOST_PYTHON_DECL bool implicit_rvalue_convertible_from_python(
-    PyObject* source
-    , registration const& converters)
+BOOST_PYTHON_DECL bool implicit_rvalue_convertible_from_python(PyObject* source,
+                                                               registration const& converters)
 {    
     if (objects::find_instance_impl(source, converters.target_type))
         return true;
@@ -152,86 +137,68 @@ BOOST_PYTHON_DECL bool implicit_rvalue_convertible_from_python(
 
 namespace
 {
-  void throw_no_lvalue_from_python(PyObject* source, registration const& converters, char const* ref_type)
+  void throw_no_lvalue_from_python(PyObject* source, registration const& converters,
+                                   char const* ref_type)
   {
-      handle<> msg(
-#if PY_VERSION_HEX >= 0x03000000
-          ::PyUnicode_FromFormat
-#else
-          ::PyString_FromFormat
-#endif
-              (
-              "No registered converter was able to extract a C++ %s to type %s"
-              " from this Python object of type %s"
-              , ref_type
-              , converters.target_type.name()
-              , source->ob_type->tp_name
-              ));
-              
-      PyErr_SetObject(PyExc_TypeError, msg.get());
-
+      PyErr_Format(
+          PyExc_TypeError,
+          "No registered converter was able to extract a C++ %s to type %s"
+          " from this Python object of type %s",
+          ref_type,
+          converters.target_type.name(),
+          source->ob_type->tp_name
+      );
       throw_error_already_set();
   }
 
-  void* lvalue_result_from_python(
-      PyObject* source
-      , registration const& converters
-      , char const* ref_type)
+  void* lvalue_result_from_python(PyObject* source, registration const& converters,
+                                  char const* ref_type)
   {
       handle<> holder(source);
-      if (source->ob_refcnt <= 1)
-      {
-          handle<> msg(
-#if PY_VERSION_HEX >= 0x3000000
-              ::PyUnicode_FromFormat
-#else
-              ::PyString_FromFormat
-#endif
-                  (
-                  "Attempt to return dangling %s to object of type: %s"
-                  , ref_type
-                  , converters.target_type.name()));
-          
-          PyErr_SetObject(PyExc_ReferenceError, msg.get());
-
+      if (source->ob_refcnt <= 1) {
+          PyErr_Format(
+              PyExc_ReferenceError,
+              "Attempt to return dangling %s to object of type: %s",
+              ref_type,
+              converters.target_type.name()
+          );
           throw_error_already_set();
       }
       
       void* result = get_lvalue_from_python(source, converters);
       if (!result)
-          (throw_no_lvalue_from_python)(source, converters, ref_type);
+          throw_no_lvalue_from_python(source, converters, ref_type);
       return result;
   }
   
 }
 
-BOOST_PYTHON_DECL void throw_no_pointer_from_python(PyObject* source, registration const& converters)
+BOOST_PYTHON_DECL void throw_no_pointer_from_python(PyObject* source,
+                                                    registration const& converters)
 {
-    (throw_no_lvalue_from_python)(source, converters, "pointer");
+    throw_no_lvalue_from_python(source, converters, "pointer");
 }
 
-BOOST_PYTHON_DECL void throw_no_reference_from_python(PyObject* source, registration const& converters)
+BOOST_PYTHON_DECL void throw_no_reference_from_python(PyObject* source,
+                                                      registration const& converters)
 {
-    (throw_no_lvalue_from_python)(source, converters, "reference");
+    throw_no_lvalue_from_python(source, converters, "reference");
 }
 
-BOOST_PYTHON_DECL void* reference_result_from_python(
-    PyObject* source
-    , registration const& converters)
+BOOST_PYTHON_DECL void* reference_result_from_python(PyObject* source,
+                                                     registration const& converters)
 {
-    return (lvalue_result_from_python)(source, converters, "reference");
+    return lvalue_result_from_python(source, converters, "reference");
 }
   
-BOOST_PYTHON_DECL void* pointer_result_from_python(
-    PyObject* source
-    , registration const& converters)
+BOOST_PYTHON_DECL void* pointer_result_from_python(PyObject* source,
+                                                   registration const& converters)
 {
-    if (source == Py_None)
-    {
+    if (source == Py_None) {
         Py_DECREF(source);
-        return 0;
+        return nullptr;
     }
-    return (lvalue_result_from_python)(source, converters, "pointer");
+    return lvalue_result_from_python(source, converters, "pointer");
 }
   
 BOOST_PYTHON_DECL void void_result_from_python(PyObject* o)
