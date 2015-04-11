@@ -9,7 +9,6 @@
 
 # include <boost/python/converter/object_manager.hpp>
 # include <boost/python/converter/from_python.hpp>
-# include <boost/python/converter/rvalue_from_python_data.hpp>
 # include <boost/python/converter/registered.hpp>
 
 # include <boost/python/object_core.hpp>
@@ -40,7 +39,8 @@ namespace converter {
     };
 
     template<class T>
-    struct extract_rvalue {
+    struct extract_rvalue : rvalue_from_python<T> {
+        using base = rvalue_from_python<T>;
         using result_type = cpp14::conditional_t<
             python::detail::copy_ctor_mutates_rhs<T>::value,
             T&,
@@ -50,25 +50,14 @@ namespace converter {
         extract_rvalue(const extract_rvalue&) = delete;
         extract_rvalue& operator=(const extract_rvalue&) = delete;
 
-        extract_rvalue(PyObject* p)
-            : m_source(p),
-              m_data(rvalue_from_python_stage1(p, registered<T>::converters))
-        {}
+        extract_rvalue(PyObject* source) : base{source} {}
 
-        bool check() const { return m_data.stage1.convertible != nullptr; }
+        result_type operator()() {
+            if (!base::check())
+                base::throw_bad_conversion(base::source);
 
-        result_type operator()() const {
-            return *static_cast<T*>(
-                // Only do the stage2 conversion once
-                (m_data.stage1.convertible == m_data.storage.bytes)
-                ? m_data.storage.bytes
-                : rvalue_from_python_stage2(m_source, m_data.stage1, registered<T>::converters)
-            );
+            return base::operator()();
         }
-
-    private:
-        PyObject* m_source;
-        mutable rvalue_from_python_data<T> m_data;
     };
 
     template<class T>
@@ -108,7 +97,7 @@ private:
 
 public:
     using result_type = typename base::result_type;
-    operator result_type() const { return (*this)(); }
+    operator result_type() { return (*this)(); }
     
     extract(PyObject* p) : base(p) {}
     extract(object const& x) : base(x.ptr()) {}

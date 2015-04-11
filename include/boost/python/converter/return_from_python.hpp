@@ -37,22 +37,20 @@ namespace detail {
 
     template<class T>
     struct return_rvalue_from_python {
-        return_rvalue_from_python()
-            : m_data(const_cast<registration*>(&registered<T>::converters))
-        {}
+        T operator()(PyObject* source) {
+            using from_python_t = rvalue_from_python<T>;
 
-        T operator()(PyObject* p) {
-            // Take possession of the source object here. If the result is in
-            // fact going to be a copy of an lvalue embedded in the object,
-            // and we take possession inside rvalue_result_from_python, it
-            // will be destroyed too early.
-            handle<> holder(p);
+            // source is a new reference result from a function call.
+            // It needs to be decrefed in all cases.
+            handle<> decref_guard{source};
 
-            return *static_cast<T*>(rvalue_result_from_python(p, m_data.stage1));
+            auto converter = from_python_t{source};
+            if (!converter.check()) {
+                from_python_t::throw_bad_conversion(source);
+            }
+
+            return converter();
         }
-
-    private:
-        rvalue_from_python_data<T> m_data;
     };
 
     template<class T>

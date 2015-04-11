@@ -7,7 +7,6 @@
 
 # include <boost/python/detail/prefix.hpp>
 # include <boost/python/converter/from_python.hpp>
-# include <boost/python/converter/rvalue_from_python_data.hpp>
 # include <boost/python/converter/registry.hpp>
 # include <boost/python/converter/registered.hpp>
 # include <boost/python/back_reference.hpp>
@@ -20,42 +19,6 @@
 namespace boost { namespace python { namespace converter {
 
 template <class T> struct arg_from_python;
-
-//
-// rvalue converters
-//
-//   These require only that an object of type T can be created from
-//   the given Python object, but not that the T object exist
-//   somewhere in storage.
-//
-
-// Used when T is a plain value (non-pointer, non-reference) type or
-// a (non-volatile) const reference to a plain value type.
-template <class T>
-struct arg_rvalue_from_python {
-    // We can't add_const here, or it would be impossible to pass
-    // auto_ptr<U> args from Python to C++
-    using result_type = cpp14::add_lvalue_reference_t<T>;
-    
-    arg_rvalue_from_python(PyObject* p)
-        : m_data{rvalue_from_python_stage1(p, registered<T>::converters)}, m_source{p}
-    {}
-    bool check() const { return m_data.stage1.convertible != nullptr; }
-
-    result_type operator()() {
-        if (m_data.stage1.construct)
-            m_data.stage1.construct(m_source, &m_data.stage1);
-
-        return python::detail::void_ptr_to_reference<T>(m_data.stage1.convertible);
-    }
-
-private:
-    rvalue_from_python_data<result_type> m_data;
-    PyObject* m_source;
-};
-
-
-// ==================
 
 // Converts to a (PyObject*,T) bundle, for when you need a reference
 // back to the Python object
@@ -101,7 +64,7 @@ using select_arg_from_python_t = cpp14::conditional_t<
                 cpp14::conditional_t<
                     boost::python::is_back_reference<T>::value,
                     back_reference_arg_from_python<T>,
-                    arg_rvalue_from_python<T>
+                    rvalue_from_python<T> // T is a plain value U or U const&
                 >
             >
         >

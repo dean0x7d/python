@@ -23,22 +23,22 @@ int main()
 {
     assert_same<
         select_arg_from_python_t<int>,
-        arg_rvalue_from_python<int>
+        rvalue_from_python<int>
     >();
     
     assert_same<
         select_arg_from_python_t<int const>,
-        arg_rvalue_from_python<int const>
+        rvalue_from_python<int const>
     >();
     
     assert_same<
         select_arg_from_python_t<int volatile>,
-        arg_rvalue_from_python<int volatile>
+        rvalue_from_python<int volatile>
     >();
 
     assert_same<
         select_arg_from_python_t<int const volatile>,
-        arg_rvalue_from_python<int const volatile>
+        rvalue_from_python<int const volatile>
     >();
 
 
@@ -73,7 +73,7 @@ int main()
     
     assert_same<
         select_arg_from_python_t<int const&>,
-        arg_rvalue_from_python<int const&>
+        rvalue_from_python<int const&>
     >();
     
     assert_same<
