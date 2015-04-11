@@ -21,7 +21,7 @@ struct object_manager_value_arg_from_python {
     using result_type = T;
     
     object_manager_value_arg_from_python(PyObject* p) : m_source{p} {}
-    bool convertible() const { return object_manager_traits<T>::check(m_source); }
+    bool check() const { return object_manager_traits<T>::check(m_source); }
     T operator()() const { return T(python::detail::borrowed_reference(m_source)); }
 
 private:
@@ -50,7 +50,7 @@ struct object_manager_ref_arg_from_python {
         python::detail::destroy_stored<Ref>(m_result.bytes);
     }
 
-    bool convertible() const {
+    bool check() const {
         using type = cpp14::remove_cv_t<cpp14::remove_reference_t<Ref>>;
         return object_manager_traits<type>::check(
             get_managed_object(python::detail::void_ptr_to_reference<Ref>(m_result.bytes))

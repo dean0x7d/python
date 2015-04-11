@@ -16,21 +16,39 @@ namespace boost { namespace python { namespace converter {
 
 namespace detail {
     template<class T>
-    struct return_rvalue_from_python {
-        using result_type = T;
+    struct return_lvalue_from_python {
+        T operator()(PyObject* source) const {
+            using from_python_t = lvalue_from_python<T>;
 
+            // source is a new reference result from a function call.
+            // It needs to be decrefed in all cases.
+            handle<> decref_guard{source};
+
+            if (source->ob_refcnt <= 1)
+                from_python_t::throw_dangling_pointer();
+
+            auto converter = from_python_t{source};
+            if (!converter.check())
+                from_python_t::throw_bad_conversion(source);
+
+            return converter();
+        };
+    };
+
+    template<class T>
+    struct return_rvalue_from_python {
         return_rvalue_from_python()
             : m_data(const_cast<registration*>(&registered<T>::converters))
         {}
 
-        result_type operator()(PyObject* p) {
+        T operator()(PyObject* p) {
             // Take possession of the source object here. If the result is in
             // fact going to be a copy of an lvalue embedded in the object,
             // and we take possession inside rvalue_result_from_python, it
             // will be destroyed too early.
             handle<> holder(p);
 
-            return *static_cast<result_type*>(rvalue_result_from_python(p, m_data.stage1));
+            return *static_cast<T*>(rvalue_result_from_python(p, m_data.stage1));
         }
 
     private:
@@ -39,10 +57,8 @@ namespace detail {
 
     template<class T>
     struct return_object_manager_from_python {
-        using result_type = T;
-
-        result_type operator()(PyObject* p) const {
-            return static_cast<result_type>(
+        T operator()(PyObject* p) const {
+            return static_cast<T>(
                 object_manager_traits<T>::adopt(expect_non_null(p))
             );
         }
@@ -53,38 +69,18 @@ template<class T>
 struct return_from_python : cpp14::conditional_t<
     is_object_manager<T>::value,
     detail::return_object_manager_from_python<T>,
-    detail::return_rvalue_from_python<T>
+    cpp14::conditional_t<
+        std::is_pointer<T>::value || std::is_lvalue_reference<T>::value,
+        detail::return_lvalue_from_python<T>,
+        detail::return_rvalue_from_python<T>
+    >
 > {};
-
-template<class T>
-struct return_from_python<T*> {
-    using result_type = T*;
-
-    result_type operator()(PyObject* p) const {
-        return static_cast<result_type>(
-            pointer_result_from_python(p, registered<T>::converters)
-        );
-    }
-};
-
-template<class T>
-struct return_from_python<T&> {
-    using result_type = T&;
-
-    result_type operator()(PyObject* p) const {
-        return python::detail::void_ptr_to_reference<result_type>(
-            reference_result_from_python(p, registered<T>::converters)
-        );
-    }
-};
 
 // Specialization as a convenience for call and call_method
 template<>
 struct return_from_python<void> {
-    using result_type = void;
-
-    result_type operator()(PyObject* p) const {
-        void_result_from_python(p);
+    void operator()(PyObject* p) const {
+        decref(expect_non_null(p));
     }
 };
 

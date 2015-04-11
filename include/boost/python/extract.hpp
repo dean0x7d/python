@@ -22,6 +22,24 @@ namespace boost { namespace python {
 
 namespace converter {
     template<class T>
+    struct extract_lvalue : lvalue_from_python<T> {
+        using base = lvalue_from_python<T>;
+        using result_type = T;
+
+        extract_lvalue(PyObject* source) : base{source}, source{source} {}
+
+        T operator()() const {
+            if (!base::check())
+                base::throw_bad_conversion(source);
+
+            return base::operator()();
+        }
+
+    private:
+        PyObject* source;
+    };
+
+    template<class T>
     struct extract_rvalue {
         using result_type = cpp14::conditional_t<
             python::detail::copy_ctor_mutates_rhs<T>::value,
@@ -75,73 +93,21 @@ namespace converter {
     using select_extract_t = cpp14::conditional_t<
         is_object_manager<T>::value,
         extract_object_manager<T>,
-        extract_rvalue<T>
+        cpp14::conditional_t<
+            std::is_pointer<T>::value || std::is_lvalue_reference<T>::value,
+            extract_lvalue<T>,
+            extract_rvalue<T>
+        >
     >;
-
-    template<class T>
-    struct extract_base : select_extract_t<T> {
-        using select_extract_t<T>::select_extract_t;
-    };
-
-    template<class T>
-    struct extract_base<T*> {
-        using result_type = T*;
-
-        extract_base(PyObject* p)
-            : m_source(p),
-              m_result(
-                  (p == Py_None)
-                  ? nullptr
-                  : get_lvalue_from_python(p, registered<T>::converters)
-              )
-        {}
-
-        bool check() const { return m_source == Py_None || m_result != nullptr; }
-
-        result_type operator()() const {
-            if (m_result == nullptr && m_source != Py_None)
-                throw_no_pointer_from_python(m_source, registered<T>::converters);
-
-            return static_cast<result_type>(m_result);
-        }
-
-    private:
-        PyObject* m_source;
-        void* m_result;
-    };
-
-    template<class T>
-    struct extract_base<T&> {
-        using result_type = T&;
-
-        extract_base(PyObject* p)
-            : m_source(p),
-              m_result(get_lvalue_from_python(p, registered<T>::converters))
-        {}
-
-        bool check() const { return m_result != nullptr; }
-
-        result_type operator()() const {
-            if (m_result == nullptr)
-                throw_no_reference_from_python(m_source, registered<T>::converters);
-
-            return python::detail::void_ptr_to_reference<result_type>(m_result);
-        }
-
-    private:
-        PyObject* m_source;
-        void* m_result;
-    };
 } // namespace converter
 
 template<class T>
-struct extract : converter::extract_base<T> {
+struct extract : converter::select_extract_t<T> {
 private:
-    using base = converter::extract_base<T>;
+    using base = converter::select_extract_t<T>;
 
 public:
     using result_type = typename base::result_type;
-
     operator result_type() const { return (*this)(); }
     
     extract(PyObject* p) : base(p) {}

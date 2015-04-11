@@ -24,18 +24,18 @@ using convertible_function = void* (*)(PyObject*);
 struct rvalue_from_python_stage1_data;
 using constructor_function = void (*)(PyObject* source, rvalue_from_python_stage1_data*);
 
-struct lvalue_from_python {
-    convertible_function convert;
-};
-
-struct rvalue_from_python {
-    convertible_function convertible;
-    constructor_function construct;
-    pytype_function expected_pytype;
-};
-
 struct BOOST_PYTHON_DECL registration
 {
+    struct lvalue_from_python {
+        convertible_function convert;
+    };
+
+    struct rvalue_from_python {
+        convertible_function convertible;
+        constructor_function construct;
+        pytype_function expected_pytype;
+    };
+
  public: // member functions
     explicit registration(type_info target, bool is_shared_ptr = false)
         : target_type(target), is_shared_ptr(is_shared_ptr) {}
