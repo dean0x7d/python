@@ -96,25 +96,16 @@ private:
 // rvalue converters
 //
 //   These require only that an object of type T can be created from
-//   the given Python object, but not that the T object exist
-//   somewhere in storage.
+//   the given Python object, but not that the T object exist somewhere in storage.
 //
 template<class T>
-struct rvalue_from_python {
-    rvalue_from_python(PyObject* source)
+struct rvalue_from_python_base {
+    rvalue_from_python_base(PyObject* source)
         : source{source},
           data{rvalue_from_python_stage1(source, registered<T>::converters)}
     {}
 
     bool check() const { return data.stage1.convertible != nullptr; }
-
-    T& operator()() {
-        // Only do the stage2 conversion once
-        if (data.stage1.convertible != data.storage.bytes && data.stage1.construct)
-            data.stage1.construct(source, &data.stage1);
-
-        return python::detail::void_ptr_to_reference<T>(data.stage1.convertible);
-    }
 
 public:
     static void throw_bad_conversion(PyObject* source) {
@@ -122,8 +113,64 @@ public:
     }
 
 protected:
+    T& stage2_conversion() {
+        // Only do the stage2 conversion once
+        if (data.stage1.convertible != data.storage.bytes && data.stage1.construct)
+            data.stage1.construct(source, &data.stage1);
+
+        return python::detail::void_ptr_to_reference<T>(data.stage1.convertible);
+    }
+
+    bool result_is_temp_object() const {
+        return data.stage1.convertible == data.storage.bytes;
+    }
+
+protected:
     PyObject* source;
     rvalue_from_python_data<T> data;
+};
+
+template<class T>
+struct rvalue_from_python : rvalue_from_python_base<T> {
+    using base = rvalue_from_python_base<T>;
+    using base::base;
+
+    T& operator()() & { return base::stage2_conversion(); }
+
+    T operator()() && {
+        auto& result = base::stage2_conversion();
+        if (base::result_is_temp_object()) {
+            // When the result is a temp object stored in data.storage.bytes,
+            // it should be moved out whenever possible.
+            // Note: This will be a copy if T's move constructor was deleted
+            // by the compiler. However, there will be a compile error if T's
+            // move constructor was explicitly deleted: 'T(T&&) = delete;'.
+            // Unfortunately, std::is_move_constructible cannot detect this
+            // case, so this is an open issue for now.
+            return std::move(result);
+        }
+        else {
+            // When the result is a pointer to embedded data in a Python object,
+            // it should be copied out. This may not be possible for move-only
+            // types (e.g. std::unique_ptr), in which case the value is moved,
+            // thus stealing the data from the Python object.
+            return maybe_copy(result, std::is_copy_constructible<T>{});
+        }
+    }
+
+private:
+    T&  maybe_copy(T& result, std::true_type) { return result; }
+    T&& maybe_copy(T& result, std::false_type) { return std::move(result); }
+};
+
+// T const& is a special rvalue case where operator() should always return a reference.
+// This eliminates the temp value creation overhead of 'T operator()() &&'.
+template<class T>
+struct rvalue_from_python<T const&> : rvalue_from_python_base<T> {
+    using base = rvalue_from_python_base<T>;
+    using base::base;
+
+    T const& operator()() { return base::stage2_conversion(); }
 };
 
 }}} // namespace boost::python::converter

@@ -38,7 +38,7 @@ struct class_value_wrapper
 {
     static PyObject* convert(Src x)
     {
-        return MakeInstance::execute(x);
+        return MakeInstance::execute(std::move(x));
     }
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
     static PyTypeObject const *get_pytype() { return MakeInstance::get_pytype(); }

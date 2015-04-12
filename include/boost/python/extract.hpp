@@ -15,7 +15,6 @@
 # include <boost/python/refcount.hpp>
 
 # include <boost/python/detail/copy_ctor_mutates_rhs.hpp>
-# include <boost/python/detail/referent_storage.hpp>
 
 namespace boost { namespace python {
 
@@ -52,11 +51,18 @@ namespace converter {
 
         extract_rvalue(PyObject* source) : base{source} {}
 
-        result_type operator()() {
+        result_type operator()() & {
             if (!base::check())
                 base::throw_bad_conversion(base::source);
 
             return base::operator()();
+        }
+
+        T operator()() && {
+            if (!base::check())
+                base::throw_bad_conversion(base::source);
+
+            return std::move(base::operator()());
         }
     };
 

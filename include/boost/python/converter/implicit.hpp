@@ -30,11 +30,23 @@ struct implicit
     {
         void* storage = ((rvalue_from_python_storage<Target>*)data)->storage.bytes;
 
-        arg_from_python<Source> get_source(obj);
-        new (storage) Target(get_source());
+        construct_impl(storage, obj, std::is_abstract<Source>{});
         
         // record successful construction
         data->convertible = storage;
+    }
+
+private:
+    static void construct_impl(void* storage, PyObject* p, std::true_type /*is_abstract*/) {
+        arg_from_python<Source const&> get_source(p);
+        assert(get_source.check());
+        new (storage) Target(get_source());
+    }
+
+    static void construct_impl(void* storage, PyObject* p, std::false_type /*is_abstract*/) {
+        arg_from_python<Source> get_source(p);
+        assert(get_source.check());
+        new (storage) Target(std::move(get_source)());
     }
 };
 

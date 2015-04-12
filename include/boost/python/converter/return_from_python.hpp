@@ -8,7 +8,6 @@
 # include <boost/python/converter/from_python.hpp>
 # include <boost/python/converter/registered.hpp>
 # include <boost/python/converter/object_manager.hpp>
-# include <boost/python/detail/referent_storage.hpp>
 # include <boost/python/errors.hpp>
 # include <boost/python/handle.hpp>
 
@@ -49,7 +48,7 @@ namespace detail {
                 from_python_t::throw_bad_conversion(source);
             }
 
-            return converter();
+            return std::move(converter)();
         }
     };
 

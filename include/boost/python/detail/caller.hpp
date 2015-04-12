@@ -130,7 +130,7 @@ private:
             detail::make_invoke_tag<Result, Function>{},
             create_result_converter<CallPolicies, Result>(arg_pack.base_args),
             m_function,
-            converters...
+            std::move(converters)...
         );
 
         return CallPolicies::postcall(arg_pack, result);

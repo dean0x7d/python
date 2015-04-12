@@ -6,6 +6,7 @@
 # define AS_TO_PYTHON_FUNCTION_DWA2002121_HPP
 # include <boost/python/detail/prefix.hpp>
 # include <type_traits>
+# include <utility>
 
 namespace boost { namespace python { namespace converter { 
 
@@ -31,11 +32,22 @@ struct as_to_python_function
         // modify its argument is if T is an auto_ptr-like type. There
         // is still a const-correctness hole w.r.t. auto_ptr<U> const,
         // but c'est la vie.
-        return ToPython::convert(*const_cast<T*>(static_cast<T const*>(x)));
+        return convert_impl(*const_cast<T*>(static_cast<T const*>(x)),
+                            std::is_copy_constructible<T>{});
     }
+
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
     static PyTypeObject const * get_pytype() { return ToPython::get_pytype(); }
 #endif
+
+private:
+    static PyObject* convert_impl(T& x, std::true_type) {
+        return ToPython::convert(x);
+    }
+
+    static PyObject* convert_impl(T& x, std::false_type) {
+        return ToPython::convert(std::move_if_noexcept(x));
+    }
 };
 
 }}} // namespace boost::python::converter
