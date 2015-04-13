@@ -56,36 +56,24 @@
 //        convertible to bool. True iff T(X::construct(p)) will not
 //        throw.
 
-// Forward declarations
-//
-namespace boost { namespace python
-{
-  namespace api
-  {
-    class object; 
-  }
-}}
-
 namespace boost { namespace python { namespace converter { 
-
 
 // Specializations for handle<T>
 template <class T>
 struct handle_object_manager_traits
     : pyobject_traits<typename T::element_type>
 {
- private:
-  typedef pyobject_traits<typename T::element_type> base;
-  
- public:
-  static constexpr bool is_specialized = true;
+private:
+    using base = pyobject_traits<typename T::element_type>;
 
-  // Initialize with a null_ok pointer for efficiency, bypassing the
-  // null check since the source is always non-null.
-  static null_ok<typename T::element_type>* adopt(PyObject* p)
-  {
-      return python::allow_null(base::checked_downcast(p));
-  }
+public:
+    static constexpr bool is_specialized = true;
+
+    // Initialize with a null_ok pointer for efficiency, bypassing the
+    // null check since the source is always non-null.
+    static null_ok<typename T::element_type>* adopt(PyObject* p) {
+        return python::allow_null(base::checked_downcast(p));
+    }
 };
 
 template <class T>
@@ -102,20 +90,11 @@ struct object_manager_traits : cpp14::conditional_t<
     default_object_manager_traits<T>
 > {};
 
-//
 // Traits for detecting whether a type is an object manager or a
 // (cv-qualified) reference to an object manager.
-// 
-
 template <class T>
 using is_object_manager = std::integral_constant<bool, 
     object_manager_traits<T>::is_specialized
->;
-
-template <class T>
-using is_reference_to_object_manager = std::integral_constant<bool,
-    std::is_reference<T>::value &&
-    is_object_manager<cpp14::remove_cv_t<cpp14::remove_reference_t<T>>>::value
 >;
 
 }}} // namespace boost::python::converter

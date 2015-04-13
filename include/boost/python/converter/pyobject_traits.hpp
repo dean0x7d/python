@@ -6,15 +6,13 @@
 # define PYOBJECT_TRAITS_DWA2002720_HPP
 
 # include <boost/python/detail/prefix.hpp>
-# include <boost/python/converter/pyobject_type.hpp>
 
 namespace boost { namespace python { namespace converter { 
 
 template <class> struct pyobject_traits;
 
 template <>
-struct pyobject_traits<PyObject>
-{
+struct pyobject_traits<PyObject> {
     // All objects are convertible to PyObject
     static bool check(PyObject*) { return true; }
     static PyObject* checked_downcast(PyObject* x) { return x; }
@@ -26,10 +24,26 @@ struct pyobject_traits<PyObject>
 //
 // Specializations
 //
+template<class Object, PyTypeObject* pytype>
+struct pyobject_traits_specialization {
+    static bool check(PyObject* x) {
+        return PyObject_IsInstance(x, (PyObject*)pytype);
+    }
 
-# define BOOST_PYTHON_BUILTIN_OBJECT_TRAITS(T)                  \
-    template <> struct pyobject_traits<Py##T##Object>           \
-        : pyobject_type<Py##T##Object, &Py##T##_Type> {}
+    static Object* checked_downcast(PyObject* p) {
+        return python::downcast<Object>(python::pytype_check(pytype, p));
+    }
+
+#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
+    static PyTypeObject const* get_pytype() { return pytype; }
+#endif
+};
+
+# define BOOST_PYTHON_BUILTIN_OBJECT_TRAITS(T)                     \
+template<>                                                         \
+struct pyobject_traits<Py##T##Object>                              \
+    : pyobject_traits_specialization<Py##T##Object, &Py##T##_Type> \
+{};
 
 // This is not an exhaustive list; should be expanded.
 BOOST_PYTHON_BUILTIN_OBJECT_TRAITS(Type);

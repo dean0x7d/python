@@ -8,7 +8,6 @@
 # include <boost/python/detail/prefix.hpp>
 # include <boost/python/detail/raw_pyobject.hpp>
 # include <boost/python/cast.hpp>
-# include <boost/python/converter/pyobject_type.hpp>
 # include <boost/python/errors.hpp>
 
 namespace boost { namespace python { namespace converter { 
@@ -19,23 +18,22 @@ template <class T> struct object_manager_traits;
 
 // Derive specializations of object_manager_traits from this class
 // when T is an object manager for a particular Python type hierarchy.
-//
-template <PyTypeObject* pytype, class T>
-struct pytype_object_manager_traits
-    : pyobject_type<T, pytype> // provides check()
-{
+template<PyTypeObject* pytype, class T>
+struct pytype_object_manager_traits {
     static constexpr bool is_specialized = true;
-    static inline python::detail::new_reference adopt(PyObject*);
-};
 
-//
-// implementations
-//
-template <PyTypeObject* pytype, class T>
-inline python::detail::new_reference pytype_object_manager_traits<pytype,T>::adopt(PyObject* x)
-{
-    return python::detail::new_reference(python::pytype_check(pytype, x));
-}
+    static bool check(PyObject* x) {
+        return PyObject_IsInstance(x, (PyObject*)pytype);
+    }
+
+    static python::detail::new_reference adopt(PyObject* p) {
+        return python::detail::new_reference(python::pytype_check(pytype, p));
+    }
+
+#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
+    static PyTypeObject const* get_pytype() { return pytype; }
+#endif
+};
 
 }}} // namespace boost::python::converter
 
