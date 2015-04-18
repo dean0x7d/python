@@ -32,23 +32,10 @@ namespace converter
 // Provide specializations of to_python_value
 template <class T> struct to_python_value;
 
-namespace detail
-{
-  // Since there's no registry lookup, always report the existence of
-  // a converter.
-  struct builtin_to_python
-  {
-      // This information helps make_getter() decide whether to try to
-      // return an internal reference or not. I don't like it much,
-      // but it will have to serve for now.
-      static constexpr bool uses_registry = false;
-  };
-}
-
 // Use expr to create the PyObject corresponding to x
 # define BOOST_PYTHON_RETURN_TO_PYTHON_BY_VALUE(T, expr, pytype)\
 template<>                                                      \
-struct to_python_value<T> : detail::builtin_to_python {         \
+struct to_python_value<T> {                                     \
     PyObject* operator()(T const& x) const {                    \
         return (expr);                                          \
     }                                                           \

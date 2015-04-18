@@ -31,10 +31,6 @@ namespace detail
           return converter::object_manager_traits<T>::get_pytype();
       }
 #endif
-      // This information helps make_getter() decide whether to try to
-      // return an internal reference or not. I don't like it much,
-      // but it will have to serve for now.
-      static constexpr bool uses_registry = false;
   };
 
   template <class T>
@@ -75,10 +71,6 @@ struct to_python_value<converter::shared_ptr<T>> {
         return converter::registered<T>::converters.to_python_target_type();
     }
 #endif
-    // This information helps make_getter() decide whether to try to
-    // return an internal reference or not. I don't like it much,
-    // but it will have to serve for now.
-    static constexpr bool uses_registry = false;
 };
 
 template<class T>

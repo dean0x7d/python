@@ -34,9 +34,17 @@ namespace detail {
   // pointee type), to-python conversions will attempt to produce an
   // object which refers to the original C++ object, rather than a
   // copy. See default_getter_policy for rationale.
+  template<class T, class = void>
+  struct uses_registry : std::false_type {};
+
+  template<class T>
+  struct uses_registry<T, decltype((void)make_to_python_value<T>::uses_registry, void())>
+      : std::integral_constant<bool, make_to_python_value<T>::uses_registry>
+  {};
+
   template <class T>
   using default_getter_by_ref = std::integral_constant<bool,
-      make_to_python_value<T>::uses_registry && std::is_class<T>::value
+      uses_registry<T>::value && std::is_class<T>::value
   >;
 
   // Metafunction computing the default CallPolicy to use for reading
