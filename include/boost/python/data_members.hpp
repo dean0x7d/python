@@ -7,8 +7,6 @@
 
 # include <boost/python/detail/prefix.hpp>
 
-# include <boost/python/handle.hpp>
-
 # include <boost/python/return_value_policy.hpp>
 # include <boost/python/return_by_value.hpp>
 # include <boost/python/return_internal_reference.hpp>
@@ -16,10 +14,7 @@
 
 # include <boost/python/converter/builtin_converters.hpp>
 
-# include <boost/python/detail/not_specified.hpp>
-# include <boost/python/detail/value_arg.hpp>
-
-namespace boost { namespace python { 
+namespace boost { namespace python {
 
 //
 // This file defines the make_getter and make_setter function
@@ -28,51 +23,7 @@ namespace boost { namespace python {
 // can be used for attribute access on wrapped classes.
 //
 
-namespace detail
-{
-
-  // A small function object which handles the getting and setting of
-  // data members.
-  template <class Data, class Class>
-  struct member
-  {
-   public:      
-      member(Data Class::*which) : m_which(which) {}
-      
-      Data& operator()(Class& c) const
-      {
-          return c.*m_which;
-      }
-
-      void operator()(Class& c, value_arg_t<Data> d) const
-      {
-          c.*m_which = d;
-      }
-   private:
-      Data Class::*m_which;
-  };
-
-  // A small function object which handles the getting and setting of
-  // non-member objects.
-  template <class Data>
-  struct datum
-  {
-   public:      
-      datum(Data *which) : m_which(which) {}
-      
-      Data& operator()() const
-      {
-          return *m_which;
-      }
-
-      void operator()(value_arg_t<Data> d) const
-      {
-          *m_which = d;
-      }
-   private:
-      Data *m_which;
-  };
-  
+namespace detail {
   //
   // Helper metafunction for determining the default CallPolicy to use
   // for attribute access.  If T is a [reference to a] class type X
@@ -82,12 +33,20 @@ namespace detail
   // smart pointer types which produce a wrapped class instance of the
   // pointee type), to-python conversions will attempt to produce an
   // object which refers to the original C++ object, rather than a
-  // copy.  See default_member_getter_policy for rationale.
-  // 
+  // copy. See default_getter_policy for rationale.
   template <class T>
   using default_getter_by_ref = std::integral_constant<bool,
       make_to_python_value<T>::uses_registry && std::is_class<T>::value
   >;
+
+  // Metafunction computing the default CallPolicy to use for reading
+  // non-member data.
+  template<class Data>
+  struct default_getter_policy : cpp14::conditional_t<
+      default_getter_by_ref<cpp14::remove_pointer_t<Data>>::value,
+      return_value_policy<reference_existing_object>,
+      return_value_policy<return_by_value>
+  > {};
 
   // Metafunction computing the default CallPolicy to use for reading
   // data members
@@ -97,67 +56,41 @@ namespace detail
   // return_internal_reference so that we can do things like
   //    x.y.z =  1
   // and get the right result.
-  template <class T>
-  using default_member_getter_policy_t = cpp14::conditional_t<
-      default_getter_by_ref<T>::value,
+  template<class Data, class Class>
+  struct default_getter_policy<Data Class::*> : cpp14::conditional_t<
+      default_getter_by_ref<Data>::value,
       return_internal_reference<>,
       return_value_policy<return_by_value>
-  >;
-
-  // Metafunction computing the default CallPolicy to use for reading
-  // non-member data.
-  template <class T>
-  using default_datum_getter_policy_t = cpp14::conditional_t<
-      default_getter_by_ref<T>::value,
-      return_value_policy<reference_existing_object>,
-      return_value_policy<return_by_value>
-  >;
+  > {};
 
   //
   // make_getter helper function family -- These helpers to
   // boost::python::make_getter are used to dispatch behavior.
 
-  // Handle non-member pointers with policies
-  template <class D, class Policies>
-  inline object make_getter(D* d, Policies const& policies)
-  {
+  // Handle non-member pointers
+  template<class Data, class CallPolicies>
+  inline object make_getter(Data* d, CallPolicies const& call_policies) {
       return python::make_function(
-          detail::datum<D>(d), policies, detail::type_list<D&>()
+          [d]() -> Data& { return *d; },
+          call_policies,
+          type_list<Data&>{}
       );
-  }
-  
-  // Handle non-member pointers without policies
-  template <class D>
-  inline object make_getter(D* d, not_specified)
-  {
-      return detail::make_getter(d, default_datum_getter_policy_t<D>());
   }
 
-  // Handle pointers-to-members with policies
-  template <class C, class D, class Policies>
-  inline object make_getter(D C::*pm, Policies const& policies)
-  {
-      typedef C Class;
+  // Handle pointers-to-members
+  template<class Class, class Data, class CallPolicies>
+  inline object make_getter(Data Class::*pm, CallPolicies const& call_policies) {
       return python::make_function(
-          detail::member<D,Class>(pm)
-        , policies
-        , detail::type_list<D&,Class&>()
+          [pm](Class& c) -> Data& { return c.*pm; },
+          call_policies,
+          type_list<Data&, Class&>{}
       );
-  }
-      
-  // Handle pointers-to-members without policies
-  template <class C, class D>
-  inline object make_getter(D C::*pm, not_specified)
-  {
-      return detail::make_getter(pm, default_member_getter_policy_t<D>());
   }
 
   // Handle references
-  template <class D, class P>
-  inline object make_getter(D& d, P const& p)
-  {
-      // Just dispatch to the handler for pointer types.
-      return detail::make_getter(&d, p);
+  template<class Data, class CallPolicies>
+  inline object make_getter(Data& d, CallPolicies const& cp) {
+      return detail::make_getter(&d, cp);
   }
 
   //
@@ -165,30 +98,29 @@ namespace detail
   // boost::python::make_setter are used to dispatch behavior.
   
   // Handle non-member pointers
-  template <class D, class Policies>
-  inline object make_setter(D* p, Policies const& policies)
-  {
+  template<class Data, class CallPolicies>
+  inline object make_setter(Data* d, CallPolicies const& call_policies) {
       return python::make_function(
-          detail::datum<D>(p), policies, detail::type_list<void,D const&>()
+          [d](Data const& rhs) { *d = rhs; },
+          call_policies,
+          type_list<void, Data const&>{}
       );
   }
 
   // Handle pointers-to-members
-  template <class C, class D, class Policies>
-  inline object make_setter(D C::*pm, Policies const& policies)
-  {
+  template<class Class, class Data, class CallPolicies>
+  inline object make_setter(Data Class::*pm, CallPolicies const& call_policies) {
       return python::make_function(
-          detail::member<D,C>(pm)
-        , policies
-        , detail::type_list<void, C&, D const&>()
+          [pm](Class& c, Data const& rhs) { c.*pm = rhs; },
+          call_policies,
+          type_list<void, Class&, Data const&>()
       );
   }
 
   // Handle references
-  template <class D, class Policies>
-  inline object make_setter(D& x, Policies const& policies)
-  {
-      return detail::make_setter(&x, policies);
+  template<class Data, class CallPolicies>
+  inline object make_setter(Data& x, CallPolicies const& cp) {
+      return detail::make_setter(&x, cp);
   }
 }
 
@@ -197,8 +129,8 @@ namespace detail
 // retrieves data through the first argument and is appropriate for
 // use as the `get' function in Python properties .  The second,
 // policies argument, is optional.
-template <class D, class CallPolicies = detail::not_specified>
-inline object make_getter(D const& d, CallPolicies const& cp = {}) {
+template<class Data, class CallPolicies = detail::default_getter_policy<Data>>
+inline object make_getter(Data const& d, CallPolicies const& cp = {}) {
     return detail::make_getter(d, cp);
 }
 
@@ -207,8 +139,8 @@ inline object make_getter(D const& d, CallPolicies const& cp = {}) {
 // writes data through the first argument and is appropriate for
 // use as the `set' function in Python properties .  The second,
 // policies argument, is optional.
-template <class D, class CallPolicies = default_call_policies>
-inline object make_setter(D&& d, CallPolicies const& cp = {}) {
+template<class Data, class CallPolicies = default_call_policies>
+inline object make_setter(Data&& d, CallPolicies const& cp = {}) {
     return detail::make_setter(d, cp);
 }
 
