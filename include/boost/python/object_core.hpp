@@ -23,6 +23,8 @@
 # include <boost/python/detail/def_helper_fwd.hpp>
 # include <boost/python/detail/unwrap.hpp>
 
+# include <boost/python/converter/to_python_fwd.hpp>
+
 namespace boost { namespace python { 
 
 namespace detail
@@ -30,11 +32,6 @@ namespace detail
   class kwds_proxy; 
   class args_proxy; 
 } 
-
-namespace converter
-{
-  template <class T> struct arg_to_python;
-}
 
 // Put this in an inner namespace so that the generalized operators won't take over
 namespace api

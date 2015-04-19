@@ -6,14 +6,10 @@
 # define ARG_TO_PYTHON_DWA200265_HPP
 
 # include <boost/python/ptr.hpp>
+# include <boost/python/to_python_value.hpp>
 # include <boost/python/to_python_indirect.hpp>
 # include <boost/python/object/function_handle.hpp>
 # include <boost/python/base_type_traits.hpp>
-
-# include <boost/python/converter/registered.hpp>
-# include <boost/python/converter/shared_ptr.hpp>
-// Bring in specializations
-# include <boost/python/converter/builtin_converters.hpp>
 
 # ifdef BOOST_PYTHON_USE_STD_REF
 #  include <functional>
@@ -41,7 +37,7 @@ namespace detail
   template <class T>
   struct value_arg_to_python : handle<>  {
       value_arg_to_python(T const& x)
-          : handle<>(registered<T>::converters.to_python(&x))
+          : handle<>(to_python_value<T>{}(x))
       {}
   };
 
@@ -93,6 +89,14 @@ struct arg_to_python : detail::select_arg_to_python_t<T> {
     using detail::select_arg_to_python_t<T>::select_arg_to_python_t;
 };
 
+// Make sure char const* is not interpreted as a regular pointer
+template<>
+struct arg_to_python<char const*> : handle<> {
+    arg_to_python(char const* x)
+        : handle<>(to_python_value<char const*>{}(x))
+    {}
+};
+
 // Interpret char[N] as char const* for the sake of conversion
 template<std::size_t N>
 struct arg_to_python<char[N]> : arg_to_python<char const*> {
@@ -115,11 +119,6 @@ struct arg_to_python<reference_wrapper<T>> : handle<> {
     arg_to_python(T& x)
         : handle<>{to_python_indirect<T&, python::detail::make_reference_holder>{}(x)}
     {}
-};
-
-template<class T>
-struct arg_to_python<shared_ptr<T>> : handle<> {
-    arg_to_python(shared_ptr<T> const& x) : handle<>{shared_ptr_to_python(x)} {}
 };
 
 }}} // namespace boost::python::converter

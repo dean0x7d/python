@@ -7,14 +7,10 @@
 
 # include <boost/python/detail/prefix.hpp>
 
-# include <boost/python/handle.hpp>
-
 # include <boost/python/converter/registered.hpp>
 # include <boost/python/converter/builtin_converters.hpp>
 # include <boost/python/converter/object_manager.hpp>
 # include <boost/python/converter/shared_ptr.hpp>
-
-# include <boost/python/detail/value_arg.hpp>
 
 namespace boost { namespace python { 
 
@@ -22,7 +18,7 @@ namespace detail
 {
   template <class T>
   struct object_manager_to_python_value {
-      PyObject* operator()(value_arg_t<T> x) const {
+      PyObject* operator()(T const& x) const {
           return python::upcast<PyObject>(python::xincref(get_managed_object(x)));
       }
 
@@ -35,7 +31,7 @@ namespace detail
 
   template <class T>
   struct registry_to_python_value {
-      PyObject* operator()(value_arg_t<T> x) const {
+      PyObject* operator()(T const& x) const {
           return converter::registered<T>::converters.to_python(&x);
       }
 

@@ -8,6 +8,9 @@
 # include <boost/python/detail/none.hpp>
 # include <boost/python/handle.hpp>
 # include <boost/python/ssize_t.hpp>
+
+# include <boost/python/converter/to_python_fwd.hpp>
+
 # include <string>
 # include <complex>
 # include <limits>
@@ -22,18 +25,14 @@ namespace boost { namespace python {
 
 namespace converter
 {
-  template <class T> struct arg_to_python;
   BOOST_PYTHON_DECL PyObject* do_return_to_python(char);
   BOOST_PYTHON_DECL PyObject* do_return_to_python(char const*);
   BOOST_PYTHON_DECL PyObject* do_return_to_python(PyObject*);
   BOOST_PYTHON_DECL PyObject* do_arg_to_python(PyObject*);
 }
 
-// Provide specializations of to_python_value
-template <class T> struct to_python_value;
-
-// Use expr to create the PyObject corresponding to x
-# define BOOST_PYTHON_RETURN_TO_PYTHON_BY_VALUE(T, expr, pytype)\
+// Specialize argument and return value converters for T using expr
+# define BOOST_PYTHON_TO_PYTHON_BY_VALUE(T, expr, pytype)       \
 template<>                                                      \
 struct to_python_value<T> {                                     \
     PyObject* operator()(T const& x) const {                    \
@@ -43,19 +42,6 @@ struct to_python_value<T> {                                     \
         return (pytype);                                        \
     }                                                           \
 };
-
-# define BOOST_PYTHON_ARG_TO_PYTHON_BY_VALUE(T, expr)   \
-namespace converter {                                   \
-    template<>                                          \
-    struct arg_to_python<T> : handle<> {                \
-        arg_to_python(T const& x) : handle<>(expr) {}   \
-    };                                                  \
-}
-
-// Specialize argument and return value converters for T using expr
-# define BOOST_PYTHON_TO_PYTHON_BY_VALUE(T, expr, pytype)  \
-        BOOST_PYTHON_RETURN_TO_PYTHON_BY_VALUE(T,expr, pytype)  \
-        BOOST_PYTHON_ARG_TO_PYTHON_BY_VALUE(T,expr)
 
 // Specialize converters for signed and unsigned T to Python Int
 #if PY_VERSION_HEX >= 0x03000000
@@ -126,13 +112,11 @@ BOOST_PYTHON_TO_PYTHON_BY_VALUE(std::wstring, ::PyUnicode_FromWideChar(x.data(),
 BOOST_PYTHON_TO_PYTHON_BY_VALUE(float, ::PyFloat_FromDouble(x), &PyFloat_Type)
 BOOST_PYTHON_TO_PYTHON_BY_VALUE(double, ::PyFloat_FromDouble(x), &PyFloat_Type)
 BOOST_PYTHON_TO_PYTHON_BY_VALUE(long double, ::PyFloat_FromDouble(x), &PyFloat_Type)
-BOOST_PYTHON_RETURN_TO_PYTHON_BY_VALUE(PyObject*, converter::do_return_to_python(x), 0)
+BOOST_PYTHON_TO_PYTHON_BY_VALUE(PyObject*, converter::do_return_to_python(x), 0)
 BOOST_PYTHON_TO_PYTHON_BY_VALUE(std::complex<float>, ::PyComplex_FromDoubles(x.real(), x.imag()), &PyComplex_Type)
 BOOST_PYTHON_TO_PYTHON_BY_VALUE(std::complex<double>, ::PyComplex_FromDoubles(x.real(), x.imag()), &PyComplex_Type)
 BOOST_PYTHON_TO_PYTHON_BY_VALUE(std::complex<long double>, ::PyComplex_FromDoubles(x.real(), x.imag()), &PyComplex_Type)
 
-# undef BOOST_PYTHON_RETURN_TO_PYTHON_BY_VALUE
-# undef BOOST_PYTHON_ARG_TO_PYTHON_BY_VALUE
 # undef BOOST_PYTHON_TO_PYTHON_BY_VALUE
 # undef BOOST_PYTHON_TO_INT
     
