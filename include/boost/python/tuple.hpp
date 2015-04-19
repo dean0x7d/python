@@ -42,7 +42,7 @@ namespace converter {
 template <class... Args>
 tuple make_tuple(Args const&... args) {
     return tuple{detail::new_reference(
-        PyTuple_Pack(sizeof...(Args), incref(object{args}.ptr())...)
+        PyTuple_Pack(sizeof...(Args), object{args}.ptr()...)
     )};
 };
 
