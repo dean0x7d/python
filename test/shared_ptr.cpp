@@ -173,13 +173,6 @@ BOOST_PYTHON_MODULE(shared_ptr_ext)
         .staticmethod("call_f")
         ;
 
-    // This is the ugliness required to register a to-python converter
-    // for shared_ptr<A>.
-    objects::class_value_wrapper<
-        shared_ptr<A>
-      , objects::make_ptr_instance<A, objects::pointer_holder<shared_ptr<A>,A> >
-    >();
-        
     def("New", &New);
 
     def("factory", factory);

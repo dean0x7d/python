@@ -40,6 +40,8 @@ struct BOOST_PYTHON_DECL registration
     explicit registration(type_info target, bool is_shared_ptr = false)
         : target_type(target), is_shared_ptr(is_shared_ptr) {}
 
+    // Check that a to_python converter exists
+    bool has_to_python() const { return m_to_python != nullptr; }
     // Convert the appropriately-typed data to Python
     PyObject* to_python(void const*) const;
 

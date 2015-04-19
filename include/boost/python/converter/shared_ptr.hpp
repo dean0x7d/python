@@ -6,6 +6,7 @@
 # define SHARED_PTR_FROM_PYTHON_DWA20021130_HPP
 
 # include <boost/python/handle.hpp>
+# include <boost/python/register_ptr_to_python.hpp>
 
 # include <boost/python/converter/shared_ptr_fwd.hpp>
 # include <boost/python/converter/to_python_fwd.hpp>
@@ -77,13 +78,19 @@ private:
 
 template<class T>
 struct to_python_value<converter::shared_ptr<T>> {
-    PyObject* operator()(converter::shared_ptr<T> const& x) const {
-        if (!x)
+    PyObject* operator()(converter::shared_ptr<T> const& source) const {
+        if (!source) {
             return python::detail::none();
-        else if (auto* d = get_deleter<converter::shared_ptr_deleter>(x))
+        }
+        else if (auto* d = get_deleter<converter::shared_ptr_deleter>(source)) {
             return incref(d->owner.get());
-        else
-            return converter::registered<converter::shared_ptr<T>>::converters.to_python(&x);
+        }
+        else {
+            auto const& converters = converter::registered<converter::shared_ptr<T>>::converters;
+            if (!converters.has_to_python())
+                register_ptr_to_python<converter::shared_ptr<T>>();
+            return converters.to_python(&source);
+        }
     }
 
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
