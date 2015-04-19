@@ -10,6 +10,7 @@
 # include <boost/python/ssize_t.hpp>
 
 # include <boost/python/converter/to_python_fwd.hpp>
+# include <boost/python/converter/shared_ptr.hpp>
 
 # include <string>
 # include <complex>

@@ -10,7 +10,6 @@
 # include <boost/python/converter/registered.hpp>
 # include <boost/python/converter/builtin_converters.hpp>
 # include <boost/python/converter/object_manager.hpp>
-# include <boost/python/converter/shared_ptr.hpp>
 
 namespace boost { namespace python { 
 
@@ -55,19 +54,6 @@ struct to_python_value : cpp14::conditional_t<
     detail::object_manager_to_python_value<T>,
     detail::registry_to_python_value<T>
 > {};
-
-template<class T>
-struct to_python_value<converter::shared_ptr<T>> {
-    PyObject* operator()(converter::shared_ptr<T> const& x) const {
-        return converter::shared_ptr_to_python(x);
-    }
-
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    static PyTypeObject const* get_pytype() {
-        return converter::registered<T>::converters.to_python_target_type();
-    }
-#endif
-};
 
 template<class T>
 using make_to_python_value = to_python_value<cpp14::remove_cv_t<cpp14::remove_reference_t<T>>>;

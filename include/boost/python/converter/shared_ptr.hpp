@@ -8,6 +8,7 @@
 # include <boost/python/handle.hpp>
 
 # include <boost/python/converter/shared_ptr_fwd.hpp>
+# include <boost/python/converter/to_python_fwd.hpp>
 # include <boost/python/converter/from_python.hpp>
 # include <boost/python/converter/rvalue_from_python_data.hpp>
 # include <boost/python/converter/registered.hpp>
@@ -28,16 +29,6 @@ struct shared_ptr_deleter {
 
     handle<> owner;
 };
-
-template<class T>
-PyObject* shared_ptr_to_python(shared_ptr<T> const& x) {
-    if (!x)
-        return python::detail::none();
-    else if (auto* d = get_deleter<shared_ptr_deleter>(x))
-        return incref(d->owner.get());
-    else
-        return converter::registered<shared_ptr<T>>::converters.to_python(&x);
-}
 
 template <class T>
 struct shared_ptr_from_python {
@@ -82,6 +73,26 @@ private:
     }
 };
 
-}}} // namespace boost::python::converter
+} // namespace converter
+
+template<class T>
+struct to_python_value<converter::shared_ptr<T>> {
+    PyObject* operator()(converter::shared_ptr<T> const& x) const {
+        if (!x)
+            return python::detail::none();
+        else if (auto* d = get_deleter<converter::shared_ptr_deleter>(x))
+            return incref(d->owner.get());
+        else
+            return converter::registered<converter::shared_ptr<T>>::converters.to_python(&x);
+    }
+
+#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
+    static PyTypeObject const* get_pytype() {
+        return converter::registered<T>::converters.to_python_target_type();
+    }
+#endif
+};
+
+}} // namespace boost::python
 
 #endif // SHARED_PTR_FROM_PYTHON_DWA20021130_HPP
