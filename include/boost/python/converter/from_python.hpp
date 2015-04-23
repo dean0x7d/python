@@ -93,13 +93,24 @@ private:
     void* result;
 };
 
+// register rvalue
+//
+//   Used to register rvalue converters at 'def' calls (when function signatures are read).
+//   This is useful for template types like std::tuple. A specialization should be provided
+//   with the necessary converter registration. See 'std::tuple.hpp' for an example.
+//   Note: This is not ideal, but needed for now because pytype information is runtime data
+//   which must be initialized before anything else.
+//
+template<class T>
+struct rvalue_from_python_register {};
+
 // rvalue converters
 //
 //   These require only that an object of type T can be created from
 //   the given Python object, but not that the T object exist somewhere in storage.
 //
 template<class T>
-struct rvalue_from_python_base {
+struct rvalue_from_python_base : rvalue_from_python_register<T> {
     rvalue_from_python_base(PyObject* source)
         : source{source},
           data{rvalue_from_python_stage1(source, registered<T>::converters)}
