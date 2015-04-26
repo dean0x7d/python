@@ -392,6 +392,12 @@ namespace converter {
   {};
 }
 
+inline namespace literals {
+    inline str operator"" _s(char const* c_str, std::size_t) {
+        return str{c_str};
+    }
+}
+
 }}  // namespace boost::python
 
 #endif // STR_20020703_HPP
