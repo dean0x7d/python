@@ -35,9 +35,9 @@ template <class T>
 struct shared_ptr_from_python {
     shared_ptr_from_python() {
         converter::registry::insert(
-            &convertible, &construct, type_id<shared_ptr<T>>(),
+            &convertible, &construct, type_id<shared_ptr<T>>()
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-            &converter::expected_from_python_type_direct<T>::get_pytype
+            , &converter::expected_from_python_type_direct<T>::get_pytype
 #endif
         );
     }

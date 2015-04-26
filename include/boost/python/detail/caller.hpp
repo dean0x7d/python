@@ -92,23 +92,19 @@ struct caller<Function, CallPolicies, type_list<Result, Args...>, cpp14::index_s
     static unsigned min_arity() { return sizeof...(Args); }
     
     static py_func_sig_info signature() {
-        using Sig = type_list<Result, Args...>;
-        signature_element const* sig = detail::signature<Sig>::elements();
+        using Sig = typename CallPolicies::template extract_signature<type_list<Result, Args...>>::type;
+        auto sig = detail::signature<Sig>::elements();
 
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
         using rtype = typename CallPolicies::template extract_return_type<Sig>::type;
 
-        static const signature_element ret = {
+        sig[0] = {
             std::is_same<void, rtype>::value ? "void" : type_id<rtype>().name(),
-            &select_result_converter_t<CallPolicies, Result>::get_pytype,
-            std::is_reference<rtype>::value &&
-                !std::is_const<cpp14::remove_reference_t<rtype>>::value
+            select_result_converter_t<CallPolicies, Result>::get_pytype(),
+            is_reference_to_non_const<rtype>::value
         };
-        py_func_sig_info res = {sig, &ret};
-#else
-        py_func_sig_info res = {sig, sig};
 #endif
-        return res;
+        return sig;
     }
 
 private:

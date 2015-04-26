@@ -8,10 +8,6 @@
 # include <boost/python/detail/none.hpp>
 # include <boost/python/detail/value_arg.hpp>
 
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-# include <boost/python/converter/pytype_function.hpp>
-#endif
-
 # include <boost/python/refcount.hpp>
 
 namespace boost { namespace python { 
@@ -26,7 +22,8 @@ namespace detail {
 
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
                 static PyTypeObject const* get_pytype() {
-                    return converter::expected_pytype_for_arg<T>::get_pytype();
+                    auto r = converter::registry::query(type_id<cpp14::remove_pointer_t<T>>());
+                    return r ? r->expected_from_python_type() : nullptr;
                 }
 #endif
             };

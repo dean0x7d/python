@@ -22,7 +22,7 @@ class function_doc_signature_generator{
     static std::vector<function const*> flatten(function const *f);
     static std::vector<function const*> split_seq_overloads( const std::vector<function const *> &funcs, bool split_on_doc_change);
     static str raw_function_pretty_signature(function const *f);
-    static str parameter_string(py_function const &f, size_t n, object arg_names, bool cpp_types);
+    static str parameter_string(python::detail::signature_element const& s, size_t n, object arg_names, bool cpp_types);
     static str pretty_signature(function const *f, size_t n_overloads,  bool cpp_types = false);
 
 public:

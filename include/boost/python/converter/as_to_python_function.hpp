@@ -36,10 +36,6 @@ struct as_to_python_function
                             std::is_copy_constructible<T>{});
     }
 
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    static PyTypeObject const * get_pytype() { return ToPython::get_pytype(); }
-#endif
-
 private:
     static PyObject* convert_impl(T& x, std::true_type) {
         return ToPython::convert(x);

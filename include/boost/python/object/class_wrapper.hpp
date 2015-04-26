@@ -6,9 +6,6 @@
 # define CLASS_WRAPPER_DWA20011221_HPP
 
 # include <boost/python/to_python_converter.hpp>
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-# include <boost/python/converter/pytype_function.hpp>
-#endif
 
 namespace boost { namespace python { namespace objects { 
 
@@ -28,7 +25,9 @@ struct class_cref_wrapper
         return MakeInstance::execute(x);
     }
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    static PyTypeObject const *get_pytype() { return converter::registered_pytype_direct<Src>::get_pytype(); }
+    static PyTypeObject const* get_pytype() {
+        return converter::registry::lookup(type_id<Src>()).m_class_object;
+    }
 #endif
 };
 

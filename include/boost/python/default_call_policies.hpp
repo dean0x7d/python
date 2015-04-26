@@ -47,6 +47,11 @@ struct default_call_policies {
     struct extract_return_type {
         using type = detail::front_t<Signature>;
     };
+
+    template<class Signature>
+    struct extract_signature {
+        using type = Signature;
+    };
 };
 
 struct default_result_converter {

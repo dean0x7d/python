@@ -8,49 +8,43 @@
 
 # include <boost/python/type_id.hpp>
 # include <boost/python/detail/type_list.hpp>
-# include <boost/python/converter/pytype_function.hpp>
+
+# include <memory>
 
 namespace boost { namespace python { namespace detail { 
 
-struct signature_element
-{
+struct signature_element {
     char const* basename;
-    converter::pytype_function pytype_f;
+    PyTypeObject const* pytype;
     bool lvalue;
 };
 
-struct py_func_sig_info
-{
-    signature_element const *signature;
-    signature_element const *ret;
-};
+using py_func_sig_info = std::unique_ptr<signature_element[]>;
 
 template<class T>
 using is_reference_to_non_const = std::integral_constant<bool,
 	std::is_reference<T>::value && !std::is_const<cpp14::remove_reference_t<T>>::value
 >;
 
+inline PyTypeObject const* get_expected_from_python_type(type_info ti) {
+    auto r = converter::registry::query(ti);
+    return r ? r->expected_from_python_type() : nullptr;
+};
+
 template<class Sig> struct signature;
 
 template<class... Args>
-struct signature<type_list<Args...>>
-{
-    static signature_element const* elements()
-    {
-        static signature_element const result[] = {
+struct signature<type_list<Args...>> {
+    static py_func_sig_info elements() {
+        return std::unique_ptr<signature_element[]>{new signature_element[sizeof...(Args)]{
+            { type_id<Args>().name(),
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-            { type_id<Args>().name(),
-              &converter::expected_pytype_for_arg<Args>::get_pytype,
-			  is_reference_to_non_const<Args>::value }...,
+              get_expected_from_python_type(type_id<cpp14::remove_pointer_t<Args>>()),
 #else
-            { type_id<Args>().name(),
-              0, 
-			  is_reference_to_non_const<Args>::value }...,
+              nullptr,
 #endif
-            {0, 0, 0}
-        };
-        
-        return result;
+              is_reference_to_non_const<Args>::value }...
+        }};
     }
 };
 

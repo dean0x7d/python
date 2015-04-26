@@ -27,8 +27,8 @@ namespace boost { namespace python { namespace objects {
         if (check_docs && f2->doc() != f1->doc() && f1->doc())
             return false;
 
-        python::detail::signature_element const* s1 = impl1.signature();
-        python::detail::signature_element const* s2 = impl2.signature();
+        auto s1 = impl1.signature();
+        auto s2 = impl2.signature();
 
         unsigned size = impl1.max_arity()+1;
 
@@ -111,32 +111,26 @@ namespace boost { namespace python { namespace objects {
             return none;
         }
 
-        PyTypeObject const * py_type = s.pytype_f?s.pytype_f():0;
-        if ( py_type )
-            return  py_type->tp_name;
-        else{
+        if (s.pytype)
+            return  s.pytype->tp_name;
+        else {
             static const char * object = "object";
             return object;
         }
     }
 
-    str function_doc_signature_generator::parameter_string(py_function const &f, size_t n, object arg_names, bool cpp_types)
+    str function_doc_signature_generator::parameter_string(
+        python::detail::signature_element const& s, size_t n, object arg_names, bool cpp_types)
     {
         str param;
 
-        python::detail::signature_element  const * s = f.signature();
-        if (cpp_types)
-        {
-            if(!n)
-                s = &f.get_return_type();
-            if (s[n].basename == 0)
-            {
+        if (cpp_types) {
+            if (s.basename == nullptr)
                 return str("...");
-            }
 
-            param = str(s[n].basename);
+            param = str(s.basename);
 
-            if (s[n].lvalue)
+            if (s.lvalue)
                  param += " {lvalue}";
 
         }
@@ -146,12 +140,12 @@ namespace boost { namespace python { namespace objects {
             {
                 object kv;
                 if ( arg_names && (kv = arg_names[n-1]) )
-                    param = str(" ({}){}").format(py_type_str(s[n]), kv[0]);
+                    param = str(" ({}){}").format(py_type_str(s), kv[0]);
                 else
-                    param = str(" ({}){}{}").format(py_type_str(s[n]), "arg", n);
+                    param = str(" ({}){}{}").format(py_type_str(s), "arg", n);
             }
             else //we are processing the return type
-                param = py_type_str(f.get_return_type());
+                param = py_type_str(s);
         }
 
         //an argument - check for default value and append it
@@ -184,10 +178,11 @@ namespace boost { namespace python { namespace objects {
 
         size_t n_extra_default_args=0;
 
+        auto s = impl.signature();
         for (unsigned n = 0; n <= arity; ++n)
         {
             formal_params.append(
-                parameter_string(impl, n, f->m_arg_names, cpp_types)
+                parameter_string(s[n], n, f->m_arg_names, cpp_types)
                 );
 
             // find all the arguments with default values preceeding the arity-n_overloads

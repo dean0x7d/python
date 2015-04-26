@@ -12,7 +12,7 @@
 |doc_objects( (dict)arg1, (list)arg2, (tuple)arg3, (str)arg4) -> None :
 
 >>> print selected_doc(X.__init__, 1, 2, 3, 4, 5)
-|__init__( (object)self, (int)value) -> None :
+|__init__( (X)self, (int)value) -> None :
 |    this is the __init__ function
 |    its documentation has two lines.
 |

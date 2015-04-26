@@ -228,9 +228,10 @@ PyObject* function::call(PyObject* args, PyObject* keywords) const
 object function::signature(bool show_return_type) const
 {
     py_function const& impl = m_fn;
-    
-    python::detail::signature_element const* return_type = impl.signature();
-    python::detail::signature_element const* s = return_type + 1;
+
+    auto signature = impl.signature();
+    auto return_type = signature[0];
+    auto s = signature.get() + 1;
     
     list formal_params;
     if (impl.max_arity() == 0)
@@ -262,11 +263,9 @@ object function::signature(bool show_return_type) const
     }
 
     if (show_return_type)
-        return "%s(%s) -> %s" % make_tuple(
-            m_name, str(", ").join(formal_params), return_type->basename);
-    return "%s(%s)" % make_tuple(
-        m_name, str(", ").join(formal_params));
-}
+        return "{}({}) -> {}"_s.format(m_name, ", "_s.join(formal_params), return_type.basename);
+    return "{}({})"_s.format(m_name, ", "_s.join(formal_params));
+};
 
 object function::signatures(bool show_return_type) const
 {

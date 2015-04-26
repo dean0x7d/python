@@ -12,10 +12,6 @@
 
 # include <boost/python/detail/none.hpp>
 
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-# include <boost/python/converter/pytype_function.hpp>
-#endif
-
 # include <boost/python/refcount.hpp>
 
 # include <memory>
@@ -40,7 +36,8 @@ struct to_python_indirect {
 
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
     static PyTypeObject const* get_pytype() {
-        return converter::registered_pytype<T>::get_pytype();
+        auto r = converter::registry::query(type_id<cpp14::remove_pointer_t<T>>());
+        return r ? r->m_class_object : nullptr;
     }
 #endif
 };

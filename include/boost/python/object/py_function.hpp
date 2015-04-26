@@ -60,8 +60,7 @@ struct signature_py_function_impl : py_function_impl_base {
     }
     
     virtual python::detail::py_func_sig_info signature() const final {
-        auto const* sig = python::detail::signature<Sig>::elements();
-        return {sig, sig};
+        return python::detail::signature<Sig>::elements();
     }
 
 private:
@@ -89,8 +88,7 @@ struct full_py_function_impl : py_function_impl_base {
     }
 
     virtual python::detail::py_func_sig_info signature() const final {
-        auto const* sig = python::detail::signature<Sig>::elements();
-        return {sig, sig};
+        return python::detail::signature<Sig>::elements();
     }
 
 private:
@@ -127,14 +125,10 @@ struct py_function {
         return m_impl->max_arity();
     }
 
-    python::detail::signature_element const* signature() const {
-        return m_impl->signature().signature;
+    python::detail::py_func_sig_info signature() const {
+        return m_impl->signature();
     }
 
-    python::detail::signature_element const& get_return_type() const {
-        return *m_impl->signature().ret;
-    }
-    
 private:
     std::unique_ptr<py_function_impl_base> m_impl;
 };

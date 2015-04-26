@@ -31,11 +31,14 @@ object make_keyword_range_function(Function f, CallPolicies const& cp, keyword_r
 // the C++ argument types to be passed to Holder's constructor.
 template<class Signature, class Holder, class CallPolicies>
 object make_keyword_range_constructor(CallPolicies const& cp, detail::keyword_range const& kw) {
-#if !defined( BOOST_PYTHON_NO_PY_SIGNATURES) && defined( BOOST_PYTHON_PY_SIGNATURES_PROPER_INIT_SELF_TYPE)
-    python_class<typename Holder::value_type>::register_();
-#endif
     return detail::make_keyword_range_function(
-        objects::make_holder<Holder, Signature>::execute, cp, kw
+        objects::make_holder<Holder, Signature>::execute,
+#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
+        objects::holder_policy<typename Holder::value_type, CallPolicies>{cp},
+#else
+        cp,
+#endif
+        kw
     );
 }
 
