@@ -13,15 +13,11 @@
 # include <boost/python/refcount.hpp>
 # include <boost/python/def_visitor.hpp>
 
-# include <boost/python/detail/raw_pyobject.hpp>
-# include <boost/python/detail/dependent.hpp>
-
 # include <boost/python/object/add_to_namespace.hpp>
 
-# include <boost/python/detail/is_xxx.hpp>
+# include <boost/python/detail/raw_pyobject.hpp>
 # include <boost/python/detail/string_literal.hpp>
 # include <boost/python/detail/def_helper_fwd.hpp>
-# include <boost/python/detail/unwrap.hpp>
 
 # include <boost/python/converter/to_python_fwd.hpp>
 
@@ -152,41 +148,45 @@ namespace api
       U& derived() { return *static_cast<U*>(this); }
   };
 
-  template <class T>
-  PyObject* object_initializer(T const& x);
-  
   class object : public object_operators<object> {
   public:
       // default constructor creates a None object
       object() noexcept : m_ptr{python::detail::none()} {}
       
       // explicit conversion from any C++ object to Python
-      template <class T>
-      explicit object(T const& x) : m_ptr{object_initializer(x)} {}
+      template<class T, class = cpp14::enable_if_t<!std::is_base_of<object, T>::value>>
+      explicit object(T const& x)
+          : m_ptr{incref(converter::arg_to_python<T>(x).get())}
+      {}
+
+      template<class T>
+      explicit object(proxy<T> const& x) noexcept
+          : m_ptr{incref(x.operator object().ptr())}
+      {}
 
       // Throw error_already_set() if the handle is null.
       explicit object(handle<> const& x)
-          : m_ptr{python::incref(python::expect_non_null(x.get()))}
+          : m_ptr{incref(expect_non_null(x.get()))}
       {}
 
       // copy constructor without NULL checking, for efficiency.
-      object(object const& rhs) noexcept : m_ptr{python::incref(rhs.m_ptr)} {}
+      object(object const& rhs) noexcept : m_ptr{incref(rhs.m_ptr)} {}
       object(object&& rhs) noexcept : m_ptr{rhs.release()} {}
 
       object& operator=(object const& rhs) noexcept {
-          python::incref(rhs.m_ptr);
-          python::decref(m_ptr);
+          incref(rhs.m_ptr);
+          decref(m_ptr);
           m_ptr = rhs.m_ptr;
           return *this;
       }
 
       object& operator=(object&& rhs) noexcept {
-          python::decref(m_ptr);
+          decref(m_ptr);
           m_ptr = rhs.release();
           return *this;
       }
 
-      ~object() { python::decref(m_ptr); }
+      ~object() { decref(m_ptr); }
 
       // Underlying object access -- returns a borrowed reference
       PyObject* ptr() const noexcept { return m_ptr; }
@@ -203,7 +203,7 @@ namespace api
       PyObject* m_ptr;
 
   public: // implementation detail -- for internal use only
-      explicit object(detail::borrowed_reference p) noexcept : m_ptr{python::incref((PyObject*)p)} {}
+      explicit object(detail::borrowed_reference p) noexcept : m_ptr{incref((PyObject*)p)} {}
       explicit object(detail::new_reference p) : m_ptr{expect_non_null((PyObject*)p)} {}
       explicit object(detail::new_non_null_reference p) noexcept : m_ptr{(PyObject*)p} {}
   };
@@ -218,55 +218,6 @@ namespace api
         : base(p) {}                                                                    \
     inline explicit derived(::boost::python::detail::new_non_null_reference p) noexcept \
         : base(p) {}
-
-  //
-  // object_initializer -- get the handle to construct the object with,
-  // based on whether T is a proxy or derived from object
-  //
-  template <bool is_proxy = false, bool is_object_manager = false>
-  struct object_initializer_impl {
-      static PyObject* get(object const& x, std::true_type) {
-          return python::incref(x.ptr());
-      }
-      
-      template <class T>
-      static PyObject* get(T const& x, std::false_type) {
-          return python::incref(converter::arg_to_python<T>(x).get());
-      }
-  };
-      
-  template <>
-  struct object_initializer_impl<true, false> {
-      template <class Policies>
-      static PyObject* get(proxy<Policies> const& x, std::false_type) {
-          return python::incref(x.operator object().ptr());
-      }
-  };
-
-  template <>
-  struct object_initializer_impl<false, true> {
-      template <class T, class U>
-      static PyObject* get(T const& x, U) {
-          return python::incref(get_managed_object(x));
-      }
-  };
-
-  template <>
-  struct object_initializer_impl<true, true>
-  {}; // empty implementation should cause an error
-
-  template <class T>
-  PyObject* object_initializer(T const& x) {
-      using type = cpp14::conditional_t<
-          python::detail::is_<std::reference_wrapper, T>::value,
-          detail::unwrap_t<T>,
-          T
-      >;
-      return object_initializer_impl<
-          detail::is_<boost::python::api::proxy, type>::value,
-          converter::is_object_manager<type>::value
-      >::get(x, std::is_base_of<object, T>());
-  }
 
 } // namespace api
 using api::object;
