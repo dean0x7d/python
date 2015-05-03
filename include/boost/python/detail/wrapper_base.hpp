@@ -11,79 +11,49 @@ namespace boost { namespace python {
 
 class override;
 
-namespace detail
-{
-  class BOOST_PYTHON_DECL_FORWARD wrapper_base;
-  
-  namespace wrapper_base_ // ADL disabler
-  {
-    inline PyObject* get_owner(wrapper_base const volatile& w);
+namespace detail {
 
-    inline PyObject*
-    owner_impl(void const volatile* /*x*/, std::false_type)
-    {
-        return 0;
+class BOOST_PYTHON_DECL wrapper_base {
+public:
+    PyObject* owner() const volatile { return m_self; }
+
+protected:
+    wrapper_base() = default;
+
+    override get_override(char const* name, PyTypeObject* class_object) const;
+
+private:
+    PyObject* m_self = nullptr;
+
+    friend void initialize_wrapper(PyObject* self, wrapper_base* w);
+};
+
+namespace wrapper_base_ // ADL disabler
+{
+    inline PyObject* owner_impl(void const volatile* /*x*/, std::false_type) {
+        return nullptr;
     }
-    
+
     template <class T>
-    inline PyObject*
-    owner_impl(T const volatile* x, std::true_type);
-    
+    inline PyObject* owner_impl(T const volatile* x, std::true_type) {
+        if (auto w = dynamic_cast<wrapper_base const volatile*>(x)) {
+            return w->owner();
+        }
+        return nullptr;
+    }
+
     template <class T>
-    inline PyObject*
-    owner(T const volatile* x)
-    {
+    inline PyObject* owner(T const volatile* x) {
         return wrapper_base_::owner_impl(x, std::is_polymorphic<T>());
     }
-  }
-  
-  class BOOST_PYTHON_DECL wrapper_base
-  {
-      friend void initialize_wrapper(PyObject* self, wrapper_base* w);
-      friend PyObject* wrapper_base_::get_owner(wrapper_base const volatile& w);
-   protected:
-      wrapper_base() : m_self(0) {}
-          
-      override get_override(
-          char const* name, PyTypeObject* class_object) const;
+} // namespace wrapper_base_
 
-   private:
-      void detach();
-      
-   private:
-      PyObject* m_self;
-  };
+inline void initialize_wrapper(PyObject* self, wrapper_base* w) {
+    w->m_self = self;
+}
 
-  namespace wrapper_base_ // ADL disabler
-  {
-    template <class T>
-    inline PyObject*
-    owner_impl(T const volatile* x, std::true_type)
-    {
-        if (wrapper_base const volatile* w = dynamic_cast<wrapper_base const volatile*>(x))
-        {
-            return wrapper_base_::get_owner(*w);
-        }
-        return 0;
-    }
-    
-    inline PyObject* get_owner(wrapper_base const volatile& w)
-    {
-        return w.m_self;
-    }
-  }
-  
-  inline void initialize_wrapper(PyObject* self, wrapper_base* w)
-  {
-      w->m_self = self;
-  }
+inline void initialize_wrapper(PyObject* /*self*/, ...) {}
 
-  inline void initialize_wrapper(PyObject* /*self*/, ...) {}
-
-  
-  
-} // namespace detail
-
-}} // namespace boost::python
+}}} // namespace boost::python::detail
 
 #endif // WRAPPER_BASE_DWA2004722_HPP

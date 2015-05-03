@@ -4,42 +4,25 @@
 
 #include <boost/python/wrapper.hpp>
 
-namespace boost { namespace python {
+namespace boost { namespace python { namespace detail {
 
-namespace detail
-{
-  override wrapper_base::get_override(
-      char const* name
-    , PyTypeObject* class_object
-  ) const
-  {
-      if (this->m_self)
-      {
-          if (handle<> m = handle<>(
-                  python::allow_null(
-                      ::PyObject_GetAttrString(
-                          this->m_self, const_cast<char*>(name))))
-          )
-          {
-              PyObject* borrowed_f = 0;
-            
-              if (
-                  PyMethod_Check(m.get())
-                  && ((PyMethodObject*)m.get())->im_self == this->m_self
-                  && class_object->tp_dict != 0
-              )
-              {
-                  borrowed_f = ::PyDict_GetItemString(
-                      class_object->tp_dict, const_cast<char*>(name));
+override wrapper_base::get_override(char const* name, PyTypeObject* class_object) const {
+    if (m_self) {
+        if (auto m = handle<>{allow_null(PyObject_GetAttrString(m_self, name))}) {
+            auto method = (PyMethodObject*)m.get();
 
+            if (PyMethod_Check(method) &&
+                method->im_self == m_self &&
+                class_object->tp_dict != nullptr)
+            {
+                PyObject* borrowed_f = PyDict_GetItemString(class_object->tp_dict, name);
+                if (borrowed_f != method->im_func)
+                    return override{m};
+            }
+        }
+    }
 
-              }
-              if (borrowed_f != ((PyMethodObject*)m.get())->im_func)
-                  return override(m);
-          }
-      }
-      return override(handle<>(detail::none()));
-  }
-}
+    return override{handle<>{none()}};
+};
 
-}} // namespace boost::python::detail
+}}} // namespace boost::python::detail

@@ -17,31 +17,22 @@ class override;
 
 namespace detail
 {
-  class wrapper_base;
-  
   // The result of calling a method.
-  class method_result
-  {
-   private:
+  class method_result {
+  private:
       friend class boost::python::override;
-      explicit method_result(PyObject* x)
-        : m_obj(x)
-      {}
+      explicit method_result(PyObject* x) : m_obj{x} {}
 
-   public:
+  public:
       template <class T>
-      operator T()
-      {
-          converter::return_from_python<T> converter;
-          return converter(m_obj.release());
-      }
+      operator T() {
+          return converter::return_from_python<T>{}(m_obj.release());
+      };
       
 #  ifdef _MSC_VER
 	  template <class T>
-	  operator T*()
-	  {
-		  converter::return_from_python<T*> converter;
-		  return converter(m_obj.release());
+	  operator T*() {
+		  return converter::return_from_python<T*>{}(m_obj.release());
 	  }
 #  endif 
 
@@ -49,52 +40,40 @@ namespace detail
 	  // No operator T&
 #  else
       template <class T>
-      operator T&() const
-      {
-          converter::return_from_python<T&> converter;
-          return converter(const_cast<handle<>&>(m_obj).release());
-      }
+      operator T&() const {
+          return converter::return_from_python<T&>{}(m_obj.release());
+      };
 #endif
 
       template <class T>
-      T as()
-      {
-          converter::return_from_python<T> converter;
-          return converter(m_obj.release());
-      }
+      T as() {
+          return converter::return_from_python<T>{}(m_obj.release());
+      };
 
       template <class T>
-      T unchecked()
-      {
-          return extract<T>(m_obj.get())();
-      }
-   private:
+      T unchecked() {
+          return extract<T>{m_obj.get()}();
+      };
+
+  private:
       mutable handle<> m_obj;
   };
 }
 
-class override : public object
-{
- private:
+class override : public object {
+private:
     friend class detail::wrapper_base;
-    override(handle<> x)
-      : object(x)
-    {}
+    override(handle<> x) : object{x} {}
     
- public:
+public:
     template<class... Args>
-    detail::method_result operator()(Args const&... args) const
-    {
-        detail::method_result x(
+    detail::method_result operator()(Args const&... args) const {
+        return detail::method_result{
             PyObject_CallFunctionObjArgs(
-                this->ptr(),
-                converter::arg_to_python<Args>(args).get()...,
-                nullptr
+                ptr(), converter::arg_to_python<Args>(args).get()..., nullptr
             )
-        );
-        return x;
+        };
     }
-
 };
 
 }} // namespace boost::python
