@@ -42,25 +42,4 @@ namespace detail
   }
 }
 
-#if 0
-namespace converter
-{
-  PyObject* BOOST_PYTHON_DECL do_polymorphic_ref_to_python(
-      python::detail::wrapper_base const volatile* x, type_info src
-  )
-  {
-      if (x == 0)
-      {
-          ::PyErr_Format(
-              PyExc_TypeError
-            , "Attempting to returning pointer or reference to instance of %s\n"
-              "for which no corresponding Python object exists. Wrap this function"
-              "with a return return value policy"
-          )
-      }
-  }
-  
-}
-#endif 
-
 }} // namespace boost::python::detail
