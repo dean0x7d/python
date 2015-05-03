@@ -8,7 +8,6 @@
 # include <boost/python/detail/prefix.hpp>
 
 # include <boost/python/object_core.hpp>
-# include <boost/python/call.hpp>
 # include <boost/python/cpp14/type_traits.hpp>
 # include <boost/python/detail/is_xxx.hpp>
 
@@ -25,31 +24,10 @@ template <class L, class R, class T>
 using enable_binary_t = cpp14::enable_if_t<is_object_operators<L,R>::value, T>;
 
 template <class U>
-object object_operators<U>::operator()() const
-{
-    object_cref2 f = *static_cast<U const*>(this);
-    return call<object>(f.ptr());
-}
-
-
-template <class U>
-inline
-object_operators<U>::operator bool_type() const
-{
-    object_cref2 x = *static_cast<U const*>(this);
-    int is_true = PyObject_IsTrue(x.ptr());
+inline object_operators<U>::operator bool_type() const {
+    int is_true = PyObject_IsTrue(get_managed_object(this->derived()));
     if (is_true < 0) throw_error_already_set();
-    return is_true ? &object::ptr : 0;
-}
-
-template <class U>
-inline bool
-object_operators<U>::operator!() const
-{
-    object_cref2 x = *static_cast<U const*>(this);
-    int is_true = PyObject_IsTrue(x.ptr());
-    if (is_true < 0) throw_error_already_set();
-    return !is_true;
+    return is_true ? &object::ptr : nullptr;
 }
 
 # define BOOST_PYTHON_BINARY_OPERATOR(op)                               \

@@ -67,13 +67,13 @@ namespace api
   template <class U>
   class object_operators : public def_visitor<U> {
       using bool_type = PyObject* (object::*)() const;
-   protected:
-      typedef object const& object_cref;
-   public:
+
+  protected:
+      using object_cref = object const&;
+
+  public:
       // function call
       //
-      object operator()() const;
-
       template <typename... Args>
       object operator()(Args const&... args) const;
 
@@ -85,7 +85,6 @@ namespace api
       // truth value testing
       //
       operator bool_type() const;
-      bool operator!() const; // needed for vc6
 
       // Attribute access
       //
@@ -126,17 +125,15 @@ namespace api
       object_slice slice(slice_nil, slice_nil);
 
       template <class T, class V>
-      const_object_slice
-      slice(T const& start, V const& end) const;
+      const_object_slice slice(T const& start, V const& end) const;
     
       template <class T, class V>
-      object_slice
-      slice(T const& start, V const& end);
+      object_slice slice(T const& start, V const& end);
       
-   private: // def visitation for adding callable objects as class methods
-      
+  private: // def visitation for adding callable objects as class methods
       template <class ClassT, class DocStringT>
-      void visit(ClassT& cl, char const* name, python::detail::def_helper<DocStringT> const& helper) const
+      void visit(ClassT& cl, char const* name,
+                 python::detail::def_helper<DocStringT> const& helper) const
       {
           // It's too late to specify anything other than docstrings if
           // the callable object is already wrapped.
@@ -149,12 +146,10 @@ namespace api
       }
 
       friend class python::def_visitor_access;
-      
-   private:
-     // there is a confirmed CWPro8 codegen bug here. We prevent the
-     // early destruction of a temporary by binding a named object
-     // instead.
-    typedef object const object_cref2;
+
+  private:
+      U const& derived() const { return *static_cast<U const*>(this); }
+      U& derived() { return *static_cast<U*>(this); }
   };
 
   template <class T>
@@ -275,82 +270,72 @@ namespace api
 
 } // namespace api
 using api::object;
-template <class T> struct extract;
 
 //
 // implementation
 //
 
-namespace detail 
-{
+namespace detail {
+    class call_proxy {
+    public:
+        call_proxy(object target) : m_target(target) {}
+        operator object() const { return m_target; }
 
-class call_proxy 
-{ 
-public: 
-  call_proxy(object target) : m_target(target) {} 
-  operator object() const { return m_target;} 
- 
- private: 
-    object m_target; 
-}; 
- 
-class kwds_proxy : public call_proxy 
-{ 
-public: 
-  kwds_proxy(object o = object()) : call_proxy(o) {} 
-}; 
-class args_proxy : public call_proxy 
-{ 
-public: 
-  args_proxy(object o) : call_proxy(o) {} 
-  kwds_proxy operator* () const { return kwds_proxy(*this);} 
-}; 
+    private:
+        object m_target;
+    };
+
+    class kwds_proxy : public call_proxy {
+    public:
+        kwds_proxy(object o = {}) : call_proxy(o) {}
+    };
+
+    class args_proxy : public call_proxy {
+    public:
+      args_proxy(object o) : call_proxy(o) {}
+      kwds_proxy operator* () const { return kwds_proxy(*this);}
+    };
 } 
 
 template <typename U>
 template <typename... Args>
-object api::object_operators<U>::operator()(Args const&... args) const
-{
-    // TODO: this should use perfect forwarding, but the converter isn't compatible yet
-    U const& self = *static_cast<U const*>(this);
-    return call<object>(get_managed_object(self), args...);
+object api::object_operators<U>::operator()(Args const&... args) const {
+    return call<object>(get_managed_object(this->derived()), args...);
 }
 
 template <typename U> 
-detail::args_proxy api::object_operators<U>::operator* () const 
-{ 
-  object_cref2 x = *static_cast<U const*>(this); 
-  return boost::python::detail::args_proxy(x); 
-} 
+detail::args_proxy api::object_operators<U>::operator* () const {
+    return detail::args_proxy(this->derived());
+}
  
 template <typename U> 
-object api::object_operators<U>::operator()(detail::args_proxy const &args) const 
-{ 
-  U const& self = *static_cast<U const*>(this); 
-  PyObject *result = PyObject_Call(get_managed_object(self),
-                                   args.operator object().ptr(), 
-                                   0); 
-  return object(boost::python::detail::new_reference(result)); 
- 
-} 
+object api::object_operators<U>::operator()(detail::args_proxy const& args) const {
+  return object{detail::new_reference(
+      PyObject_Call(
+          get_managed_object(this->derived()),
+          args.operator object().ptr(),
+          nullptr
+      )
+  )};
+};
  
 template <typename U> 
 object api::object_operators<U>::operator()(detail::args_proxy const &args, 
                                             detail::kwds_proxy const &kwds) const 
 { 
-  U const& self = *static_cast<U const*>(this); 
-  PyObject *result = PyObject_Call(get_managed_object(self),
-                                   args.operator object().ptr(), 
-                                   kwds.operator object().ptr()); 
-  return object(boost::python::detail::new_reference(result)); 
- 
-}  
+  return object{detail::new_reference(
+      PyObject_Call(
+          get_managed_object(this->derived()),
+          args.operator object().ptr(),
+          kwds.operator object().ptr()
+      )
+  )};
+};
 
 
 template <typename U>
 template <class T>
-object api::object_operators<U>::contains(T const& key) const
-{
+object api::object_operators<U>::contains(T const& key) const {
     return this->attr("__contains__")(object(key));
 }
 
@@ -363,23 +348,21 @@ namespace converter
   template <class T> struct object_manager_traits;
   
   template <>
-  struct object_manager_traits<object>
-  {
+  struct object_manager_traits<object> {
       static constexpr bool is_specialized = true;
       static bool check(PyObject*) { return true; }
       
-      static python::detail::new_non_null_reference adopt(PyObject* x)
-      {
+      static python::detail::new_non_null_reference adopt(PyObject* x) {
           return python::detail::new_non_null_reference(x);
       }
+
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
       static PyTypeObject const *get_pytype() {return 0;}
 #endif
   };
 }
 
-inline PyObject* get_managed_object(object const& x)
-{
+inline PyObject* get_managed_object(object const& x) {
     return x.ptr();
 }
 

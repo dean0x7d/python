@@ -18,8 +18,8 @@ namespace boost { namespace python {
 
 template <class T> struct null_ok;
 
-template <class T>
-inline null_ok<T>* allow_null(T* p) noexcept {
+template<class T = PyObject>
+inline null_ok<T>* allow_null(T* p = nullptr) noexcept {
     return (null_ok<T>*)p;
 }
 
