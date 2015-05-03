@@ -82,7 +82,7 @@ struct to_python_value<converter::shared_ptr<T>> {
         if (!source) {
             return python::detail::none();
         }
-        else if (auto* d = get_deleter<converter::shared_ptr_deleter>(source)) {
+        else if (auto* d = converter::get_deleter<converter::shared_ptr_deleter>(source)) {
             return incref(d->owner.get());
         }
         else {
