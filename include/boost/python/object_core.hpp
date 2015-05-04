@@ -160,7 +160,7 @@ namespace api
       {}
 
       template<class T>
-      explicit object(proxy<T> const& x) noexcept
+      explicit object(proxy<T> const& x)
           : m_ptr{incref(x.operator object().ptr())}
       {}
 
