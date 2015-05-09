@@ -11,7 +11,7 @@ override wrapper_base::get_override(char const* name, PyTypeObject* class_object
         if (auto m = handle<>{allow_null(PyObject_GetAttrString(m_self, name))}) {
             auto method = (PyMethodObject*)m.get();
 
-            if (PyMethod_Check(method) &&
+            if (PyMethod_Check(m.get()) &&
                 method->im_self == m_self &&
                 class_object->tp_dict != nullptr)
             {
