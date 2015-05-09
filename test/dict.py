@@ -28,6 +28,13 @@ None
 [(1, 'a test string'), (1.5, 13)]
 default
 default
+3
+13
+True False
+a test string
+default
+(1.5, 13)
+{}
 """
 
 def run(args = None):

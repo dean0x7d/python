@@ -51,7 +51,7 @@ object dict_items(dict data)
 
 void work_with_dict(dict data1, dict data2)
 {
-    if (!data1.has_key("k1")) {
+    if (!data1.contains("k1")) {
         throw std::runtime_error("dict does not have key 'k1'");
     }
     data1.update(data2);
@@ -74,8 +74,19 @@ void test_templates(object print)
     print(tmp.get(2,"default"));
     print(tmp.setdefault(3,"default"));
 
-    BOOST_ASSERT(!tmp.has_key(key));
+    BOOST_ASSERT(!tmp.contains(key));
     //print(tmp[3]);
+
+    auto d = tmp.copy();
+    print(len(d));
+    print(object{d[1.5]});
+    print(d.contains(1), d.contains(-1));
+    print(d.pop(1));
+    print(d.pop(2, "default"));
+    del(d[3]);
+    print(d.popitem());
+    d.clear();
+    print(d);
 }
     
 BOOST_PYTHON_MODULE(dict_ext)

@@ -80,7 +80,6 @@ rule lib_boost_python ( is-py3 ? )
         numeric.cpp
         list.cpp
         long.cpp
-        dict.cpp
         slice.cpp
 
         converter/from_python.cpp
