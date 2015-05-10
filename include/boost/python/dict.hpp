@@ -27,55 +27,45 @@ public:
 
 public:
     // D.clear() -> None. Remove all items.
-    void clear() {
-        if (is_dict_exact())
-            PyDict_Clear(ptr());
-        else
-            attr("clear")();
-    }
+    void clear() noexcept { PyDict_Clear(ptr()); }
 
     // D.copy() -> dict. A shallow copy.
     dict copy() const {
-        if (is_dict_exact())
-            return dict{detail::new_reference(PyDict_Copy(ptr()))};
-        else
-            return dict{detail::borrowed_reference(attr("copy")().ptr())};
+        return dict{detail::new_reference(PyDict_Copy(ptr()))};
     }
 
     // D.get(k[,d]) -> D[k] if D.contains(k), else d. d defaults to None.
     template<class T, class... O>
     object get(T&& key, O&&... default_) const {
         static_assert(sizeof...(O) <= 1, "");
-        if (is_dict_exact()) {
-            PyObject* result = PyDict_GetItem(ptr(), object{std::forward<T>(key)}.ptr());
-            return result ? object{detail::borrowed_reference(result)}
-                          : object{std::forward<O>(default_)...};
-        }
-        else {
-            return attr("get")(std::forward<T>(key), std::forward<O>(default_)...);
-        }
+        PyObject* result = PyDict_GetItem(ptr(), object{std::forward<T>(key)}.ptr());
+        return result ? object{detail::borrowed_reference(result)}
+                      : object{std::forward<O>(default_)...};
     }
 
     // D.has_key(k) -> bool. Deprecated in favor of D.contains(k).
     template<class T>
     [[deprecated]] bool has_key(T&& key) const {
-        return extract<bool>{contains(std::forward<T>(key))};
+        return contains(std::forward<T>(key));
+    };
+
+    // D.contains(k) -> bool. Equivalent to the Python expression 'k in D'.
+    template<class T>
+    bool contains(T&& key) const {
+        auto result = PyDict_Contains(ptr(), object{std::forward<T>(key)}.ptr());
+        if (result == -1)
+            throw_error_already_set();
+        return result == 1;
     };
 
     // D.items() -> list of (key, value) pairs, as 2-tuples.
     list items() const {
-        if (is_dict_exact())
-            return list{detail::new_reference(PyDict_Items(ptr()))};
-        else
-            return list{detail::borrowed_reference(attr("items")().ptr())};
+        return list{detail::new_reference(PyDict_Items(ptr()))};
     }
 
     // D.keys() -> list of keys.
     list keys() const {
-        if (is_dict_exact())
-            return list{detail::new_reference(PyDict_Keys(ptr()))};
-        else
-            return list{detail::borrowed_reference(attr("keys")().ptr())};
+        return list{detail::new_reference(PyDict_Keys(ptr()))};
     }
 
     // D.pop(k[,d]) -> D[k] or d. Remove and return D[k] if D.contains(k).
@@ -96,27 +86,28 @@ public:
     template<class T, class... O>
     object setdefault(T&& key, O&&... default_) const {
         static_assert(sizeof...(O) <= 1, "");
-        return attr("setdefault")(std::forward<T>(key), std::forward<O>(default_)...);
+
+        auto k = object{std::forward<T>(key)};
+        auto result = get(k, std::forward<O>(default_)...);
+
+        if (!contains(k)) {
+            if (PyDict_SetItem(ptr(), k.ptr(), result.ptr()) == -1)
+                throw_error_already_set();
+        }
+
+        return result;
     }
 
     // D.update(E) -> None. Update D from E: for k in E.keys(): D[k] = E[k].
     template<class T>
     void update(T&& other) {
-        if (is_dict_exact()) {
-            if (PyDict_Update(ptr(), object{std::forward<T>(other)}.ptr()) == -1)
-                throw_error_already_set();
-        }
-        else {
-            attr("update")(std::forward<T>(other));
-        }
+        if (PyDict_Update(ptr(), object{std::forward<T>(other)}.ptr()) == -1)
+            throw_error_already_set();
     }
 
     // D.values() -> list of values.
     list values() const {
-        if (is_dict_exact())
-            return list{detail::new_reference(PyDict_Values(ptr()))};
-        else
-            return list{detail::borrowed_reference(attr("values")().ptr())};
+        return list{detail::new_reference(PyDict_Values(ptr()))};
     }
 
 #if PY_MAJOR_VERSION < 3
@@ -135,8 +126,6 @@ private:
             (PyObject*)&PyDict_Type, arg.ptr(), nullptr
         );
     }
-
-    bool is_dict_exact() const noexcept { return PyDict_CheckExact(ptr()); }
 };
 
 //
