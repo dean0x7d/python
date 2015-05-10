@@ -11,6 +11,8 @@
 # include <boost/python/list.hpp>
 # include <boost/python/tuple.hpp>
 # include <boost/python/extract.hpp>
+# include <boost/python/args.hpp>
+
 # include <boost/python/converter/pytype_object_mgr_traits.hpp>
 
 namespace boost { namespace python {
@@ -18,9 +20,17 @@ namespace boost { namespace python {
 class dict : public object {
 public:
     // dict() -> new empty dictionary.
-    // dict(mapping) -> new dictionary initialized from a mapping object's (key, value) pairs.
-    // dict(seq) -> new dictionary initialized as if via:
     dict() : object{detail::new_reference(PyDict_New())} {}
+
+    dict(std::initializer_list<arg> items) : dict() {
+        for (auto& item : items) {
+            auto const& kwarg = item.elements[0];
+            auto value = kwarg.default_value ? kwarg.default_value.get() : detail::none();
+
+            if (PyDict_SetItemString(ptr(), kwarg.name, value) == -1)
+                throw_error_already_set();
+        }
+    }
 
     template<class T>
     explicit dict(T&& data) : dict{call(object{std::forward<T>(data)})} {}

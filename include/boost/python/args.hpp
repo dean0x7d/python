@@ -24,7 +24,10 @@ namespace detail
       keyword elements[nkeywords];
 
       // This is needed on some compilers which assume the template below is also a move ctor
+      keywords_base(keywords_base const&) = default;
       keywords_base(keywords_base&&) = default;
+      keywords_base& operator=(keywords_base const&) = default;
+      keywords_base& operator=(keywords_base&&) = default;
 
       template<typename... Ts>
       explicit keywords_base(Ts&&... args) : elements{std::forward<Ts>(args)...} {}

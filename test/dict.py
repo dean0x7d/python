@@ -10,6 +10,8 @@
 >>> compare = lambda a, b: len(a) == len(b) and all(x in a for x in b)
 >>> print new_dict()
 {}
+>>> initializer_list() == {'k1': 'char const*', 'k2': 'string', 'k3': 1, 'k4': [], 'default': None}
+True
 >>> data_dict() == {1: {'key2': 'value2'}, 'key1': 'value1'}
 True
 >>> tmp = data_dict()

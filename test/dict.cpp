@@ -18,6 +18,11 @@ object new_dict()
     return dict();
 }
 
+dict initializer_list() {
+    return dict{"k1"_a="char const*", "k2"_a=std::string{"string"}, 
+                "k3"_a=1, "k4"_a=list(), "default"_a};
+}
+
 object data_dict()
 {
     dict tmp1;
@@ -92,6 +97,7 @@ void test_templates(object print)
 BOOST_PYTHON_MODULE(dict_ext)
 {
     def("new_dict", new_dict);
+    def("initializer_list", initializer_list);
     def("data_dict", data_dict);
     def("dict_keys", dict_keys);
     def("dict_values", dict_values);
