@@ -50,7 +50,7 @@ void work_with_string(object print)
     print(data.swapcase());
     print(data.title());
     print(data.upper());
-#if PY_VERSION_HEX > 0x03000000
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 3
     print(data.casefold());
 #else
     print(data);
@@ -74,7 +74,7 @@ void work_with_string(object print)
 
     print("format");
     print(str("{} <-> {} <=> {}").format("string", 'a', 2));
-#if PY_VERSION_HEX > 0x03000000
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 2
     dict d;
     d["first"] = "string";
     d["second"] = 'a';

@@ -47,7 +47,7 @@ public:
 public:
     str capitalize() const { return str_call("capitalize"); }
 
-#if PY_MAJOR_VERSION >= 3
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 3
     str casefold() const { return str_call("casefold"); }
 #endif
 
@@ -100,7 +100,7 @@ public:
         return str_call("format", std::forward<Ts>(args)...);
     }
 
-#if PY_MAJOR_VERSION >= 3
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 2
     template <class T>
     str format_map(T&& mapping) const {
         return str_call("format_map", std::forward<T>(mapping));
