@@ -46,6 +46,9 @@ find
 format
 string <-> a <=> 2
 string <-> a <=> 2
+string <-> a <=> 2
+keyword arguments 2
+string <-> a <=> 2
 expandtabs
                 tab     demo    !
         tab demo    !

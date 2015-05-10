@@ -100,6 +100,10 @@ public:
         return str_call("format", std::forward<Ts>(args)...);
     }
 
+    str format(detail::kwargs_proxy kwargs) {
+        return str{attr("format")(kwargs)};
+    };
+
 #if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 2
     template <class T>
     str format_map(T&& mapping) const {

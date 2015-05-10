@@ -72,13 +72,18 @@ void work_with_string(object print)
     print(data.find(std::string("demo")));
     print(data.find(std::string("demo"),9));
 
-    print("format");
-    print(str("{} <-> {} <=> {}").format("string", 'a', 2));
-#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 2
     dict d;
     d["first"] = "string";
     d["second"] = 'a';
     d["third"] = 2;
+    auto kwargs = **d;
+
+    print("format");
+    print(str("{} <-> {} <=> {}").format("string", 'a', 2));
+    print(str("{first} <-> {second} <=> {third}").format(**d));
+    print(str("{first} <-> {second} <=> {third}").format(kwargs));
+    print("{first} {second}"_s.format(**dict{"second"_a=2, "first"_a="keyword arguments"}));
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 2
     print(str("{first} <-> {second} <=> {third}").format_map(d));
 #else
     print(str("{} <-> {} <=> {}").format("string", 'a', 2));
