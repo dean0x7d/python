@@ -123,7 +123,7 @@ void list_base::sort()
 
 #if PY_VERSION_HEX >= 0x03000000
 void list_base::sort(args_proxy const &args, 
-                     kwds_proxy const &kwds)
+                     kwargs_proxy const &kwds)
 {
     this->attr("sort")(args, kwds);
 }

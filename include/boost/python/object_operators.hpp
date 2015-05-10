@@ -11,7 +11,71 @@
 # include <boost/python/cpp14/type_traits.hpp>
 # include <boost/python/detail/is_xxx.hpp>
 
-namespace boost { namespace python { namespace api {
+namespace boost { namespace python {
+
+namespace detail {
+    struct kwargs_proxy {
+        kwargs_proxy(object target) : target{target} {}
+        operator object() const { return target; }
+        PyObject* ptr() const { return target.ptr(); }
+
+    protected:
+        object target;
+    };
+
+    struct args_proxy : kwargs_proxy {
+        using kwargs_proxy::kwargs_proxy;
+        kwargs_proxy operator*() const { return {target}; }
+    };
+}
+
+template<class U>
+template<class... Args>
+object api::object_operators<U>::operator()(Args const&... args) const {
+    return call<object>(get_managed_object(this->derived()), args...);
+}
+
+template<class U>
+detail::args_proxy api::object_operators<U>::operator*() const {
+    return {this->derived()};
+}
+
+template<class U>
+object api::object_operators<U>::operator()(detail::args_proxy const& args) const {
+    return object{detail::new_reference(
+        PyObject_Call(
+            get_managed_object(this->derived()),
+            args.ptr(),
+            nullptr
+        )
+    )};
+};
+
+template<class U>
+object api::object_operators<U>::operator()(detail::kwargs_proxy const& kwargs) const {
+    return object{detail::new_reference(
+        PyObject_Call(
+            get_managed_object(this->derived()),
+            handle<>{PyTuple_New(0)}.get(),
+            kwargs.ptr()
+        )
+    )};
+};
+
+template<class U>
+object api::object_operators<U>::operator()(detail::args_proxy const& args,
+                                            detail::kwargs_proxy const& kwargs) const
+{
+    return object{detail::new_reference(
+        PyObject_Call(
+            get_managed_object(this->derived()),
+            args.ptr(),
+            kwargs.ptr()
+        )
+    )};
+};
+
+namespace api {
 
 template <class L, class R = L>
 struct is_object_operators {

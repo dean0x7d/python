@@ -23,11 +23,10 @@
 
 namespace boost { namespace python { 
 
-namespace detail
-{
-  class kwds_proxy; 
-  class args_proxy; 
-} 
+namespace detail {
+    struct args_proxy;
+    struct kwargs_proxy;
+}
 
 // Put this in an inner namespace so that the generalized operators won't take over
 namespace api
@@ -73,10 +72,11 @@ namespace api
       template <typename... Args>
       object operator()(Args const&... args) const;
 
-      detail::args_proxy operator* () const; 
-      object operator()(detail::args_proxy const &args) const; 
-      object operator()(detail::args_proxy const &args, 
-                        detail::kwds_proxy const &kwds) const; 
+      detail::args_proxy operator*() const;
+      object operator()(detail::args_proxy const& args) const;
+      object operator()(detail::kwargs_proxy const& kwargs) const;
+      object operator()(detail::args_proxy const& args,
+                        detail::kwargs_proxy const& kwargs) const;
 
       // truth value testing
       //
@@ -225,64 +225,6 @@ using api::object;
 //
 // implementation
 //
-
-namespace detail {
-    class call_proxy {
-    public:
-        call_proxy(object target) : m_target(target) {}
-        operator object() const { return m_target; }
-
-    private:
-        object m_target;
-    };
-
-    class kwds_proxy : public call_proxy {
-    public:
-        kwds_proxy(object o = {}) : call_proxy(o) {}
-    };
-
-    class args_proxy : public call_proxy {
-    public:
-      args_proxy(object o) : call_proxy(o) {}
-      kwds_proxy operator* () const { return kwds_proxy(*this);}
-    };
-} 
-
-template <typename U>
-template <typename... Args>
-object api::object_operators<U>::operator()(Args const&... args) const {
-    return call<object>(get_managed_object(this->derived()), args...);
-}
-
-template <typename U> 
-detail::args_proxy api::object_operators<U>::operator* () const {
-    return detail::args_proxy(this->derived());
-}
- 
-template <typename U> 
-object api::object_operators<U>::operator()(detail::args_proxy const& args) const {
-  return object{detail::new_reference(
-      PyObject_Call(
-          get_managed_object(this->derived()),
-          args.operator object().ptr(),
-          nullptr
-      )
-  )};
-};
- 
-template <typename U> 
-object api::object_operators<U>::operator()(detail::args_proxy const &args, 
-                                            detail::kwds_proxy const &kwds) const 
-{ 
-  return object{detail::new_reference(
-      PyObject_Call(
-          get_managed_object(this->derived()),
-          args.operator object().ptr(),
-          kwds.operator object().ptr()
-      )
-  )};
-};
-
 
 template <typename U>
 template <class T>

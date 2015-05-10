@@ -38,8 +38,7 @@ namespace detail
 
       void sort(); //  sort *IN PLACE*; if given, cmpfunc(x, y) -> -1, 0, 1
 #if PY_VERSION_HEX >= 0x03000000
-      void sort(args_proxy const &args, 
-                 kwds_proxy const &kwds);
+      void sort(args_proxy const &args, kwargs_proxy const &kwds);
 #else
       void sort(object_cref cmpfunc);
 #endif

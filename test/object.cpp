@@ -195,10 +195,11 @@ bool check_string_slice()
     return s.slice(2,-1).slice(1,-1)  == "lo, wor";
 }
 
-object test_call(object c, object args, object kwds) 
-{ 
-    return c(*args, **kwds); 
-} 
+void test_call(object c, object args, object kwds) { 
+    c(*args);
+    c(**kwds);
+    c(*args, **kwds);
+}
 
 bool check_binary_operators()
 {
