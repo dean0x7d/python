@@ -8,8 +8,11 @@
 # include <boost/python/detail/prefix.hpp>
 
 # include <boost/python/object_core.hpp>
-# include <boost/python/cpp14/type_traits.hpp>
+# include <boost/python/call.hpp>
+
 # include <boost/python/detail/is_xxx.hpp>
+
+# include <boost/python/cpp14/type_traits.hpp>
 
 namespace boost { namespace python {
 

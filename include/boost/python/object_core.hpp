@@ -7,8 +7,7 @@
 
 # include <boost/python/detail/prefix.hpp>
 
-# include <boost/python/call.hpp>
-# include <boost/python/handle_fwd.hpp>
+# include <boost/python/handle.hpp>
 # include <boost/python/errors.hpp>
 # include <boost/python/refcount.hpp>
 # include <boost/python/def_visitor.hpp>
@@ -18,6 +17,7 @@
 # include <boost/python/detail/raw_pyobject.hpp>
 # include <boost/python/detail/string_literal.hpp>
 # include <boost/python/detail/def_helper_fwd.hpp>
+# include <boost/python/detail/none.hpp>
 
 # include <boost/python/converter/to_python_fwd.hpp>
 

@@ -14,6 +14,7 @@
 
 # include <boost/python/detail/unwrap_wrapper.hpp>
 
+# include <boost/python/back_reference.hpp>
 # include <boost/python/has_back_reference.hpp>
 # include <boost/python/bases.hpp>
 

@@ -9,6 +9,8 @@
 
 # include <boost/python/default_call_policies.hpp>
 # include <boost/python/args.hpp>
+# include <boost/python/signature.hpp>
+
 # include <boost/python/detail/caller.hpp>
 
 # include <boost/python/object/function_object.hpp>

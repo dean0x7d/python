@@ -8,6 +8,7 @@
 
 # include <boost/python/type_id.hpp>
 # include <boost/python/detail/type_list.hpp>
+# include <boost/python/converter/registry.hpp>
 
 # include <memory>
 
