@@ -21,113 +21,78 @@
 
 namespace boost { namespace python {
 
-class str : public object
-{
+class str : public object {
 public:
-    str(const char* s = "") : object(detail::new_reference(BOOST_PyString_FromString(s))) {}
+    str(char const* s = "")
+        : object{detail::new_reference(BOOST_PyString_FromString(s))}
+    {}
 
     str(char const* start, char const* finish)
-        : object(detail::new_reference(
+        : object{detail::new_reference(
             BOOST_PyString_FromStringAndSize(start, str_size_as_py_ssize_t(finish - start))
-        ))
+        )}
     {}
 
     str(char const* start, std::size_t length)
-        : object(detail::new_reference(
+        : object{detail::new_reference(
             BOOST_PyString_FromStringAndSize(start, str_size_as_py_ssize_t(length))
-        ))
+        )}
     {}
 
-    template <class T>
-    explicit str(T&& other) : str{call(object{std::forward<T>(other)})} {}
+    template<class T>
+    explicit str(T&& other)
+        : str{call(object{std::forward<T>(other)})}
+    {}
 
 public:
     str capitalize() const { return str_call("capitalize"); }
 
-#if PY_VERSION_HEX > 0x03000000
+#if PY_MAJOR_VERSION >= 3
     str casefold() const { return str_call("casefold"); }
 #endif
 
-    template <class T>
-    str center(T&& width) const {
-        return str_call("center", std::forward<T>(width));
-    }
-    template <class T1, class T2>
-    str center(T1&& width, T2&& fillchar) const {
-        return str_call("center", std::forward<T1>(width), std::forward<T2>(fillchar));
+    template<class T, class... Os>
+    str center(T&& width, Os&&... fillchar) const {
+        static_assert(sizeof...(Os) <= 1, "width[, fillchar]");
+        return str_call("center", std::forward<T>(width), std::forward<Os>(fillchar)...);
     }
 
-    template<class T>
-    long count(T&& sub) const {
-        return int_call("count", std::forward<T>(sub));
-    }
-    template<class T1, class T2>
-    long count(T1&& sub, T2&& start) const {
-        return int_call("count", std::forward<T1>(sub), std::forward<T2>(start));
-    }
-    template<class T1, class T2, class T3>
-    long count(T1&& sub, T2&& start, T3&& end) const {
-        return int_call("count", std::forward<T1>(sub), std::forward<T2>(start), std::forward<T3>(end));
+    template<class T, class... Os>
+    long count(T&& sub, Os&&... start_end) const {
+        static_assert(sizeof...(Os) <= 2, "");
+        return int_call("count", std::forward<T>(sub), std::forward<Os>(start_end)...);
     }
 
-#if PY_VERSION_HEX < 0x03000000
-    object decode() const {
-        return this->attr("decode")();
-    }
-    template <class T>
-    object decode(T&& encoding) const {
-        return this->attr("decode")(std::forward<T>(encoding));
-    }
-    template <class T1, class T2>
-    object decode(T1&& encoding, T2&& errors) const {
-        return this->attr("decode")(std::forward<T1>(encoding), std::forward<T2>(errors));
+#if PY_MAJOR_VERSION < 3
+    template<class... Os>
+    object decode(Os&&... encoding_errors) const {
+        static_assert(sizeof...(Os) <= 2, "");
+        return attr("decode")(std::forward<Os>(encoding_errors)...);
     }
 #endif
 
-    object encode() const {
-        return this->attr("encode")();
-    }
-    template <class T>
-    object encode(T&& encoding) const {
-        return this->attr("encode")(std::forward<T>(encoding));
-    }
-    template <class T1, class T2>
-    object encode(T1&& encoding, T2&& errors) const {
-        return this->attr("encode")(std::forward<T1>(encoding), std::forward<T2>(errors));
+    template<class... Os>
+    object encode(Os&&... encoding_errors) const {
+        static_assert(sizeof...(Os) <= 2, "");
+        return attr("encode")(std::forward<Os>(encoding_errors)...);
     }
 
-    template <class T>
-    bool endswith(T&& suffix) const {
-        return int_call("endswith", std::forward<T>(suffix));
+    template<class T, class... Os>
+    bool endswith(T&& suffix, Os&&... start_end) const {
+        static_assert(sizeof...(Os) <= 2, "");
+        return int_call("endswith", std::forward<T>(suffix), std::forward<Os>(start_end)...);
     }
-    template <class T1, class T2>
-    bool endswith(T1&& suffix, T2&& start) const {
-        return int_call("endswith", std::forward<T1>(suffix), std::forward<T2>(start));
+
+    template<class... Os>
+    str expandtabs(Os&&... tabsize) const {
+        static_assert(sizeof...(Os) <= 1, "");
+        return str_call("expandtabs", std::forward<Os>(tabsize)...);
     }
-    template <class T1, class T2, class T3>
-    bool endswith(T1&& suffix, T2&& start, T3&& end) const {
-        return int_call("endswith", std::forward<T1>(suffix), std::forward<T2>(start), std::forward<T3>(end));
-    }
-    
-    str expandtabs() const {
-        return str_call("expandtabs");
-    }
-    template <class T>
-    str expandtabs(T&& tabsize) const {
-        return str_call("expandtabs", std::forward<T>(tabsize));
-    }
-    
-    template <class T>
-    long find(T&& sub) const {
-        return int_call("find", std::forward<T>(sub));
-    }
-    template <class T1, class T2>
-    long find(T1&& sub, T2&& start) const {
-        return int_call("find", std::forward<T1>(sub), std::forward<T2>(start));
-    }
-    template <class T1, class T2, class T3>
-    long find(T1&& sub, T2&& start, T3&& end) const {
-        return int_call("find", std::forward<T1>(sub), std::forward<T2>(start), std::forward<T3>(end));
+
+    template<class T, class... Os>
+    long find(T&& sub, Os&&... start_end) const {
+        static_assert(sizeof...(Os) <= 2, "");
+        return int_call("find", std::forward<T>(sub), std::forward<Os>(start_end)...);
     }
 
     template <class... Ts>
@@ -135,34 +100,27 @@ public:
         return str_call("format", std::forward<Ts>(args)...);
     }
 
-#if PY_VERSION_HEX > 0x03000000
+#if PY_MAJOR_VERSION >= 3
     template <class T>
     str format_map(T&& mapping) const {
         return str_call("format_map", std::forward<T>(mapping));
     }
 #endif
-    
-    template <class T>
-    long index(T&& sub) const {
-        return int_call("index", std::forward<T>(sub));
-    }
-    template <class T1, class T2>
-    long index(T1&& sub, T2&& start) const {
-        return int_call("index", std::forward<T1>(sub), std::forward<T2>(start));
-    }
-    template <class T1, class T2, class T3>
-    long index(T1&& sub, T2&& start, T3&& end) const {
-        return int_call("index", std::forward<T1>(sub), std::forward<T2>(start), std::forward<T3>(end));
+
+    template<class T, class... Os>
+    long index(T&& sub, Os&&... start_end) const {
+        static_assert(sizeof...(Os) <= 2, "");
+        return int_call("index", std::forward<T>(sub), std::forward<Os>(start_end)...);
     }
 
     bool isalnum() const { return int_call("isalnum"); }
     bool isalpha() const { return int_call("isalpha"); }
     bool isdigit() const { return int_call("isdigit"); }
-#if PY_VERSION_HEX > 0x03000000
+#if PY_MAJOR_VERSION >= 3
     bool isidentifier() const { return int_call("isidentifier"); }
 #endif
     bool islower() const { return int_call("islower"); }
-#if PY_VERSION_HEX > 0x03000000
+#if PY_MAJOR_VERSION >= 3
     bool isnumeric() const { return int_call("isnumeric"); }
     bool isprintable() const { return int_call("isprintable"); }
 #endif
@@ -170,42 +128,30 @@ public:
     bool istitle() const { return int_call("istitle"); }
     bool isupper() const { return int_call("isupper"); }
 
-    template <class T>
+    template<class T>
     str join(T&& sequence) const {
         return str_call("join", std::forward<T>(sequence));
     }
-    
-    template <class T>
-    str ljust(T&& width) const {
-        return str_call("ljust", std::forward<T>(width));
-    }
-    template <class T1, class T2>
-    str ljust(T1&& width, T2&& fillchar) const {
-        return str_call("ljust", std::forward<T1>(width), std::forward<T2>(fillchar));
+
+    template <class T, class... Os>
+    str ljust(T&& width, Os&&... fillchar) const {
+        static_assert(sizeof...(Os) <= 1, "");
+        return str_call("ljust", std::forward<T>(width), std::forward<Os>(fillchar)...);
     }
 
     str lower() const { return str_call("lower"); }
 
-    str lstrip() const {
-        return str_call("lstrip");
-    }
-    template <class T>
-    str lstrip(T&& chars) const {
-        return str_call("lstrip", std::forward<T>(chars));
+    template<class... Os>
+    str lstrip(Os&&... chars) const {
+        static_assert(sizeof...(Os) <= 1, "");
+        return str_call("lstrip", std::forward<Os>(chars)...);
     }
 
-#if PY_VERSION_HEX > 0x03000000
-    template <class T>
-    str maketrans(T&& x) const {
-        return str_call("maketrans", std::forward<T>(x));
-    }
-    template <class T1, class T2>
-    str maketrans(T1&& x, T2&& y) const {
-        return str_call("maketrans", std::forward<T1>(x), std::forward<T2>(y));
-    }
-    template <class T1, class T2, class T3>
-    str maketrans(T1&& x, T2&& y, T3&& z) const {
-        return str_call("maketrans", std::forward<T1>(x), std::forward<T2>(y), std::forward<T3>(z));
+#if PY_MAJOR_VERSION >= 3
+    template<class... Os>
+    str maketrans(Os&&... x_y_z) const {
+        static_assert(sizeof...(Os) <= 3, "");
+        return str_call("maketrans", std::forward<Os>(x_y_z)...);
     }
 #endif
 
@@ -214,48 +160,29 @@ public:
         return str_call("partition", std::forward<T>(sep));
     }
 
-    template <class T1, class T2>
-    str replace(T1&& old, T2&& new_) const {
-        return str_call("replace", std::forward<T1>(old), std::forward<T2>(new_));
-    }
-    template <class T1, class T2, class T3>
-    str replace(T1&& old, T2&& new_, T3&& maxsplit) const {
-        return str_call("replace", std::forward<T1>(old), std::forward<T2>(new_), std::forward<T3>(maxsplit));
+    template <class T1, class T2, class... Os>
+    str replace(T1&& old, T2&& new_, Os&&... maxsplit) const {
+        static_assert(sizeof...(Os) <= 1, "");
+        return str_call("replace", std::forward<T1>(old), std::forward<T2>(new_),
+                        std::forward<Os>(maxsplit)...);
     }
     
-    template <class T>
-    long rfind(T&& sub) const {
-        return int_call("rfind", std::forward<T>(sub));
-    }
-    template <class T1, class T2>
-    long rfind(T1&& sub, T2&& start) const {
-        return int_call("rfind", std::forward<T1>(sub), std::forward<T2>(start));
-    }
-    template <class T1, class T2, class T3>
-    long rfind(T1&& sub, T2&& start, T3&& end) const {
-        return int_call("rfind", std::forward<T1>(sub), std::forward<T2>(start), std::forward<T3>(end));
-    }
-    
-    template <class T>
-    long rindex(T&& sub) const {
-        return int_call("rindex", std::forward<T>(sub));
-    }
-    template <class T1, class T2>
-    long rindex(T1&& sub, T2&& start) const {
-        return int_call("rindex", std::forward<T1>(sub), std::forward<T2>(start));
-    }
-    template <class T1, class T2, class T3>
-    long rindex(T1&& sub, T2&& start, T3&& end) const {
-        return int_call("rindex", std::forward<T1>(sub), std::forward<T2>(start), std::forward<T3>(end));
+    template <class T, class... Os>
+    long rfind(T&& sub, Os&&... start_end) const {
+        static_assert(sizeof...(Os) <= 2, "");
+        return int_call("rfind", std::forward<T>(sub), std::forward<Os>(start_end)...);
     }
 
-    template <class T>
-    str rjust(T&& width) const {
-        return str_call("rjust", std::forward<T>(width));
+    template <class T, class... Os>
+    long rindex(T&& sub, Os&&... start_end) const {
+        static_assert(sizeof...(Os) <= 2, "");
+        return int_call("rindex", std::forward<T>(sub), std::forward<Os>(start_end)...);
     }
-    template <class T1, class T2>
-    str rjust(T1&& width, T2&& fillchar) const {
-        return str_call("rjust", std::forward<T1>(width), std::forward<T2>(fillchar));
+
+    template <class T, class... Os>
+    str rjust(T&& width, Os&&... fillchar) const {
+        static_assert(sizeof...(Os) <= 1, "");
+        return str_call("rjust", std::forward<T>(width), std::forward<Os>(fillchar)...);
     }
 
     template <class T>
@@ -263,77 +190,48 @@ public:
         return str_call("rpartition", std::forward<T>(sep));
     }
 
-    list rsplit() const {
-        return list(this->attr("rsplit")());
-    }
-    template <class T>
-    list rsplit(T&& sep) const {
-        return list(this->attr("rsplit")(std::forward<T>(sep)));
-    }
-    template <class T1, class T2>
-    list rsplit(T1&& sep, T2&& maxsplit) const {
-        return list(this->attr("rsplit")(std::forward<T1>(sep), std::forward<T2>(maxsplit)));
+    template<class... Os>
+    list rsplit(Os&&... sep_maxsplit) const {
+        static_assert(sizeof...(Os) <= 2, "");
+        return list{attr("rsplit")(std::forward<Os>(sep_maxsplit)...)};
+    };
+
+    template<class... Os>
+    str rstrip(Os&&... chars) const {
+        static_assert(sizeof...(Os) <= 1, "");
+        return str_call("rstrip", std::forward<Os>(chars)...);
     }
 
-    str rstrip() const {
-        return str_call("rstrip");
-    }
-    template <class T>
-    str rstrip(T&& chars) const {
-        return str_call("rstrip", std::forward<T>(chars));
+    template<class... Os>
+    list split(Os&&... sep_maxsplit) const {
+        static_assert(sizeof...(Os) <= 2, "");
+        return list{attr("split")(std::forward<Os>(sep_maxsplit)...)};
+    };
+
+    template<class... Os>
+    list splitlines(Os&&... keepends) const {
+        static_assert(sizeof...(Os) <= 1, "");
+        return list{attr("splitlines")(std::forward<Os>(keepends)...)};
+    };
+
+    template<class T, class... Os>
+    bool startswith(T&& prefix, Os&&... start_end) const {
+        static_assert(sizeof...(Os) <= 2, "");
+        return int_call("startswith", std::forward<T>(prefix), std::forward<Os>(start_end)...);
     }
 
-    list split() const {
-        return list(this->attr("split")());
-    }
-    template <class T>
-    list split(T&& sep) const {
-        return list(this->attr("split")(std::forward<T>(sep)));
-    }
-    template <class T1, class T2>
-    list split(T1&& sep, T2&& maxsplit) const {
-        return list(this->attr("split")(std::forward<T1>(sep), std::forward<T2>(maxsplit)));
-    }
-
-    list splitlines() const {
-        return list(this->attr("splitlines")());
-    }
-    template <class T>
-    list splitlines(T&& keepends) const {
-        return list(this->attr("splitlines")(std::forward<T>(keepends)));
-    }
-
-    template <class T>
-    bool startswith(T&& prefix) const {
-        return int_call("startswith", std::forward<T>(prefix));
-    }
-    template <class T1, class T2>
-    bool startswith(T1&& prefix, T2&& start) const {
-        return int_call("startswith", std::forward<T1>(prefix), std::forward<T2>(start));
-    }
-    template <class T1, class T2, class T3>
-    bool startswith(T1&& prefix, T2&& start, T3&& end) const {
-        return int_call("startswith", std::forward<T1>(prefix), std::forward<T2>(start), std::forward<T3>(end));
-    }
-
-    str strip() const {
-        return str_call("strip");
-    }
-    template <class T>
-    str strip(T&& chars) const {
-        return str_call("strip", std::forward<T>(chars));
+    template<class... Os>
+    str strip(Os&&... chars) const {
+        static_assert(sizeof...(Os) <= 1, "");
+        return str_call("strip", std::forward<Os>(chars)...);
     }
 
     str swapcase() const { return str_call("swapcase"); }
     str title() const { return str_call("title"); }
 
-    template <class T>
-    str translate(T&& table) const {
-        return str_call("translate", std::forward<T>(table));
-    }
-    template <class T1, class T2>
-    str translate(T1&& table, T2&& deletechars) const {
-        return str_call("translate", std::forward<T1>(table), std::forward<T2>(deletechars));
+    template<class T, class... Os>
+    str translate(T&& table, Os&&... deletechars) const {
+        return str_call("translate", std::forward<T>(table), std::forward<Os>(deletechars)...);
     }
 
     str upper() const { return str_call("upper"); }
@@ -355,20 +253,28 @@ private:
 
     template<class... Args>
     str str_call(char const* name, Args&&... args) const {
-        handle<> method_name(BOOST_PyString_FromString(name));
-        return str(detail::new_reference(expect_non_null(
+        return str{detail::new_reference(
             PyObject_CallMethodObjArgs(
-                this->ptr(),
-                method_name.get(),
-                object(std::forward<Args>(args)).ptr()...,
+                ptr(),
+                handle<>{BOOST_PyString_FromString(name)}.get(),
+                object{std::forward<Args>(args)}.ptr()...,
                 nullptr
             )
-        )));
-    }
+        )};
+    };
 
     template<class... Args>
     long int_call(char const* name, Args&&... args) const {
-        long result = BOOST_PyInt_AsLong(attr(name)(std::forward<Args>(args)...).ptr());
+        auto o = object{detail::new_reference(
+            PyObject_CallMethodObjArgs(
+                ptr(),
+                handle<>{BOOST_PyString_FromString(name)}.get(),
+                object{std::forward<Args>(args)}.ptr()...,
+                nullptr
+            )
+        )};
+
+        long result = BOOST_PyInt_AsLong(o.ptr());
         if (PyErr_Occurred())
             throw_error_already_set();
         return result;
