@@ -9,14 +9,11 @@
 
 namespace boost { namespace python { namespace objects { 
 
-//
-// A setattr that's "smart" about function overloading (and docstrings).
-//
-BOOST_PYTHON_DECL void add_to_namespace(
-    object const& name_space, char const* name, object const& attribute);
-
-BOOST_PYTHON_DECL void add_to_namespace(
-    object const& name_space, char const* name, object const& attribute, char const* doc);
+// Add an attribute to the name_space with the given name. If it is
+// a Boost.Python function object (boost/python/object/function.hpp)
+// and an existing function is already there, add it as an overload.
+BOOST_PYTHON_DECL void add_to_namespace(object const& name_space, char const* name,
+                                        object const& attribute, char const* doc = nullptr);
 
 }}} // namespace boost::python::objects
 

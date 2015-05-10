@@ -13,69 +13,42 @@
 
 namespace boost { namespace python { namespace objects { 
 
-
-struct BOOST_PYTHON_DECL function : PyObject
-{
-    function(
-        py_function
-        , python::detail::keyword const* names_and_defaults
-        , unsigned num_keywords);
-      
+struct BOOST_PYTHON_DECL function : PyObject {
+    function(py_function, python::detail::keyword const* names_and_defaults, unsigned num_keywords);
     ~function();
-    
+      
     PyObject* call(PyObject*, PyObject*) const;
 
     // Add an attribute to the name_space with the given name. If it is
     // a function object (this class), and an existing function is
     // already there, add it as an overload.
-    static void add_to_namespace(
-        object const& name_space, char const* name, object const& attribute);
+    static void add_to_namespace(object const& name_space, char const* name,
+                                 object const& attribute, char const* doc = nullptr);
 
-    static void add_to_namespace(
-        object const& name_space, char const* name, object const& attribute, char const* doc);
-
-    object const& doc() const;
-    void doc(object const& x);
+    object const& doc() const { return m_doc; }
+    void doc(object const& x) { m_doc = x; }
     
-    object const& name() const;
+    object const& name() const { return m_name; }
 
     object const& get_namespace() const { return m_namespace; }
     
- private: // helper functions
+private: // helper functions
     object signature(bool show_return_type=false) const;
     object signatures(bool show_return_type=false) const;
     void argument_error(PyObject* args, PyObject* keywords) const;
     void add_overload(handle<function> const&);
     
- private: // data members
+private: // data members
     py_function m_fn;
     handle<function> m_overloads;
     object m_name;
     object m_namespace;
     object m_doc;
     object m_arg_names;
-    unsigned m_nkeyword_values;
+    unsigned m_nkeyword_values = 0;
     friend class function_doc_signature_generator;
 };
 
-//
-// implementations
-//
-inline object const& function::doc() const
-{
-    return this->m_doc;
-}
-
-inline void function::doc(object const& x)
-{
-    this->m_doc = x;
-}
-
-inline object const& function::name() const
-{
-    return this->m_name;
-}
-  
 }}} // namespace boost::python::objects
 
 #endif // FUNCTION_DWA20011214_HPP
