@@ -18,7 +18,7 @@ namespace boost { namespace python {
 
 namespace detail {
     struct kwargs_proxy {
-        kwargs_proxy(object target) : target{target} {}
+        explicit kwargs_proxy(object target) : target{target} {}
         operator object() const { return target; }
         PyObject* ptr() const { return target.ptr(); }
 
@@ -28,7 +28,7 @@ namespace detail {
 
     struct args_proxy : kwargs_proxy {
         using kwargs_proxy::kwargs_proxy;
-        kwargs_proxy operator*() const { return {target}; }
+        kwargs_proxy operator*() const { return kwargs_proxy{target}; }
     };
 }
 
@@ -40,7 +40,7 @@ object api::object_operators<U>::operator()(Args const&... args) const {
 
 template<class U>
 detail::args_proxy api::object_operators<U>::operator*() const {
-    return {this->derived()};
+    return detail::args_proxy{this->derived()};
 }
 
 template<class U>
