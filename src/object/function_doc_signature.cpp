@@ -3,319 +3,184 @@
 // accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 
-#include <boost/python/converter/registrations.hpp>
 #include <boost/python/object/function_doc_signature.hpp>
-#include <boost/python/args.hpp>
+#include <boost/python/docstring_options.hpp>
+#include <vector>
+
+namespace boost { namespace python {
+
+dict& docstring_options::format() {
+    static dict fmt{
+        "doc"_a = "\n{python_signature}{docstring}{cpp_signature}",
+        "docstring_indent"_a = "    ",
+        "cpp"_a = dict{
+            "signature"_a = "\n    C++ signature :\n"
+                            "        {cpptype_return} {function_name}({parameters})",
+            "parameter"_a = "{cpptype}{lvalue} {name}{default_value}",
+            "unnamed"_a = "arg{}",
+            "default_value"_a = "={!r}",
+            "lvalue"_a = " {lvalue}",
+            "separator"_a = ", ",
+            "optional_open"_a = " [",
+            "optional_close"_a = "]",
+            "raw"_a = "PyObject* args, PyObject* kwargs"
+        },
+        "python"_a = dict{
+            "signature"_a = "{function_name}({parameters}) -> {pytype_return} :",
+            "parameter"_a = "({pytype}){name}{default_value}",
+            "unnamed"_a = "arg{}",
+            "default_value"_a = "={!r}",
+            "lvalue"_a = "",
+            "separator"_a = ", ",
+            "optional_open"_a = " [",
+            "optional_close"_a = "]",
+            "raw"_a = "*args, **kwargs"
+        }
+    };
+    return fmt;
+}
+
+void docstring_options::update_format(dict m) { format().update(m); }
+void docstring_options::update_cpp_format(dict m) { format()["cpp"].attr("update")(m); }
+void docstring_options::update_python_format(dict m) { format()["python"].attr("update")(m); }
+
+}} // namespace boost::python
 
 namespace boost { namespace python { namespace objects {
 
-    bool function_doc_signature_generator::arity_cmp( function const *f1, function const *f2 )
-    {
-        return f1->m_fn.max_arity() < f2->m_fn.max_arity();
-    }
+bool function_doc_signature_generator::are_seq_overloads(function const* f1, function const* f2) {
+    if (f2->m_fn.max_arity() != f1->m_fn.max_arity() + 1)
+        return false;
+    if (f2->doc() != f1->doc())
+        return false;
+    if (f2->m_arg_names.slice(0, -1) != f1->m_arg_names)
+        return false;
 
-    bool function_doc_signature_generator::are_seq_overloads( function const *f1, function const *f2 , bool check_docs)
-    {
-        py_function const & impl1 = f1->m_fn;
-        py_function const & impl2  = f2->m_fn;
-
-        //the number of parameters differs by 1
-        if (impl2.max_arity()-impl1.max_arity() != 1)
+    // check if the argument types are the same
+    auto s1 = f1->m_fn.signature();
+    auto s2 = f2->m_fn.signature();
+    for (unsigned i = 0; i <= f1->m_fn.max_arity(); ++i) {
+        if (s1[i].basename != s2[i].basename)
             return false;
-
-        // if check docs then f1 shold not have docstring or have the same docstring as f2
-        if (check_docs && f2->doc() != f1->doc() && f1->doc())
-            return false;
-
-        auto s1 = impl1.signature();
-        auto s2 = impl2.signature();
-
-        unsigned size = impl1.max_arity()+1;
-
-        for (unsigned i = 0; i != size; ++i)
-        {
-            //check if the argument types are the same
-            if (s1[i].basename != s2[i].basename)
-                return false;
-
-            //return type
-            if (!i) continue;
-
-            //check if the argument default values are the same
-            bool f1_has_names = bool(f1->m_arg_names);
-            bool f2_has_names = bool(f2->m_arg_names);
-            if ( (f1_has_names && f2_has_names && f2->m_arg_names[i-1]!=f1->m_arg_names[i-1])
-                 || (f1_has_names && !f2_has_names)
-                 || (!f1_has_names && f2_has_names && f2->m_arg_names[i-1]!=python::object())
-                )
-                return false;
-        }
-        return true;
     }
 
-    std::vector<function const*> function_doc_signature_generator::flatten(function const *f)
-    {
-        object name = f->name();
+    return true;
+}
 
-        std::vector<function const*> res;
+inline char const* get_pytype_string(python::detail::signature_element const& s) {
+    if (s.basename == std::string{"void"})
+        return "None";
+    else if (s.pytype)
+        return s.pytype->tp_name;
+    else
+        return "object";
+}
 
-        while (f) {
+str function_doc_signature_generator::pretty_signature(function const* f, int num_optional, dict fmt) {
+    auto arity = f->m_fn.max_arity();
+    auto signature = f->m_fn.signature();
+    auto arg_names = f->m_arg_names;
 
-            //this if takes out the not_implemented_function
-            if (f->name() == name)
-                res.push_back(f);
+    auto params = list{};
+    if (arity != std::numeric_limits<decltype(arity)>::max()) {
+        // regular function
+        for (unsigned n = 1; n <= arity; ++n) {
+            auto kwarg = (arg_names && arg_names[n-1]) ? object{arg_names[n-1]} : object{};
+            auto parameter_map = dict{
+                "name"_a = kwarg ? str{kwarg[0]} : str{fmt["unnamed"]}.format(n),
+                "pytype"_a = get_pytype_string(signature[n]),
+                "cpptype"_a = signature[n].basename ? str{signature[n].basename} : "..."_s,
+                "lvalue"_a = signature[n].lvalue ? str{fmt["lvalue"]} : ""_s,
+                "default_value"_a = (kwarg && len(kwarg) == 2)
+                                    ? str{fmt["default_value"]}.format(kwarg[1])
+                                    : ""_s
+            };
 
-            f=f->m_overloads.get();
-        }
-
-        //std::sort(res.begin(),res.end(), &arity_cmp);
-
-        return res;
-    }
-    std::vector<function const*> function_doc_signature_generator::split_seq_overloads( const std::vector<function const *> &funcs, bool split_on_doc_change)
-    {
-        std::vector<function const*> res;
-
-        std::vector<function const*>::const_iterator fi = funcs.begin();
-
-        function const * last = *fi;
-
-        while (++fi != funcs.end()){
-
-            //check if fi starts a new chain of overloads
-            if (!are_seq_overloads( last, *fi, split_on_doc_change ))
-                res.push_back(last);
-
-            last = *fi;
-        }
-
-        if (last)
-            res.push_back(last);
-
-        return res;
-    }
-
-    str function_doc_signature_generator::raw_function_pretty_signature(function const *f)
-    {
-        str res("object");
-
-        res = str("{} {}({})").format(res, f->m_name, "tuple args, dict kwds");
-
-        return res;
-    }
-
-    const  char * function_doc_signature_generator::py_type_str(const python::detail::signature_element &s)
-    {
-        if (s.basename==std::string("void")){
-            static const char * none = "None";
-            return none;
-        }
-
-        if (s.pytype)
-            return  s.pytype->tp_name;
-        else {
-            static const char * object = "object";
-            return object;
+            params.append(str{fmt["parameter"]}.format(**parameter_map));
         }
     }
+    else {
+        // raw function
+        params.append(fmt["raw"]);
+        signature[0].basename = "PyObject*";
+    }
 
-    str function_doc_signature_generator::parameter_string(
-        python::detail::signature_element const& s, size_t n, object arg_names, bool cpp_types)
-    {
-        str param;
+    auto signature_map = dict{
+        "cpptype_return"_a = signature[0].basename,
+        "pytype_return"_a = get_pytype_string(signature[0]),
+        "function_name"_a = f->m_name,
+        "parameters"_a = [&]{
+            auto separator = str{fmt["separator"]};
+            auto optional_open = str{fmt["optional_open"]};
+            auto optional_separator = str{optional_open + separator};
 
-        if (cpp_types) {
-            if (s.basename == nullptr)
-                return str("...");
+            return separator.join(params.slice(0, arity - num_optional))
+                + (num_optional ? (num_optional != arity ? optional_separator : optional_open) : ""_s)
+                + optional_separator.join(params.slice(arity - num_optional, arity))
+                + str{fmt["optional_close"]} * num_optional;
+        }()
+    };
 
-            param = str(s.basename);
+    return str{fmt["signature"]}.format(**signature_map);
+}
 
-            if (s.lvalue)
-                 param += " {lvalue}";
+list function_doc_signature_generator::function_doc_signatures(function const* f) {
+    // flatten overloads and take out 'not_implemented_function'
+    auto overloads = [f]{
+        struct overload {
+            function const* f;
+            int num_optional;
+        };
+        auto result = std::vector<overload>{};
 
-        }
-        else
-        {
-            if (n) //we are processing an argument and trying to come up with a name for it
-            {
-                object kv;
-                if ( arg_names && (kv = arg_names[n-1]) )
-                    param = str(" ({}){}").format(py_type_str(s), kv[0]);
-                else
-                    param = str(" ({}){}{}").format(py_type_str(s), "arg", n);
+        auto name = f->name();
+        auto num_optional = 0;
+        for (auto current = f; current; current = current->m_overloads.get()) {
+            if (current->name() != name)
+                continue; // ignore 'not_implemented_function'
+
+            auto next = current->m_overloads.get();
+            if (!next) {
+                result.push_back({current, num_optional});
+                break;
             }
-            else //we are processing the return type
-                param = py_type_str(s);
-        }
 
-        //an argument - check for default value and append it
-        if(n && arg_names)
-        {
-            object kv(arg_names[n-1]);
-            if (kv && len(kv) == 2)
-            {
-                param = str("{}={!r}").format(param, kv[1]);
+            // check if next starts a new chain of overloads
+            if (!are_seq_overloads(current, next)) {
+                result.push_back({current, num_optional});
+                num_optional = 0;
             }
-        }
-        return param;
-    }
-
-    str function_doc_signature_generator::pretty_signature(function const *f, size_t n_overloads,  bool cpp_types )
-    {
-        py_function
-            const& impl = f->m_fn;
-            ;
-
-
-        unsigned arity = impl.max_arity();
-
-        if(arity == unsigned(-1))// is this the proper raw function test?
-        {
-            return raw_function_pretty_signature(f);
-        }
-
-        list formal_params;
-
-        size_t n_extra_default_args=0;
-
-        auto s = impl.signature();
-        for (unsigned n = 0; n <= arity; ++n)
-        {
-            formal_params.append(
-                parameter_string(s[n], n, f->m_arg_names, cpp_types)
-                );
-
-            // find all the arguments with default values preceeding the arity-n_overloads
-            if (n && f->m_arg_names)
-            {
-                object kv(f->m_arg_names[n-1]);
-
-                if (kv && len(kv) == 2)
-                {
-                    //default argument preceeding the arity-n_overloads
-                    if( n <= arity-n_overloads)
-                        ++n_extra_default_args;
-                }
-                else
-                    //argument without default, preceeding the arity-n_overloads
-                    if( n <= arity-n_overloads)
-                        n_extra_default_args = 0;
+            else {
+                ++num_optional;
             }
         }
 
-        n_overloads+=n_extra_default_args;
+        return result;
+    }();
 
-        if (!arity && cpp_types)
-            formal_params.append("void");
+    auto const& format = docstring_options::format();
+    auto doc = str{format["doc"]};
+    auto indent = str{format["docstring_indent"]};
 
-        str ret_type (formal_params.pop(0));
-        if (cpp_types )
-        {
-            return str("{} {}({}{}{}{})").format(
-                ret_type,
-                f->m_name,
-                str(",").join(formal_params.slice(0, arity - n_overloads)),
-                n_overloads ? (n_overloads != arity ? " [," : "[ ") : "",
-                str(" [,").join(formal_params.slice(arity - n_overloads, arity)),
-                std::string(n_overloads, ']')
-            );
-        }
-        else {
-            return str("{}({}{}{}{}) -> {}").format(
-                f->m_name,
-                str(",").join(formal_params.slice(0, arity-n_overloads)),
-                n_overloads ? (n_overloads != arity ? " [," : "[ ") : "",
-                str(" [,").join(formal_params.slice(arity - n_overloads, arity)),
-                std::string(n_overloads,']'),
-                ret_type
-            );
-        }
+    auto docs = list{};
+    for (auto const& func : overloads) {
+        auto docstring = func.f->doc() ? str{func.f->doc()} : ""_s;
+        auto mapping = dict{
+            "python_signature"_a = func.f->show_python_signature
+                ? pretty_signature(func.f, func.num_optional, dict{format["python"]}) + "\n"_s
+                : ""_s,
+            "docstring"_a = docstring
+                ? indent + indent.join(docstring.splitlines(true)) + "\n"_s
+                : ""_s,
+            "cpp_signature"_a = func.f->show_cpp_signature
+                ? pretty_signature(func.f, func.num_optional, dict{format["cpp"]})
+                : ""_s
+        };
 
-        return str("{} {}({}{}{}{}) {}").format(
-            cpp_types ? ret_type : "",
-            f->m_name,
-            str(",").join(formal_params.slice(0, arity - n_overloads)),
-            n_overloads ? (n_overloads != arity ? str(" [,") : "[ ") : "",
-            str(" [,").join(formal_params.slice(arity - n_overloads, arity)),
-            std::string(n_overloads,']'),
-            cpp_types ? "" : ret_type
-        );
+        docs.append(doc.format(**mapping).rstrip());
     }
 
-    namespace detail {    
-        char py_signature_tag[] = "PY signature :";
-        char cpp_signature_tag[] = "C++ signature :";
-    }
+    return docs;
+}
 
-    list function_doc_signature_generator::function_doc_signatures( function const * f)
-    {
-        list signatures;
-        std::vector<function const*> funcs = flatten( f);
-        std::vector<function const*> split_funcs = split_seq_overloads( funcs, true);
-        std::vector<function const*>::const_iterator sfi=split_funcs.begin(), fi;
-        size_t n_overloads=0;
-        for (fi=funcs.begin(); fi!=funcs.end(); ++fi)
-        {
-            if(*sfi == *fi){
-                if((*fi)->doc())
-                {
-                    str func_doc = str((*fi)->doc());
-                    
-                    auto doc_len = len(func_doc);
-
-                    bool show_py_signature = doc_len >= int(sizeof(detail::py_signature_tag)/sizeof(char)-1)
-                                            && str(detail::py_signature_tag) == func_doc.slice(0, int(sizeof(detail::py_signature_tag)/sizeof(char))-1);
-                    if(show_py_signature)
-                    {
-                        func_doc = str(func_doc.slice(int(sizeof(detail::py_signature_tag)/sizeof(char))-1, _));
-                        doc_len = len(func_doc);
-                    }
-                    
-                    bool show_cpp_signature = doc_len >= int(sizeof(detail::cpp_signature_tag)/sizeof(char)-1)
-                                            && str(detail::cpp_signature_tag) == func_doc.slice( 1-int(sizeof(detail::cpp_signature_tag)/sizeof(char)), _);
-                    
-                    if(show_cpp_signature)
-                    {
-                        func_doc = str(func_doc.slice(_, 1-int(sizeof(detail::cpp_signature_tag)/sizeof(char))));
-                        doc_len = len(func_doc);
-                    }
-                    
-                    str res="\n";
-                    str pad = "\n";
-
-                    if(show_py_signature)
-                    { 
-                        str sig = pretty_signature(*fi, n_overloads,false);
-                        res+=sig;
-                        if(doc_len || show_cpp_signature )res+=" :";
-                        pad+= str("    ");
-                    }
-                    
-                    if(doc_len)
-                    {
-                        if(show_py_signature)
-                            res+=pad;
-                         res+= pad.join(func_doc.split("\n"));
-                    }
-
-                    if( show_cpp_signature)
-                    {
-                        if(len(res)>1)
-                            res+="\n"+pad;
-                        res+=detail::cpp_signature_tag+pad+"    "+pretty_signature(*fi, n_overloads,true);
-                    }
-                    
-                    signatures.append(res);
-                }
-                ++sfi;
-                n_overloads = 0;
-            }else
-                ++n_overloads ;
-        }
-
-        return signatures;
-    }
-
-
-}}}
-
+}}} // namespace boost::python::objects

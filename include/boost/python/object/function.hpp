@@ -46,6 +46,9 @@ private: // data members
     object m_doc;
     object m_arg_names;
     unsigned m_nkeyword_values = 0;
+    bool show_python_signature;
+    bool show_cpp_signature;
+
     friend class function_doc_signature_generator;
 };
 

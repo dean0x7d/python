@@ -93,13 +93,13 @@ True
 >>> q.f1()
 (1, 4.25, 'wow')
 >>> q.f2.__doc__.splitlines()[1]
-'f2( (X)self [, (int)x [, (float)y [, (str)z]]]) -> tuple :'
+'f2((X)self [, (int)x [, (float)y [, (str)z]]]) -> tuple :'
 
 >>> q.f2.__doc__.splitlines()[2]
 "    f2's docstring"
 
 >>> X.f.__doc__.splitlines()[1:5]
-['f( (X)self, (int)x, (float)y, (str)z) -> tuple :', "    This is X.f's docstring", '', '    C++ signature :']
+['f((X)self, (int)x, (float)y, (str)z) -> tuple :', "    This is X.f's docstring", '', '    C++ signature :']
 
 >>> xfuncs = (X.inner0, X.inner1, X.inner2, X.inner3, X.inner4, X.inner5)
 >>> for f in xfuncs:
@@ -107,12 +107,12 @@ True
 ...    print f(q, n = 1).value(),
 ...    print f(q, n = 0).value(),
 ...    print f.__doc__.splitlines()[1:5]
-1 1 0 ['inner0( (X)self, (bool)n) -> Y :', '    docstring', '', '    C++ signature :']
-1 1 0 ['inner1( (X)self, (bool)n) -> Y :', '    docstring', '', '    C++ signature :']
-1 1 0 ['inner2( (X)self, (bool)n) -> Y :', '    docstring', '', '    C++ signature :']
-1 1 0 ['inner3( (X)self, (bool)n) -> Y :', '    docstring', '', '    C++ signature :']
-1 1 0 ['inner4( (X)self, (bool)n) -> Y :', '    docstring', '', '    C++ signature :']
-1 1 0 ['inner5( (X)self, (bool)n) -> Y :', '    docstring', '', '    C++ signature :']
+1 1 0 ['inner0((X)self, (bool)n) -> Y :', '    docstring', '', '    C++ signature :']
+1 1 0 ['inner1((X)self, (bool)n) -> Y :', '    docstring', '', '    C++ signature :']
+1 1 0 ['inner2((X)self, (bool)n) -> Y :', '    docstring', '', '    C++ signature :']
+1 1 0 ['inner3((X)self, (bool)n) -> Y :', '    docstring', '', '    C++ signature :']
+1 1 0 ['inner4((X)self, (bool)n) -> Y :', '    docstring', '', '    C++ signature :']
+1 1 0 ['inner5((X)self, (bool)n) -> Y :', '    docstring', '', '    C++ signature :']
 
 >>> x = X(a1 = 44, a0 = 22)
 >>> x.inner0(0).value()
@@ -132,6 +132,16 @@ True
 >>> y = Y(value = 33)
 >>> y.raw(this = 1, that = 'the other')[1] == {'this': 1, 'that': 'the other'}
 True
+
+>>> def full_doc(obj, *args):
+...   doc = obj.__doc__.splitlines()
+...   return "\\n".join(["|" + line for line in doc])
+>>> print full_doc(y.raw)
+|
+|raw(*args, **kwargs) -> object :
+|
+|    C++ signature :
+|        PyObject* raw(PyObject* args, PyObject* kwargs)
 
 """
 def run(args = None):

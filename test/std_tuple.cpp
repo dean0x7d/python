@@ -2,6 +2,7 @@
 #include <boost/python/def.hpp>
 #include <boost/python/class.hpp>
 #include <boost/python/tuple.hpp>
+#include <boost/python/docstring_options.hpp>
 
 #include <tuple>
 #include <string>
@@ -28,6 +29,12 @@ tuple tuple_arg_from_python(std::tuple<int, int> t) {
 int test_empty(std::tuple<>) { return 1; }
 
 BOOST_PYTHON_MODULE(std_tuple_ext) {
+	docstring_options::update_python_format(dict{
+		"signature"_a = "{function_name}({parameters}) -> {pytype_return}:",
+		"parameter"_a = "{name}: {pytype}{default_value}",
+		"unnamed"_a = "a{}"
+	});
+
     def("tuple_return_to_python", tuple_return_to_python);
     def("tuple_arg_to_python", tuple_arg_to_python);
     def("tuple_return_from_python", tuple_return_from_python);

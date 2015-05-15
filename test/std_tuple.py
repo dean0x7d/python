@@ -6,7 +6,7 @@
 ...   print("\\n".join(["|" + doc[i] for i in args]))
 
 >>> print_doc(tuple_return_to_python, 1)
-|tuple_return_to_python() -> tuple :
+|tuple_return_to_python() -> tuple:
 
 >>> tuple_return_to_python()
 (1, 2.0, 3.0)
@@ -32,7 +32,7 @@
 ... else: print 'expected a TypeError exception'
 
 >>> print_doc(tuple_arg_from_python, 1)
-|tuple_arg_from_python( (tuple)arg1) -> tuple :
+|tuple_arg_from_python(a1: tuple) -> tuple:
 
 >>> tuple_arg_from_python((1, 2))
 (1, 2)

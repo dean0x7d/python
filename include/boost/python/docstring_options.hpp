@@ -6,6 +6,7 @@
 # define DOCSTRING_OPTIONS_RWGK20060111_HPP
 
 #include <boost/python/object/function.hpp>
+#include <boost/python/object/function_doc_signature.hpp>
 
 namespace boost { namespace python {
 
@@ -115,6 +116,15 @@ class BOOST_PYTHON_DECL docstring_options
       }
 
       friend struct objects::function;
+
+  public:
+      static void update_format(dict mapping);
+      static void update_cpp_format(dict mapping);
+      static void update_python_format(dict mapping);
+
+private:
+      static dict& format();
+      friend class objects::function_doc_signature_generator;
 
   private:
       static volatile bool show_user_defined_;

@@ -106,20 +106,20 @@
 ...   doc = obj.__doc__.splitlines()
 ...   return "\\n".join(["|"+doc[i] for i in args])
 
->>> print selected_doc(X.__init__, 1, 2, 4, 7, 9)
-|__init__( (X)self [, (int)a [, (str)b [, (str)c [, (float)d]]]]) -> None :
+>>> print selected_doc(X.__init__, 1, 2, 4, 7, 10)
+|__init__((X)self [, (int)a [, (str)b [, (str)c [, (float)d]]]]) -> None :
 |    doc of init
 |    C++ signature :
-|__init__( (X)self, (str)s, (bool)b) -> None :
+|__init__((X)self, (str)s, (bool)b) -> None :
 |    C++ signature :
 
 >>> print selected_doc(Y.__init__, 1, 2, 4)
-|__init__( (Y)arg1) -> None :
+|__init__((Y)arg1) -> None :
 |    doc of Y init
 |    C++ signature :
 
 >>> print selected_doc(X.bar2, 1, 2, 4)
-|bar2( (X)arg1 [, (int)arg2 [, (str)arg3 [, (str)arg4 [, (float)arg5]]]]) -> Y :
+|bar2((X)arg1 [, (int)arg2 [, (str)arg3 [, (str)arg4 [, (float)arg5]]]]) -> Y :
 |    doc of X::bar2
 |    C++ signature :
 

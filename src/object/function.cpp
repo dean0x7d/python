@@ -59,7 +59,10 @@ function::function(py_function implementation,
 
             PyTuple_SET_ITEM(m_arg_names.ptr(), i + keyword_offset, incref(kv.ptr()));
         }
-    };
+    }
+    else {
+        m_arg_names = object{handle<>{PyTuple_New(0)}};
+    }
     
     PyObject* p = this;
     if (Py_TYPE(&function_type) == nullptr) {
@@ -304,12 +307,6 @@ namespace
   }
 }
 
-namespace detail
-{
-    extern char py_signature_tag[];
-    extern char cpp_signature_tag[];
-}
-
 void function::add_to_namespace(object const& name_space, char const* name_,
                                 object const& attribute, char const* doc)
 {
@@ -372,6 +369,10 @@ void function::add_to_namespace(object const& name_space, char const* name_,
         
         if (name_space_name)
             new_func->m_namespace = object(name_space_name);
+
+        // signature options are set per function
+        new_func->show_python_signature = docstring_options::show_py_signatures_;
+        new_func->show_cpp_signature = docstring_options::show_cpp_signatures_;
     }
 
     // The PyObject_GetAttrString() or PyObject_GetItem calls above may
@@ -380,17 +381,9 @@ void function::add_to_namespace(object const& name_space, char const* name_,
     if (PyObject_SetAttr(ns, name.ptr(), attribute.ptr()) < 0)
         throw_error_already_set();
 
-    str _doc;
-    if (docstring_options::show_py_signatures_)
-        _doc += str(const_cast<const char*>(detail::py_signature_tag));
-    if (doc && docstring_options::show_user_defined_)
-        _doc += doc;
-    if (docstring_options::show_cpp_signatures_)
-        _doc += str(const_cast<const char*>(detail::cpp_signature_tag));
-
-    if (_doc) {
+    if (doc && docstring_options::show_user_defined_) {
         object mutable_attribute(attribute);
-        mutable_attribute.attr("__doc__") = _doc;
+        mutable_attribute.attr("__doc__") = str{doc};
     }
 }
 
