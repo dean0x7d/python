@@ -33,8 +33,6 @@ struct BOOST_PYTHON_DECL function : PyObject {
     object const& get_namespace() const { return m_namespace; }
     
 private: // helper functions
-    object signature(bool show_return_type=false) const;
-    object signatures(bool show_return_type=false) const;
     void argument_error(PyObject* args, PyObject* keywords) const;
     void add_overload(handle<function> const&);
     

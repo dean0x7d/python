@@ -163,65 +163,35 @@ PyObject* function::call(PyObject* args, PyObject* keywords) const {
     return nullptr;
 }
 
-object function::signature(bool show_return_type) const {
-    auto signature = m_fn.signature();
-    auto return_type = signature[0];
-    auto s = signature.get() + 1;
-    
-    list formal_params;
-    if (m_fn.max_arity() == 0)
-        formal_params.append("void");
-
-    for (unsigned n = 0; n < m_fn.max_arity(); ++n) {
-        if (s[n].basename == 0) {
-            formal_params.append("...");
-            break;
-        }
-
-        str param(s[n].basename);
-        if (s[n].lvalue)
-            param += " {lvalue}";
-
-        // None or empty tuple will test false
-        if (m_arg_names) {
-            object kv(m_arg_names[n]);
-            if (kv) {
-                char const* const fmt = len(kv) > 1 ? " %s=%r" : " %s";
-                param += fmt % kv;
-            }
-        }
-        
-        formal_params.append(param);
-    }
-
-    if (show_return_type)
-        return "{}({}) -> {}"_s.format(m_name, ", "_s.join(formal_params), return_type.basename);
-    return "{}({})"_s.format(m_name, ", "_s.join(formal_params));
-};
-
-object function::signatures(bool show_return_type) const {
-    list result;
-    for (function const* f = this; f; f = f->m_overloads.get()) {
-        result.append(f->signature(show_return_type));
-    }
-    return result;
-}
-
 void function::argument_error(PyObject* args, PyObject* /*keywords*/) const {
     static handle<> exception{
-        PyErr_NewException(const_cast<char*>("Boost.Python.ArgumentError"), PyExc_TypeError, nullptr)
+        PyErr_NewException(const_cast<char*>("Boost.Python.ArgumentError"),
+                           PyExc_TypeError, nullptr)
     };
 
-    auto message = "Python argument types in\n    {}.{}("_s.format(m_namespace, m_name);
-    
-    list actual_args;
+    auto actual_args = list{};
     for (ssize_t i = 0; i < PyTuple_Size(args); ++i) {
-        char const* name = PyTuple_GetItem(args, i)->ob_type->tp_name;
-        actual_args.append(str(name));
+        actual_args.append(PyTuple_GetItem(args, i)->ob_type->tp_name);
     }
-    message += ", "_s.join(actual_args);
-    message += ")\ndid not match C++ signature:\n    ";
-    message += "\n    "_s.join(signatures());
+
+    auto cpp_fmt = dict{docstring_options::format()["cpp"]};
+    cpp_fmt.update(dict{"signature"_a = "{function_name}({parameters})"});
+
+    auto cpp_signatures = list{};
+    for (auto f = this; f; f = f->m_overloads.get()) {
+        cpp_signatures.append(function_doc_signature_generator::pretty_signature(f, 0, cpp_fmt));
+    }
+
+    auto fmt = "Python argument types in\n"
+               "    {function_name}({actual_args})\n"
+               "did not match C++ signature:\n"
+               "    {signatures}"_s;
+
+    auto message = fmt.format(**dict{
+        "function_name"_a = "{}.{}"_s.format(m_namespace, m_name),
+        "actual_args"_a = ", "_s.join(actual_args),
+        "signatures"_a = "\n    "_s.join(cpp_signatures)
+    });
 
     PyErr_SetObject(exception.get(), message.ptr());
     throw_error_already_set();

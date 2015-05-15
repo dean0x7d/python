@@ -13,9 +13,9 @@ namespace boost { namespace python { namespace objects {
 
 class function_doc_signature_generator {
     static bool are_seq_overloads(function const* f1, function const* f2);
-    static str pretty_signature(function const* f, int num_optional, dict fmt);
 
 public:
+    static str pretty_signature(function const* f, int num_optional, dict fmt);
     static list function_doc_signatures(function const* f);
 };
 
