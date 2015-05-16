@@ -19,10 +19,8 @@
 # include <boost/python/has_back_reference.hpp>
 # include <boost/python/bases.hpp>
 
-# include <boost/noncopyable.hpp>
-
 namespace boost { namespace python {
-    using ::boost::noncopyable;
+    struct noncopyable {};
 }}
 
 namespace boost { namespace python { namespace objects {
