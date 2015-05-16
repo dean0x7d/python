@@ -10,33 +10,47 @@
 namespace boost { namespace python {
 
 dict& docstring_options::format() {
-    static dict fmt{
-        "doc"_a = "\n{python_signature}{docstring}{cpp_signature}",
-        "docstring_indent"_a = "    ",
-        "cpp"_a = dict{
-            "signature"_a = "\n    C++ signature :\n"
-                            "        {cpptype_return} {function_name}({parameters})",
-            "parameter"_a = "{cpptype}{lvalue} {name}{default_value}",
-            "unnamed"_a = "arg{}",
-            "default_value"_a = "={!r}",
-            "lvalue"_a = " {lvalue}",
-            "separator"_a = ", ",
-            "optional_open"_a = " [",
-            "optional_close"_a = "]",
-            "raw"_a = "PyObject* args, PyObject* kwargs"
-        },
-        "python"_a = dict{
-            "signature"_a = "{function_name}({parameters}) -> {pytype_return} :",
-            "parameter"_a = "({pytype}){name}{default_value}",
-            "unnamed"_a = "arg{}",
-            "default_value"_a = "={!r}",
-            "lvalue"_a = "",
-            "separator"_a = ", ",
-            "optional_open"_a = " [",
-            "optional_close"_a = "]",
-            "raw"_a = "*args, **kwargs"
-        }
-    };
+    static dict fmt = []{
+        auto fmt_ = dict{
+            "doc"_a = "\n{python_signature}{docstring}{cpp_signature}",
+            "docstring_indent"_a = "    ",
+            "cpp"_a = dict{
+                "signature"_a = "\n    C++ signature :\n"
+                                "        {cpptype_return} {function_name}({parameters})",
+                "parameter"_a = "{cpptype}{lvalue} {name}{default_value}",
+                "unnamed"_a = "arg{}",
+                "default_value"_a = "={!r}",
+                "lvalue"_a = " {lvalue}",
+                "separator"_a = ", ",
+                "optional_open"_a = " [",
+                "optional_close"_a = "]",
+                "raw"_a = "PyObject* args, PyObject* kwargs"
+            },
+            "python"_a = dict{
+                "signature"_a = "{function_name}({parameters}) -> {pytype_return} :",
+                "parameter"_a = "({pytype}){name}{default_value}",
+                "unnamed"_a = "arg{}",
+                "default_value"_a = "={!r}",
+                "lvalue"_a = "",
+                "separator"_a = ", ",
+                "optional_open"_a = " [",
+                "optional_close"_a = "]",
+                "raw"_a = "*args, **kwargs"
+            }
+        };
+
+        // Small hack here -> look for better solution.
+        // Because this dict has static storage duration, its destructor may be called
+        // after the Python interpreter has been finalized. This causes a segmentation
+        // fault when decref is called in the destructor. Incrementing the count here
+        // will prevent this. This creates a reference leak, but we expect it to live
+        // until exit anyway, so it's not a huge deal. (But a better solutions would be
+        // really *really* nice.)
+        incref(fmt_.ptr());
+
+        return fmt_;
+    }();
+
     return fmt;
 }
 
