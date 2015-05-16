@@ -7,8 +7,6 @@
 
 # include <boost/python/detail/prefix.hpp>
 
-# include <boost/noncopyable.hpp>
-
 # include <boost/python/class_fwd.hpp>
 # include <boost/python/object/class.hpp>
 

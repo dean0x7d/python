@@ -36,7 +36,7 @@ public:
 
 BOOST_PYTHON_MODULE(pointer_vector_ext)
 {       
-class_<Abstract, boost::noncopyable>("Abstract", no_init)
+class_<Abstract, noncopyable>("Abstract", no_init)
     .def("f", &Abstract::f)
     ;
 

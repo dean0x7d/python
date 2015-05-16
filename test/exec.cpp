@@ -6,6 +6,7 @@
 #include <boost/python.hpp>
 
 #include <boost/detail/lightweight_test.hpp>
+#include <boost/noncopyable.hpp>
 #include <iostream>
 
 
@@ -45,7 +46,7 @@ struct BaseWrap : Base, python::wrapper<Base>
 // Pack the Base class wrapper into a module
 BOOST_PYTHON_MODULE(embedded_hello)
 {
-  python::class_<BaseWrap, boost::noncopyable> base("Base");
+  python::class_<BaseWrap, python::noncopyable> base("Base");
 }
 
 

@@ -59,11 +59,11 @@ BOOST_PYTHON_MODULE(cltree)
         .def("__repr__",&basic::repr)
         ;
 
-    boost::python::class_<constant, boost::python::bases<basic>, boost::noncopyable>("constant")
+    boost::python::class_<constant, boost::python::bases<basic>, boost::python::noncopyable>("constant")
         ;
 
 
-    boost::python::class_<symbol, symbol_wrapper, boost::noncopyable>("symbol")
+    boost::python::class_<symbol, symbol_wrapper, boost::python::noncopyable>("symbol")
         ;
 
     boost::python::class_<variable, boost::python::bases<basic>, variable_wrapper>("variable")

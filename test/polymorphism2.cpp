@@ -137,17 +137,17 @@ BOOST_PYTHON_MODULE_INIT(polymorphism2_auto_ptr_ext)
 BOOST_PYTHON_MODULE_INIT(polymorphism2_ext)
 #endif 
 {
-    class_<ACallback HELD_PTR(A),boost::noncopyable>("A")
+    class_<ACallback HELD_PTR(A),noncopyable>("A")
         .def("f", &A::f, &ACallback::default_f)
         ;
     
     def("getBCppObj", getBCppObj, return_value_policy<reference_existing_object>());
 
-    class_<C HELD_PTR(C),bases<A>,boost::noncopyable>("C")
+    class_<C HELD_PTR(C),bases<A>,noncopyable>("C")
         .def("f", &C::f)
         ;
     
-    class_<DCallback HELD_PTR(D),bases<A>,boost::noncopyable>("D")
+    class_<DCallback HELD_PTR(D),bases<A>,noncopyable>("D")
         .def("f", &D::f)
         .def("g", &D::g)
         ;
@@ -160,7 +160,7 @@ BOOST_PYTHON_MODULE_INIT(polymorphism2_ext)
 
     def("call_f", call_f);
 
-    class_<PCallback,boost::noncopyable>("P")
+    class_<PCallback,noncopyable>("P")
         .def("f", pure_virtual(&P::f))
         ;
 

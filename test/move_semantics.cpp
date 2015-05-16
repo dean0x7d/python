@@ -107,10 +107,10 @@ BOOST_PYTHON_MODULE(move_semantics_ext) {
     def("moveonly_rvalue", rvalue<moveonly>);
     def("moveonly_rvalue_const_ref", rvalue_const_ref<moveonly>);
 
-    class_<X, std::unique_ptr<X>, boost::noncopyable>("X", init<int>())
+    class_<X, std::unique_ptr<X>, noncopyable>("X", init<int>())
         .def("value", &X::value)
     ;
-    class_<Y, std::unique_ptr<Y>, bases<X>, boost::noncopyable>("Y", init<int>());
+    class_<Y, std::unique_ptr<Y>, bases<X>, noncopyable>("Y", init<int>());
     implicitly_convertible<std::unique_ptr<Y>, std::unique_ptr<X> >();
     
     def("look", look);

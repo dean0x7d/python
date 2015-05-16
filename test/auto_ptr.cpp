@@ -63,11 +63,11 @@ std::auto_ptr<X> extract_(object o)
 
 BOOST_PYTHON_MODULE(auto_ptr_ext)
 {
-    class_<X, std::auto_ptr<X>, boost::noncopyable>("X", init<int>())
+    class_<X, std::auto_ptr<X>, noncopyable>("X", init<int>())
         .def("value", &X::value)
         ;
     
-    class_<Y, std::auto_ptr<Y>, bases<X>, boost::noncopyable>("Y", init<int>())
+    class_<Y, std::auto_ptr<Y>, bases<X>, noncopyable>("Y", init<int>())
         ;
 
     // VC6 auto_ptrs do not have converting constructors    

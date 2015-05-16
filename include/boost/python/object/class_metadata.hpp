@@ -20,6 +20,10 @@
 
 # include <boost/noncopyable.hpp>
 
+namespace boost { namespace python {
+    using ::boost::noncopyable;
+}}
+
 namespace boost { namespace python { namespace objects { 
 
 BOOST_PYTHON_DECL
