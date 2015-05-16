@@ -86,10 +86,21 @@ str function_doc_signature_generator::pretty_signature(function const* f, int nu
         // regular function
         for (unsigned n = 1; n <= arity; ++n) {
             auto kwarg = (arg_names && arg_names[n-1]) ? object{arg_names[n-1]} : object{};
+
+            auto pytype = get_pytype_string(signature[n]);
+            auto name = [&]{
+                if (kwarg)
+                    return str{kwarg[0]};
+                else if (n == 1 && f->m_namespace == pytype)
+                    return "self"_s;
+                else
+                    return str{fmt["unnamed"]}.format(n);
+            }();
+
             auto parameter_map = dict{
-                "name"_a = kwarg ? str{kwarg[0]} : str{fmt["unnamed"]}.format(n),
-                "pytype"_a = get_pytype_string(signature[n]),
-                "cpptype"_a = signature[n].basename ? str{signature[n].basename} : "..."_s,
+                "name"_a = name,
+                "pytype"_a = pytype,
+                "cpptype"_a = str{signature[n].basename},
                 "lvalue"_a = signature[n].lvalue ? str{fmt["lvalue"]} : ""_s,
                 "default_value"_a = (kwarg && len(kwarg) == 2)
                                     ? str{fmt["default_value"]}.format(kwarg[1])

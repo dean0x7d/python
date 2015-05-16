@@ -21,10 +21,10 @@ x_value((X)arg1) -> int :
 make_x((object)arg1) -> X :
 
 >>> print X.value.__doc__.splitlines()[1]
-value((X)arg1) -> int :
+value((X)self) -> int :
 
 >>> print X.set.__doc__.splitlines()[1]
-set((X)arg1, (object)arg2) -> None :
+set((X)self, (object)arg2) -> None :
 
 '''
 

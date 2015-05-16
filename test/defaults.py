@@ -114,12 +114,12 @@
 |    C++ signature :
 
 >>> print selected_doc(Y.__init__, 1, 2, 4)
-|__init__((Y)arg1) -> None :
+|__init__((Y)self) -> None :
 |    doc of Y init
 |    C++ signature :
 
 >>> print selected_doc(X.bar2, 1, 2, 4)
-|bar2((X)arg1 [, (int)arg2 [, (str)arg3 [, (str)arg4 [, (float)arg5]]]]) -> Y :
+|bar2((X)self [, (int)arg2 [, (str)arg3 [, (str)arg4 [, (float)arg5]]]]) -> Y :
 |    doc of X::bar2
 |    C++ signature :
 
