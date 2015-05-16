@@ -57,7 +57,7 @@ public:
     template<class T>
     [[deprecated]] bool has_key(T&& key) const {
         return contains(std::forward<T>(key));
-    };
+    }
 
     // D.contains(k) -> bool. Equivalent to the Python expression 'k in D'.
     template<class T>
@@ -66,7 +66,7 @@ public:
         if (result == -1)
             throw_error_already_set();
         return result == 1;
-    };
+    }
 
     // D.items() -> list of (key, value) pairs, as 2-tuples.
     list items() const {
@@ -81,7 +81,7 @@ public:
     // D.pop(k[,d]) -> D[k] or d. Remove and return D[k] if D.contains(k).
     // Return d otherwise; Raise KeyError if d is not given and !D.contains(k).
     template<class T, class... O>
-    object pop(T&& key, O&&... default_) const {
+    object pop(T&& key, O&&... default_) {
         static_assert(sizeof...(O) <= 1, "");
         return attr("pop")(std::forward<T>(key), std::forward<O>(default_)...);
     }
@@ -90,11 +90,11 @@ public:
     // 2-tuple; but raise KeyError if D is empty.
     tuple popitem() {
         return tuple{detail::borrowed_reference(attr("popitem")().ptr())};
-    };
+    }
 
     // D.setdefault(k[,d]) -> D.get(k[,d]). Also set D[k]=d if !D.contains(k).
     template<class T, class... O>
-    object setdefault(T&& key, O&&... default_) const {
+    object setdefault(T&& key, O&&... default_) {
         static_assert(sizeof...(O) <= 1, "");
 
         auto k = object{std::forward<T>(key)};
