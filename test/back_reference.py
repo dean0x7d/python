@@ -18,7 +18,7 @@
 1
 
 >>> print y_identity.__doc__.splitlines()[1]
-y_identity((Y)arg1) -> object :
+y_identity(arg1: Y) -> object:
 '''
 
 def run(args = None):

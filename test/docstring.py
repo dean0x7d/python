@@ -9,57 +9,57 @@
 ...   return "\\n".join(["|"+doc[i] for i in args])
 
 >>> print selected_doc(doc_objects, 1)
-|doc_objects((dict)arg1, (list)arg2, (tuple)arg3, (str)arg4) -> None :
+|doc_objects(arg1: dict, arg2: list, arg3: tuple, arg4: str) -> None:
 
 >>> print selected_doc(X.__init__, 1, 2, 3, 4, 5)
-|__init__((X)self, (int)value) -> None :
+|__init__(self: X, value: int) -> None:
 |    this is the __init__ function
 |    its documentation has two lines.
 |
-|    C++ signature :
+|C++ signature:
 
 >>> print selected_doc(X.value, 1, 2, 4, 7, 8, 10)
-|value((X)self) -> int :
+|value(self: X) -> int:
 |    gets the value of the object
-|    C++ signature :
-|value((X)self) -> int :
+|C++ signature:
+|value(self: X) -> int:
 |    also gets the value of the object
-|    C++ signature :
+|C++ signature:
 
 >>> print selected_doc(create, 1, 2, 3, 4)
-|create((int)value) -> X :
+|create(value: int) -> X:
 |    creates a new X object
 |
-|    C++ signature :
+|C++ signature:
 
 >>> print selected_doc(fact, 1, 2, 3, 4)
-|fact((int)n) -> int :
+|fact(n: int) -> int:
 |    compute the factorial
 |
-|    C++ signature :
+|C++ signature:
 
 >>> len(fact_usr_off_1.__doc__.splitlines())
 5
 >>> print selected_doc(fact_usr_off_1, 1, 3)
-|fact_usr_off_1((int)n) -> int :
-|    C++ signature :
+|fact_usr_off_1(n: int) -> int:
+|C++ signature:
 >>> len(fact_usr_on_1.__doc__.splitlines())
 6
 >>> print selected_doc(fact_usr_on_1, 1, 2, 4)
-|fact_usr_on_1((int)n) -> int :
+|fact_usr_on_1(n: int) -> int:
 |    usr on 1
-|    C++ signature :
+|C++ signature:
 >>> len(fact_usr_off_2.__doc__.splitlines())
 5
 >>> print selected_doc(fact_usr_off_2, 1, 3)
-|fact_usr_off_2((int)n) -> int :
-|    C++ signature :
+|fact_usr_off_2(n: int) -> int:
+|C++ signature:
 >>> len(fact_usr_on_2.__doc__.splitlines())
 6
 >>> print selected_doc(fact_usr_on_2, 1, 2, 4)
-|fact_usr_on_2((int)n) -> int :
+|fact_usr_on_2(n: int) -> int:
 |    usr on 2
-|    C++ signature :
+|C++ signature:
 
 
 >>> len(fact_sig_off_1.__doc__.splitlines())
@@ -69,9 +69,9 @@
 >>> len(fact_sig_on_1.__doc__.splitlines())
 6
 >>> print selected_doc(fact_sig_on_1, 1, 2, 4)
-|fact_sig_on_1((int)n) -> int :
+|fact_sig_on_1(n: int) -> int:
 |    sig on 1
-|    C++ signature :
+|C++ signature:
 
 >>> len(fact_sig_off_2.__doc__.splitlines())
 2
@@ -80,9 +80,9 @@
 >>> len(fact_sig_on_2.__doc__.splitlines())
 6
 >>> print selected_doc(fact_sig_on_2, 1, 2, 4)
-|fact_sig_on_2((int)n) -> int :
+|fact_sig_on_2(n: int) -> int:
 |    sig on 2
-|    C++ signature :
+|C++ signature:
 
 
 >>> print fact_usr_off_sig_off_1.__doc__
@@ -90,9 +90,9 @@
 >>> len(fact_usr_on_sig_on_1.__doc__.splitlines())
 6
 >>> print selected_doc(fact_usr_on_sig_on_1, 1, 2, 4)
-|fact_usr_on_sig_on_1((int)n) -> int :
+|fact_usr_on_sig_on_1(n: int) -> int:
 |    usr on sig on 1
-|    C++ signature :
+|C++ signature:
 
 >>> len(fact_usr_on_sig_off_1.__doc__.splitlines())
 2
@@ -101,23 +101,23 @@
 >>> len(fact_usr_on_sig_on_2.__doc__.splitlines())
 6
 >>> print selected_doc(fact_usr_on_sig_on_2, 1, 2, 4)
-|fact_usr_on_sig_on_2((int)n) -> int :
+|fact_usr_on_sig_on_2(n: int) -> int:
 |    usr on sig on 2
-|    C++ signature :
+|C++ signature:
 
 >>> print selected_doc(fact_usr_on_psig_on_csig_off_1, 1, 2)
-|fact_usr_on_psig_on_csig_off_1((int)n) -> int :
+|fact_usr_on_psig_on_csig_off_1(n: int) -> int:
 |    usr on psig on csig off 1
 
 >>> print selected_doc(fact_usr_on_psig_off_csig_on_1, 1, 3)
 |    usr on psig off csig on 1
-|    C++ signature :
+|C++ signature:
 
 >>> print fact_usr_off_psig_on_csig_off_1.__doc__.splitlines()[1]
-fact_usr_off_psig_on_csig_off_1((int)n) -> int :
+fact_usr_off_psig_on_csig_off_1(n: int) -> int:
 
 >>> print selected_doc(fact_usr_off_psig_off_csig_on_1,2)
-|    C++ signature :
+|C++ signature:
 
 
 '''

@@ -184,7 +184,7 @@ are a complicated constructor and member function, respectively.
 >>> dd.name()
 'D'
 >>> print g.__doc__.splitlines()[1]
-g((Simple)arg1) -> Simple :
+g(arg1: Simple) -> Simple:
 
 """
 

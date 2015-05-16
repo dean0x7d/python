@@ -15,25 +15,25 @@ dict& docstring_options::format() {
             "doc"_a = "\n{python_signature}{docstring}{cpp_signature}",
             "docstring_indent"_a = "    ",
             "cpp"_a = dict{
-                "signature"_a = "\n    C++ signature :\n"
-                                "        {cpptype_return} {function_name}({parameters})",
+                "signature"_a = "\nC++ signature:\n"
+                                "    {cpptype_return} {function_name}({parameters})",
                 "parameter"_a = "{cpptype}{lvalue} {name}{default_value}",
                 "unnamed"_a = "arg{}",
                 "default_value"_a = "={!r}",
                 "lvalue"_a = " {lvalue}",
                 "separator"_a = ", ",
-                "optional_open"_a = " [",
+                "optional_open"_a = "[",
                 "optional_close"_a = "]",
                 "raw"_a = "PyObject* args, PyObject* kwargs"
             },
             "python"_a = dict{
-                "signature"_a = "{function_name}({parameters}) -> {pytype_return} :",
-                "parameter"_a = "({pytype}){name}{default_value}",
+                "signature"_a = "{function_name}({parameters}) -> {pytype_return}:",
+                "parameter"_a = "{name}: {pytype}{default_value}",
                 "unnamed"_a = "arg{}",
                 "default_value"_a = "={!r}",
                 "lvalue"_a = "",
                 "separator"_a = ", ",
-                "optional_open"_a = " [",
+                "optional_open"_a = "[",
                 "optional_close"_a = "]",
                 "raw"_a = "*args, **kwargs"
             }

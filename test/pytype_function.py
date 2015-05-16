@@ -5,7 +5,7 @@
 >>> from pytype_function_ext import *
 
 >>> print func.__doc__.splitlines()[1]
-func((A)arg1) -> A :
+func(arg1: A) -> A:
 
 >>> print func.__module__
 pytype_function_ext

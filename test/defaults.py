@@ -107,21 +107,21 @@
 ...   return "\\n".join(["|"+doc[i] for i in args])
 
 >>> print selected_doc(X.__init__, 1, 2, 4, 7, 10)
-|__init__((X)self [, (int)a [, (str)b [, (str)c [, (float)d]]]]) -> None :
+|__init__(self: X[, a: int[, b: str[, c: str[, d: float]]]]) -> None:
 |    doc of init
-|    C++ signature :
-|__init__((X)self, (str)s, (bool)b) -> None :
-|    C++ signature :
+|C++ signature:
+|__init__(self: X, s: str, b: bool) -> None:
+|C++ signature:
 
 >>> print selected_doc(Y.__init__, 1, 2, 4)
-|__init__((Y)self) -> None :
+|__init__(self: Y) -> None:
 |    doc of Y init
-|    C++ signature :
+|C++ signature:
 
 >>> print selected_doc(X.bar2, 1, 2, 4)
-|bar2((X)self [, (int)arg2 [, (str)arg3 [, (str)arg4 [, (float)arg5]]]]) -> Y :
+|bar2(self: X[, arg2: int[, arg3: str[, arg4: str[, arg5: float]]]]) -> Y:
 |    doc of X::bar2
-|    C++ signature :
+|C++ signature:
 
 """
 def run(args = None):

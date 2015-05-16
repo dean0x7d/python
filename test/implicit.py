@@ -15,16 +15,16 @@
 ... else: print 'no error'
 
 >>> print x_value.__doc__.splitlines()[1]
-x_value((X)arg1) -> int :
+x_value(arg1: X) -> int:
 
 >>> print make_x.__doc__.splitlines()[1]
-make_x((object)arg1) -> X :
+make_x(arg1: object) -> X:
 
 >>> print X.value.__doc__.splitlines()[1]
-value((X)self) -> int :
+value(self: X) -> int:
 
 >>> print X.set.__doc__.splitlines()[1]
-set((X)self, (object)arg2) -> None :
+set(self: X, arg2: object) -> None:
 
 '''
 
