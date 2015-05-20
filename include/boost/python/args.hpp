@@ -50,7 +50,8 @@ namespace detail
 
   template <>
   struct keywords<1> : keywords_base<1> {
-      using keywords_base<1>::keywords_base;
+	  explicit keywords(char const* name) : keywords_base<1>(name) {}
+	  explicit keywords(keyword kw) : keywords_base<1>(kw) {}
 
       template <class T>
       keywords<1>& operator=(T value) {

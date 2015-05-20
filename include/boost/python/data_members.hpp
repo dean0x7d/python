@@ -37,8 +37,11 @@ namespace detail {
   template<class T, class = void>
   struct uses_registry : std::false_type {};
 
+  // SFINAE workaround for VS2015 RC
+  template<bool> struct bool_void { using type = void; };
+
   template<class T>
-  struct uses_registry<T, decltype((void)make_to_python_value<T>::uses_registry, void())>
+  struct uses_registry<T, typename bool_void<make_to_python_value<T>::uses_registry>::type>
       : std::integral_constant<bool, make_to_python_value<T>::uses_registry>
   {};
 

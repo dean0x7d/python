@@ -10,7 +10,7 @@
 # include <boost/python/detail/type_list.hpp>
 # include <boost/python/converter/registry.hpp>
 
-# include <memory>
+# include <vector>
 
 namespace boost { namespace python { namespace detail { 
 
@@ -20,7 +20,7 @@ struct signature_element {
     bool lvalue;
 };
 
-using py_func_sig_info = std::unique_ptr<signature_element[]>;
+using py_func_sig_info = std::vector<signature_element>;
 
 template<class T>
 using is_reference_to_non_const = std::integral_constant<bool,
@@ -37,7 +37,7 @@ template<class Sig> struct signature;
 template<class... Args>
 struct signature<type_list<Args...>> {
     static py_func_sig_info elements() {
-        return std::unique_ptr<signature_element[]>{new signature_element[sizeof...(Args)]{
+        return {
             { type_id<Args>().name(),
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
               get_expected_from_python_type(type_id<cpp14::remove_pointer_t<Args>>()),
@@ -45,7 +45,7 @@ struct signature<type_list<Args...>> {
               nullptr,
 #endif
               is_reference_to_non_const<Args>::value }...
-        }};
+        };
     }
 };
 

@@ -30,7 +30,7 @@ namespace detail
   template <class T>
   struct function_arg_to_python : handle<> {
       function_arg_to_python(T const& x)
-          : handle<>{python::objects::make_function_handle(x)}
+          : handle<>(python::objects::make_function_handle(x))
       {}
   };
 
@@ -86,7 +86,9 @@ namespace detail
 // Throw an exception if the conversion can't succeed
 template <class T>
 struct arg_to_python : detail::select_arg_to_python_t<T> {
-    using detail::select_arg_to_python_t<T>::select_arg_to_python_t;
+	arg_to_python(T const& x)
+		: detail::select_arg_to_python_t<T>(x)
+	{}
 };
 
 // Make sure char const* is not interpreted as a regular pointer
@@ -110,14 +112,14 @@ struct arg_to_python<pointer_wrapper<Ptr>> : handle<> {
                   "Passing a raw Python object pointer is not allowed");
 
     arg_to_python(Ptr x)
-        : handle<>{to_python_indirect<Ptr, python::detail::make_reference_holder>{}(x)}
+        : handle<>(to_python_indirect<Ptr, python::detail::make_reference_holder>{}(x))
     {}
 };
 
 template<class T>
 struct arg_to_python<reference_wrapper<T>> : handle<> {
     arg_to_python(T& x)
-        : handle<>{to_python_indirect<T&, python::detail::make_reference_holder>{}(x)}
+        : handle<>(to_python_indirect<T&, python::detail::make_reference_holder>{}(x))
     {}
 };
 

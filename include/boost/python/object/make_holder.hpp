@@ -21,8 +21,8 @@ struct holder_policy : BasePolicy {
     struct extract_signature;
 
     template<class... Args>
-    struct extract_signature<detail::type_list<void, PyObject*, Args...>> {
-        using type = detail::type_list<void, Class, Args...>;
+    struct extract_signature<python::detail::type_list<void, PyObject*, Args...>> {
+        using type = python::detail::type_list<void, Class, Args...>;
     };
 };
 

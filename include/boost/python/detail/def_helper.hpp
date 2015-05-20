@@ -44,12 +44,12 @@ struct tuple_find_if<Predicate, std::tuple<Args...>> {
     static constexpr auto value = find_index<false, -1, Args...>::value;
 };
 
-template<int index, class Else, class Tuple>
+template<std::size_t index, class Else, class Tuple>
 auto get_if_else_impl(Tuple const& t, std::true_type) -> decltype(std::get<index>(t)) {
     return std::get<index>(t);
 }
 
-template<int index, class Else, class Tuple>
+template<std::size_t index, class Else, class Tuple>
 Else get_if_else_impl(Tuple const&, std::false_type) {
     return {};
 }
@@ -59,7 +59,8 @@ Else get_if_else_impl(Tuple const&, std::false_type) {
 // References and cv qualifiers are removed from the element type
 // before passing it to the predicate.
 template<template<class> class Predicate, class Else, class Tuple,
-    int index = tuple_find_if<Predicate, Tuple>::value, bool found = (index >= 0)>
+    int index_ = tuple_find_if<Predicate, Tuple>::value, 
+	bool found = (index_ >= 0), std::size_t index = found ? index_ : 0>
 auto get_if_else(Tuple const& t)
     -> decltype(get_if_else_impl<index, Else>(t, std::integral_constant<bool, found>{}))
 {

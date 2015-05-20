@@ -112,9 +112,7 @@ private:
 
     template<class... Converters>
     PyObject* call_impl(argument_package arg_pack, Converters... converters) {
-        // The 'true' at the end is not needed, but it keeps VS14 CTP3 happy
-        bool check_converters[] = { converters.check()..., true };
-        for (auto is_convertible : check_converters) {
+        for (auto is_convertible : {converters.check()..., true}) {
             if (!is_convertible)
                 return nullptr;
         }
