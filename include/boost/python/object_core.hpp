@@ -261,6 +261,4 @@ inline PyObject* get_managed_object(object const& x) {
 
 }} // namespace boost::python
 
-# include <boost/python/slice_nil.hpp>
-
 #endif // OBJECT_CORE_DWA2002615_HPP
