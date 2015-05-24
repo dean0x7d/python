@@ -129,32 +129,29 @@ public:
     }
 
     using signature_ = detail::type_list<Ts...>;
-    using back_is_optional = detail::is_<detail::type_list, detail::back_t<signature_>>;
+    using back = detail::tl::back_t<signature_>;
+    using back_is_optional = detail::is_<detail::type_list, back>;
     
     using optional_args = cpp14::conditional_t<
         back_is_optional::value,
-        detail::back_t<signature_>,
+        back,
         detail::type_list<>
     >;
 
     using signature = cpp14::conditional_t<
         !back_is_optional::value,
         signature_,
-        cpp14::conditional_t<
-            optional_args::is_empty,
-            detail::drop_t<signature_, 1>,
-            detail::concat_t<
-                detail::drop_t<signature_, 1>,
-                optional_args
-            >
+        detail::tl::concat_t<
+            detail::tl::drop_t<signature_, 1>,
+            optional_args
         >
     >;
 
     // TODO: static assert to make sure there are no other optional elements
 
     // Count the number of default args
-    using n_defaults = std::integral_constant<int, optional_args::size>;
-    using n_arguments = std::integral_constant<int, signature::size>;
+    using n_defaults = std::integral_constant<std::size_t, optional_args::size>;
+    using n_arguments = std::integral_constant<std::size_t, signature::size>;
 };
 
 namespace detail
@@ -193,7 +190,7 @@ namespace detail
           if (kw.second > kw.first)
               --kw.second;
 
-          using sig = detail::drop_t<Signature, 1>;
+          using sig = tl::drop_t<Signature, 1>;
           define_class_init_helper<NDefaults-1>::template apply<sig>(cl, cp, docstring, kw);
       }
   };

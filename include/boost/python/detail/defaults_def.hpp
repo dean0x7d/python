@@ -134,7 +134,7 @@ namespace detail
               --kw.second;
 
           //  call the next define_with_defaults_helper
-          using next_sig = detail::drop_t<Sig, 1>;
+          using next_sig = tl::drop_t<Sig, 1>;
           define_with_defaults_helper<Overloads, next_sig, N-1>::def(
               name, kw, policies, name_space, doc
           );

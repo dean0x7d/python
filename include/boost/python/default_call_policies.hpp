@@ -45,7 +45,7 @@ struct default_call_policies {
 
     template<class Signature>
     struct extract_return_type {
-        using type = detail::front_t<Signature>;
+        using type = detail::tl::front_t<Signature>;
     };
 
     template<class Signature>

@@ -51,7 +51,7 @@ struct return_arg : BasePolicy {
 
     template<class Signature>
     struct extract_return_type {
-        using type = detail::get_t<Signature, arg_pos>;
+        using type = detail::tl::get_t<Signature, arg_pos>;
     };
 };
 
