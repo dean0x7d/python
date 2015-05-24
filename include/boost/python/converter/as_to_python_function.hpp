@@ -6,7 +6,6 @@
 # define AS_TO_PYTHON_FUNCTION_DWA2002121_HPP
 # include <boost/python/detail/prefix.hpp>
 # include <type_traits>
-# include <utility>
 
 namespace boost { namespace python { namespace converter { 
 
