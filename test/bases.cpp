@@ -3,41 +3,36 @@
 // accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 #include <boost/python/bases.hpp>
-#include <boost/python/object/class_metadata.hpp>
+#include <boost/python/detail/type_list_utils.hpp>
+#include <boost/python/detail/is_xxx.hpp>
 #include <type_traits>
+using namespace boost::python;
+namespace tl = boost::python::detail::tl;
 
 struct A;
 struct B;
 
-template <class... Ts>
-using choose_bases_t = boost::python::objects::select_t<
-  boost::python::objects::is_bases, boost::python::bases<>, Ts...
->;
+template<class T>
+using is_bases = detail::is_<bases, T>;
+
+template<class... Ts>
+using choose_bases_t = tl::find_if_t<tl::type_list<Ts...>, is_bases, bases<>>;
 
 int main()
 {
-    static_assert(boost::python::objects::is_bases<
-                  boost::python::bases<A,B> >::value, "");
-
-    static_assert(!boost::python::objects::is_bases<
-                  boost::python::bases<A,B>& >::value, "");
-
-    static_assert(!boost::python::objects::is_bases<
-                  void* >::value, "");
-
-    static_assert(!boost::python::objects::is_bases<
-                  int >::value, "");
-
-    static_assert(!boost::python::objects::is_bases<
-                  int[5] >::value, "");
+    static_assert(is_bases<bases<A, B>>::value, "");
+    static_assert(!is_bases<bases<A, B>&>::value, "");
+    static_assert(!is_bases<void*>::value, "");
+    static_assert(!is_bases<int>::value, "");
+    static_assert(!is_bases<int[5]>::value, "");
 
     using collected1 = choose_bases_t<int, char*>;
-    static_assert(std::is_same<collected1,boost::python::bases<> >::value, "");
+    static_assert(std::is_same<collected1, bases<>>::value, "");
 
-    static_assert(std::is_same<choose_bases_t<int,char*,long>, boost::python::bases<> >::value, "");
+    static_assert(std::is_same<choose_bases_t<int, char*, long>, bases<>>::value, "");
     
-    using collected2 = choose_bases_t<int, boost::python::bases<A,B>, A>;
-    static_assert(std::is_same<collected2,boost::python::bases<A,B> >::value, "");
+    using collected2 = choose_bases_t<int, bases<A, B>, A>;
+    static_assert(std::is_same<collected2, bases<A, B>>::value, "");
 
-    static_assert(std::is_same<choose_bases_t<int,boost::python::bases<A,B>,long>, boost::python::bases<A,B> >::value, "");
+    static_assert(std::is_same<choose_bases_t<int, bases<A, B>,long>, bases<A, B>>::value, "");
 }

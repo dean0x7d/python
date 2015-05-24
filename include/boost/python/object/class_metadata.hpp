@@ -13,6 +13,7 @@
 # include <boost/python/object/make_ptr_instance.hpp>
 
 # include <boost/python/detail/unwrap_wrapper.hpp>
+# include <boost/python/detail/type_list_utils.hpp>
 
 # include <boost/python/back_reference.hpp>
 # include <boost/python/has_back_reference.hpp>
@@ -24,7 +25,8 @@ namespace boost { namespace python {
     using ::boost::noncopyable;
 }}
 
-namespace boost { namespace python { namespace objects { 
+namespace boost { namespace python { namespace objects {
+namespace tl = python::detail::tl;
 
 BOOST_PYTHON_DECL
 void copy_class_object(type_info const& src, type_info const& dst);
@@ -75,46 +77,6 @@ inline void register_shared_ptr_from_python_and_casts() {
     register_bases_of<T, Bases>::execute();
 }
 
-namespace detail {
-    template<template<class> class Predicate, class Default, class... Args>
-    struct select;
-    
-    template<template<class> class Predicate, class Default>
-    struct select<Predicate, Default> {
-        using type = Default;
-    };
-    
-    template<template<class> class Predicate, class Default, class T, class... Tail>
-    struct select<Predicate, Default, T, Tail...> {
-        using type = cpp14::conditional_t<
-            Predicate<T>::value,
-            T,
-            typename select<Predicate, Default, Tail...>::type
-        >;
-    };
-    
-    template<template<class> class Predicate, class... Args>
-    struct any;
-    
-    template<template<class> class Predicate>
-    struct any<Predicate> {
-        static constexpr bool value = false;
-    };
-    
-    template<template<class> class Predicate, class T, class... Tail>
-    struct any<Predicate, T, Tail...> {
-        static constexpr bool value = Predicate<T>::value || any<Predicate, Tail...>::value;
-    };
-}
-
-// Select the Arg that satisfies the Predicate or return Default if none do.
-template<template<class> class Predicate, class Default, class... Args>
-using select_t = typename detail::select<Predicate, Default, Args...>::type;
-
-// Does any Arg satisfy the Predicate?
-template<template<class> class Predicate, class... Args>
-using any_t = std::integral_constant<bool, detail::any<Predicate, Args...>::value>;
-
 //
 // Helpers for choosing the optional arguments
 //
@@ -130,11 +92,12 @@ using is_held = std::integral_constant<bool, !is_bases<T>::value && !is_noncopya
 // W is the class being wrapped. Args are arbitrarily-ordered optional arguments.
 template<class W, class... Args>
 struct class_metadata {
+    using args = tl::type_list<Args...>;
     // base classes of W
-    using base_list = select_t<is_bases, bases<>, Args...>;
+    using base_list = tl::find_if_t<args, is_bases, bases<>>;
     // [a class derived from] W or a smart pointer to [a class derived from] W
-    using held_type = select_t<is_held, W, Args...>;
-    using is_noncopyable = any_t<is_noncopyable, Args...>;
+    using held_type = tl::find_if_t<args, is_held, W>;
+    using is_noncopyable = tl::any_of_t<args, is_noncopyable>;
 
 private:
     // Hold by value if held_type is W or derived from W. (Otherwise held_type is a pointer.)
@@ -153,7 +116,7 @@ private:
 
     using use_back_reference = std::integral_constant<bool,
         has_back_reference<W>::value ||
-        any_t<is_self, Args...>::value || // class_<W, W> has a back-reference
+        tl::any_of_t<args, is_self>::value || // class_<W, W> has a back-reference
         (std::is_base_of<W, unwapped_held_type>::value &&
          !std::is_same<W, unwapped_held_type>::value)
     >;
