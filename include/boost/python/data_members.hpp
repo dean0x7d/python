@@ -83,8 +83,7 @@ namespace detail {
   inline object make_getter(Data* d, CallPolicies const& call_policies) {
       return python::make_function(
           [d]() -> Data& { return *d; },
-          call_policies,
-          type_list<Data&>{}
+          call_policies
       );
   }
 
@@ -93,8 +92,7 @@ namespace detail {
   inline object make_getter(Data Class::*pm, CallPolicies const& call_policies) {
       return python::make_function(
           [pm](Class& c) -> Data& { return c.*pm; },
-          call_policies,
-          type_list<Data&, Class&>{}
+          call_policies
       );
   }
 
@@ -113,8 +111,7 @@ namespace detail {
   inline object make_setter(Data* d, CallPolicies const& call_policies) {
       return python::make_function(
           [d](Data const& rhs) { *d = rhs; },
-          call_policies,
-          type_list<void, Data const&>{}
+          call_policies
       );
   }
 
@@ -123,8 +120,7 @@ namespace detail {
   inline object make_setter(Data Class::*pm, CallPolicies const& call_policies) {
       return python::make_function(
           [pm](Class& c, Data const& rhs) { c.*pm = rhs; },
-          call_policies,
-          type_list<void, Class&, Data const&>()
+          call_policies
       );
   }
 
