@@ -2,47 +2,48 @@
 #error Do not include this file
 #else
 
-// as 'get_signature(RT(*)(Ts...), void*)' is the same
-// function as 'get_signature(RT(__cdecl *)(Ts...), void*)',
-// we don't define it twice
+// 'Return (*)(Args...)' is the same function as 'Return (__cdecl *)(Args...)'
+// -> we don't define it twice
 #if !defined(BOOST_PYTHON_FN_CC_IS_CDECL)
 
-template <class RT, class... Ts>
-inline type_list<RT, Ts...> 
-get_signature(RT(BOOST_PYTHON_FN_CC *)(Ts...), void* = nullptr)
-{
-    return {};
-}
+// Non-member functions
+template<class Return, class _, class... Args>
+struct get_signature<Return(BOOST_PYTHON_FN_CC *)(Args...), _> {
+    using type = type_list<Return, Args...>;
+};
 
 #endif
 
+// Member functions
+template<class Return, class Class, class Target, class... Args>
+struct get_signature<Return(BOOST_PYTHON_FN_CC Class::*)(Args...), Target> {
+    using type = type_list<Return, most_derived_t<Target, Class>&, Args...>;
+};
 
-template <class RT, class ClassT, class... Ts, class Target = ClassT>
-inline type_list<RT, most_derived_t<Target, ClassT>&, Ts...>
-get_signature(RT(BOOST_PYTHON_FN_CC ClassT::*)(Ts...), Target* = nullptr)
-{
-    return {};
-}
+template<class Return, class Class, class Target, class... Args>
+struct get_signature<Return(BOOST_PYTHON_FN_CC Class::*)(Args...) const, Target> {
+    using type = type_list<Return, most_derived_t<Target, Class>&, Args...>;
+};
 
-template <class RT, class ClassT, class... Ts, class Target = ClassT>
-inline type_list<RT, most_derived_t<Target, ClassT>&, Ts...>
-get_signature(RT(BOOST_PYTHON_FN_CC ClassT::*)(Ts...) const, Target* = nullptr)
-{
-    return {};
-}
+template<class Return, class Class, class Target, class... Args>
+struct get_signature<Return(BOOST_PYTHON_FN_CC Class::*)(Args...) volatile, Target> {
+    using type = type_list<Return, most_derived_t<Target, Class>&, Args...>;
+};
 
-template <class RT, class ClassT, class... Ts, class Target = ClassT>
-inline type_list<RT, most_derived_t<Target, ClassT>&, Ts...>
-get_signature(RT(BOOST_PYTHON_FN_CC ClassT::*)(Ts...) volatile, Target* = nullptr)
-{
-    return {};
-}
+template<class Return, class Class, class Target, class... Args>
+struct get_signature<Return(BOOST_PYTHON_FN_CC Class::*)(Args...) const volatile, Target> {
+    using type = type_list<Return, most_derived_t<Target, Class>&, Args...>;
+};
 
-template <class RT, class ClassT, class... Ts, class Target = ClassT>
-inline type_list<RT, most_derived_t<Target, ClassT>&, Ts...>
-get_signature(RT(BOOST_PYTHON_FN_CC ClassT::*)(Ts...) const volatile, Target* = nullptr)
-{
-    return {};
-}
+// Functor and lambda
+template<class Return, class Class, class... Args>
+struct get_signature<Return(BOOST_PYTHON_FN_CC Class::*)(Args...), int> {
+    using type = type_list<Return, Args...>;
+};
+
+template<class Return, class Class, class... Args>
+struct get_signature<Return(BOOST_PYTHON_FN_CC Class::*)(Args...) const, int> {
+    using type = type_list<Return, Args...>;
+};
 
 #endif // BOOST_PYTHON_FN_CC

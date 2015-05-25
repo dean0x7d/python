@@ -18,61 +18,58 @@ namespace boost { namespace python { namespace detail {
 template <class C1, class C2>
 using most_derived_t = cpp14::conditional_t<std::is_convertible<C1*, C2*>::value, C1, C2>;
 
-    
-//  The following includes generate::
+
+//  The following includes generate metafunctions which return signatures
+//  for non-member functions:
 //
-//      template <class RT, class... Ts>
-//      inline type_list<RT, Ts...>
-//      get_signature(RT(BOOST_PYTHON_FN_CC *)(Ts...), void* = nullptr)
-//      {
-//          return {};
-//      }
+//      Return (BOOST_PYTHON_FN_CC *)(Args...)
+//      -> type_list<Return, Args...>
 //
-//    where BOOST_PYTHON_FN_CC is a calling convention keyword, can be
+//  where BOOST_PYTHON_FN_CC is a calling convention keyword, can be:
+//      empty, for default calling convention
+//      __cdecl (if BOOST_PYTHON_ENABLE_CDECL is defined)
+//      __stdcall (if BOOST_PYTHON_ENABLE_STDCALL is defined)
+//      __fastcall (if BOOST_PYTHON_ENABLE_FASTCALL is defined)
 //
-//        empty, for default calling convention
-//        __cdecl (if BOOST_PYTHON_ENABLE_CDECL is defined)
-//        __stdcall (if BOOST_PYTHON_ENABLE_STDCALL is defined)
-//        __fastcall (if BOOST_PYTHON_ENABLE_FASTCALL is defined)
 //
-//   And, for an appropriate assortment of cv-qualifications::
+//  For member functions an appropriate assortment of cv-qualifications
+//  is defined:
+//      Return (BOOST_PYTHON_FN_CC Class::*)(Args...) [const] [volatile]
+//      -> type_list<Return, Class-or-Target, Args...>
 //
-//      template <class RT, class ClassT, class... Ts>
-//      inline type_list<RT, ClassT&, Ts...>
-//      get_signature(RT(BOOST_PYTHON_FN_CC ClassT::*)(Ts...) cv))
-//      {
-//          return {};
-//      }
 //
-//      template <class Target, class RT, class ClassT, class... Ts>
-//      inline type_list<RT, most_derived_t<Target, ClassT>&, T0...TN>
-//      get_signature(RT(BOOST_PYTHON_FN_CC ClassT::*)(T0...TN) cv), Target*)
-//      {
-//          return {};
-//      }
+//  For functions objects 'operator()' is inspected and the Class type
+//  is remove from the signature:
+//      Return (BOOST_PYTHON_FN_CC Class::*)(Args...) [const]
+//      -> type_list<Return, Args...>
 //
-//  There are two forms for invoking get_signature::
 //
-//      get_signature(f)
+//  There are two forms for invoking get_signature:
+//      get_signature_t<Function>
+//      get_signature_t<Function, Target>
 //
-//  and ::
-//
-//      get_signature(f, (Target*)nullptr)
-//
-//  These functions extract the return type, class (for member
+//  These metafunctions extract the return type, class (for member
 //  functions) and arguments of the input signature and stuff them in
-//  an mpl type sequence (the calling convention is dropped).
-//  Note that cv-qualification is dropped from
-//  the "hidden this" argument of member functions; that is a
-//  necessary sacrifice to ensure that an lvalue from_python converter
-//  is used.  A pointer is not used so that None will be rejected for
-//  overload resolution.
+//  a type_list (the calling convention is dropped).
+//
+//  Note that cv-qualification is dropped from the "hidden this" param
+//  of member functions; that is a necessary sacrifice to ensure that
+//  an lvalue from_python converter is used. A pointer is not used so
+//  that None will be rejected for overload resolution.
 //
 //  The second form of get_signature essentially downcasts the "hidden
 //  this" argument of member functions to Target, because the function
 //  may actually be a member of a base class which is not wrapped, and
 //  in that case conversion from python would fail.
 
+
+// This is selected if all the function pointer specializations fail to match.
+// Assume it's a function object and pass the type of its operator() to another
+// specialization which is going to discard the Class type from the signature.
+template<class FuncObject, class /*Target*/>
+struct get_signature {
+    using type = typename get_signature<decltype(&FuncObject::operator()), int>::type;
+};
 
 // 'default' calling convention
 # define BOOST_PYTHON_FN_CC
@@ -103,7 +100,7 @@ using most_derived_t = cpp14::conditional_t<std::is_convertible<C1*, C2*>::value
 # endif
 
 template<class Function, class Target = void>
-using make_signature = decltype(get_signature(std::declval<Function>(), std::declval<Target*>()));
+using make_signature = typename get_signature<Function, Target>::type;
 
 }}} // namespace boost::python::detail
 

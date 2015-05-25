@@ -82,6 +82,7 @@ bpl-test crossmod_exception
 ]
 
 [ bpl-test move_semantics ]
+[ bpl-test def_lambda ]
 [ bpl-test std_tuple ]
 
 [ bpl-test injected ]
