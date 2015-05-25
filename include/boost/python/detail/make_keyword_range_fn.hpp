@@ -18,7 +18,7 @@ namespace boost { namespace python { namespace detail {
 // keywords is missing for all but the initial function definition.
 template<class CallPolicies, class Function>
 object make_keyword_range_function(Function f, CallPolicies const& cp, keyword_range const& kw) {
-    return detail::make_function_aux<detail::make_signature<Function>, 0>(f, cp, kw);
+    return detail::make_function_aux<detail::get_signature_t<Function>, 0>(f, cp, kw);
 }
 
 template<class Signature, class CallPolicies, class Function>

@@ -51,7 +51,7 @@ namespace detail
       
       objects::add_to_namespace(
           name_space, name,
-          detail::make_keyword_range_function<make_signature<Func, wrapped_type>>(f, policies, kw)
+          detail::make_keyword_range_function<get_signature_t<Func, wrapped_type>>(f, policies, kw)
         , doc
       );
   }

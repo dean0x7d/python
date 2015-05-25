@@ -46,7 +46,7 @@ namespace detail
   //   when the 3rd argument is keywords or when it is a signature.
   template<class CallPolicies, class Keywords, class Function>
   object make_function_dispatch(Function f, CallPolicies const& cp, Keywords const& kw, std::true_type) {
-      return detail::make_function_aux<detail::make_signature<Function>, Keywords::size>(
+      return detail::make_function_aux<detail::get_signature_t<Function>, Keywords::size>(
           f, cp, kw.range()
       );
   }
@@ -63,12 +63,12 @@ namespace detail
 //
 template<class Function>
 object make_function(Function f) {
-    return detail::make_function_aux<detail::make_signature<Function>>(f, default_call_policies{});
+    return detail::make_function_aux<detail::get_signature_t<Function>>(f, default_call_policies{});
 }
 
 template<class Function, class CallPolicies>
 object make_function(Function f, CallPolicies const& cp) {
-    return detail::make_function_aux<detail::make_signature<Function>>(f, cp);
+    return detail::make_function_aux<detail::get_signature_t<Function>>(f, cp);
 }
 
 template <class Function, class CallPolicies, class KeywordsOrSignature>

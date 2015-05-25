@@ -132,7 +132,7 @@ namespace detail
                                    std::true_type)
   {
       return detail::make_constructor_aux<
-          detail::make_signature<Function>, Keywords::size
+          detail::get_signature_t<Function>, Keywords::size
       >(
           f, cp, kw.range()
       );
@@ -151,14 +151,14 @@ namespace detail
 //   Keywords, and/or Signature.
 template<class Function>
 object make_constructor(Function f) {
-    return detail::make_constructor_aux<detail::make_signature<Function>>(
+    return detail::make_constructor_aux<detail::get_signature_t<Function>>(
         f, default_call_policies{}
     );
 }
 
 template<class Function, class CallPolicies>
 object make_constructor(Function f, CallPolicies const& cp) {
-    return detail::make_constructor_aux<detail::make_signature<Function>>(f, cp);
+    return detail::make_constructor_aux<detail::get_signature_t<Function>>(f, cp);
 }
 
 template<class Function, class CallPolicies, class KeywordsOrSignature>

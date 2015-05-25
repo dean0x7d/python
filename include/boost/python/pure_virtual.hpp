@@ -37,7 +37,7 @@ namespace detail
   // whose return type is replaced by void, and whose first argument is
   // replaced by C&.
   template<class F, class C>
-  using error_signature = replace_front2_t<make_signature<F>, void, C&>;
+  using error_signature = replace_front2_t<get_signature_t<F>, void, C&>;
 
   //
   // } 

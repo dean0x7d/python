@@ -44,7 +44,7 @@ namespace detail
                            overloads_base const*)
   {
       scope current;
-      define_with_defaults<make_signature<Function>>(name, overloads, current);
+      define_with_defaults<get_signature_t<Function>>(name, overloads, current);
   }
 }
 

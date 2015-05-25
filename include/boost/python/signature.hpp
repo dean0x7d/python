@@ -100,7 +100,7 @@ struct get_signature {
 # endif
 
 template<class Function, class Target = void>
-using make_signature = typename get_signature<Function, Target>::type;
+using get_signature_t = typename get_signature<Function, Target>::type;
 
 }}} // namespace boost::python::detail
 

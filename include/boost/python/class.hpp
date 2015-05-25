@@ -234,7 +234,7 @@ private:
     object make_fn_impl(F const& f, std::false_type /*is_object*/,
                         std::false_type /*is_member*/, ...)
     {
-        return python::make_function(f, default_call_policies{}, detail::make_signature<F, T>{});
+        return python::make_function(f, default_call_policies{}, detail::get_signature_t<F, T>{});
     };
 
     template <class T, class D, class B>
@@ -270,7 +270,7 @@ private:
         objects::add_to_namespace(
             *this, name,
             make_function(f, helper.policies(), helper.keywords(),
-                          detail::make_signature<Function, target>{}),
+                          detail::get_signature_t<Function, target>{}),
             helper.doc()
         );
 
@@ -307,7 +307,7 @@ private:
     void def_maybe_overloads(char const* name, Function, Overloads const& overloads,
                              detail::overloads_base const*)
     {
-        detail::define_with_defaults<detail::make_signature<Function>>(name, overloads, *this);
+        detail::define_with_defaults<detail::get_signature_t<Function>>(name, overloads, *this);
     }
 
     template<class Function, class A1>

@@ -28,7 +28,7 @@ inline handle<> function_handle(Function const& f) {
 // reasoning as above.
 template<class Function>
 handle<> make_function_handle(Function f) {
-    return objects::function_handle<python::detail::make_signature<Function>>(f);
+    return objects::function_handle<python::detail::get_signature_t<Function>>(f);
 }
 
 }}} // namespace boost::python::objects
