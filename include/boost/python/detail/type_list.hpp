@@ -9,7 +9,7 @@ namespace boost { namespace python { namespace detail {
 
 template<class... Ts>
 struct type_list {
-    static constexpr std::size_t size = sizeof...(Ts);
+    static constexpr auto size = sizeof...(Ts);
     static constexpr bool is_empty = size == 0;
 };
     
