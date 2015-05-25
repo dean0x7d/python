@@ -64,4 +64,11 @@
 #define BOOST_PYTHON_SUPPORTS_PY_SIGNATURES // enables smooth transition
 #endif
 
+# ifndef BOOST_PYTHON_USE_STD_SHARED_PTR
+#  define BOOST_PYTHON_USE_STD_SHARED_PTR
+# endif
+# ifndef BOOST_PYTHON_USE_STD_REF
+#  define BOOST_PYTHON_USE_STD_REF
+# endif
+
 #endif // CONFIG_DWA052200_H_
