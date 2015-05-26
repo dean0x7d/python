@@ -74,7 +74,7 @@ bool function_doc_signature_generator::are_seq_overloads(function const* f1, fun
     auto s1 = f1->m_fn.signature();
     auto s2 = f2->m_fn.signature();
     for (unsigned i = 0; i <= f1->m_fn.max_arity(); ++i) {
-        if (s1[i].basename != s2[i].basename)
+        if (s1[i].cpptype != s2[i].cpptype)
             return false;
     }
 
@@ -82,7 +82,7 @@ bool function_doc_signature_generator::are_seq_overloads(function const* f1, fun
 }
 
 inline char const* get_pytype_string(python::detail::signature_element const& s) {
-    if (s.basename == std::string{"void"})
+    if (s.cpptype == typeid(void))
         return "None";
     else if (s.pytype)
         return s.pytype->tp_name;
@@ -95,6 +95,7 @@ str function_doc_signature_generator::pretty_signature(function const* f, int nu
     auto signature = f->m_fn.signature();
     auto arg_names = f->m_arg_names;
 
+    auto cpptype_return = str{signature[0].cpptype.pretty_name()};
     auto params = list{};
     if (arity != std::numeric_limits<decltype(arity)>::max()) {
         // regular function
@@ -114,7 +115,7 @@ str function_doc_signature_generator::pretty_signature(function const* f, int nu
             auto parameter_map = dict{
                 "name"_a = name,
                 "pytype"_a = pytype,
-                "cpptype"_a = str{signature[n].basename},
+                "cpptype"_a = str{signature[n].cpptype.pretty_name()},
                 "lvalue"_a = signature[n].lvalue ? str{fmt["lvalue"]} : ""_s,
                 "default_value"_a = (kwarg && len(kwarg) == 2)
                                     ? str{fmt["default_value"]}.format(kwarg[1])
@@ -127,11 +128,11 @@ str function_doc_signature_generator::pretty_signature(function const* f, int nu
     else {
         // raw function
         params.append(fmt["raw"]);
-        signature[0].basename = "PyObject*";
+        cpptype_return = "PyObject*";
     }
 
     auto signature_map = dict{
-        "cpptype_return"_a = signature[0].basename,
+        "cpptype_return"_a = cpptype_return,
         "pytype_return"_a = get_pytype_string(signature[0]),
         "function_name"_a = f->m_name,
         "parameters"_a = [&]{

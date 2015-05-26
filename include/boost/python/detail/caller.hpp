@@ -99,7 +99,7 @@ struct caller<Function, CallPolicies, type_list<Result, Args...>, cpp14::index_s
         using rtype = typename CallPolicies::template extract_return_type<Sig>::type;
 
         sig[0] = {
-            std::is_same<void, rtype>::value ? "void" : type_id<rtype>().name(),
+            type_id<rtype>(),
             select_result_converter_t<CallPolicies, Result>::get_pytype(),
             is_reference_to_non_const<rtype>::value
         };

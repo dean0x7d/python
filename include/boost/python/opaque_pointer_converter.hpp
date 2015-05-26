@@ -36,7 +36,7 @@ struct opaque
     {
         if (type_object.tp_name == 0)
         {
-            type_object.tp_name = const_cast<char*>(type_id<Pointee*>().name());
+            type_object.tp_name = type_id<Pointee*>().name();
             if (PyType_Ready (&type_object) < 0)
             {
                 throw error_already_set();

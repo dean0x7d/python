@@ -15,7 +15,7 @@
 namespace boost { namespace python { namespace detail { 
 
 struct signature_element {
-    char const* basename;
+    type_info cpptype;
     PyTypeObject const* pytype;
     bool lvalue;
 };
@@ -38,7 +38,7 @@ template<class... Args>
 struct signature<type_list<Args...>> {
     static py_func_sig_info elements() {
         return {
-            { type_id<Args>().name(),
+            { type_id<Args>(),
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
               get_expected_from_python_type(type_id<cpp14::remove_pointer_t<Args>>()),
 #else

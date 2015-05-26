@@ -46,7 +46,7 @@ BOOST_PYTHON_DECL PyTypeObject* registration::get_class_object() const
 {
     if (!m_class_object) {
         PyErr_Format(PyExc_TypeError, "No Python class registered for C++ class %s",
-                     target_type.name());
+                     target_type.pretty_name().c_str());
         throw_error_already_set();
     }
     
@@ -57,7 +57,7 @@ BOOST_PYTHON_DECL PyObject* registration::to_python(void const* source) const
 {
     if (!m_to_python) {
         PyErr_Format(PyExc_TypeError, "No to_python (by-value) converter found for C++ type: %s",
-                     target_type.name());
+                     target_type.pretty_name().c_str());
         throw_error_already_set();
     }
 
@@ -118,7 +118,7 @@ namespace registry
       
       assert(slot.m_to_python == nullptr); // we have a problem otherwise
       if (slot.m_to_python) {
-          auto msg = std::string("to-Python converter for ") + cpptype.name()
+          auto msg = std::string("to-Python converter for ") + cpptype.pretty_name()
               + " already registered; second conversion method ignored.";
           
           if (PyErr_WarnEx(nullptr, msg.c_str(), 1))

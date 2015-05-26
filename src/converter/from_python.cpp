@@ -91,7 +91,7 @@ namespace errors {
             PyExc_ReferenceError,
             "Attempt to return dangling %s to object of type: %s",
             ref_type,
-            converters.target_type.name()
+            converters.target_type.pretty_name().c_str()
         );
         throw_error_already_set();
     }
@@ -105,7 +105,7 @@ namespace errors {
             "No registered converter was able to extract a C++ %s to type %s"
             " from this Python object of type %s",
             ref_type,
-            converters.target_type.name(),
+            converters.target_type.pretty_name().c_str(),
             source->ob_type->tp_name
         );
         throw_error_already_set();
@@ -117,7 +117,7 @@ namespace errors {
             PyExc_TypeError,
             "No registered converter was able to produce a C++ rvalue of type %s"
             " from this Python object of type %s",
-            converters.target_type.name(),
+            converters.target_type.pretty_name().c_str(),
             source->ob_type->tp_name
         );
         throw_error_already_set();
