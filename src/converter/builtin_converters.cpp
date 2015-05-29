@@ -46,12 +46,12 @@ namespace
    public:
       slot_rvalue_from_python()
       {
-          registry::insert(
-              &slot_rvalue_from_python<T,SlotPolicy>::convertible
-              , &slot_rvalue_from_python<T,SlotPolicy>::construct
-              , type_id<T>()
-              , &SlotPolicy::get_pytype
-              );
+          registry::insert_rvalue_converter(
+              &slot_rvalue_from_python<T,SlotPolicy>::convertible,
+              &slot_rvalue_from_python<T,SlotPolicy>::construct,
+              type_id<T>(),
+              SlotPolicy::get_pytype()
+          );
       }
       
    private:
@@ -522,7 +522,7 @@ void initialize_builtin_converters()
     slot_rvalue_from_python<std::complex<long double>,complex_rvalue_from_python>();
     
     // Add an lvalue converter for char which gets us char const*
-    registry::insert(convert_to_cstring,type_id<char>(),&converter::wrap_pytype<&BOOST_PyString_Type>::get_pytype);
+    registry::insert_lvalue_converter(convert_to_cstring, type_id<char>(), &BOOST_PyString_Type);
 
     // Register by-value converters to std::string, std::wstring
 #if defined(Py_USING_UNICODE) && !defined(BOOST_NO_STD_WSTRING)

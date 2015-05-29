@@ -16,9 +16,6 @@ struct pyobject_traits<PyObject> {
     // All objects are convertible to PyObject
     static bool check(PyObject*) { return true; }
     static PyObject* checked_downcast(PyObject* x) { return x; }
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    static PyTypeObject const* get_pytype() { return 0; }
-#endif
 };
 
 //
@@ -34,9 +31,6 @@ struct pyobject_traits_specialization {
         return python::downcast<Object>(python::pytype_check(pytype, p));
     }
 
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    static PyTypeObject const* get_pytype() { return pytype; }
-#endif
 };
 
 # define BOOST_PYTHON_BUILTIN_OBJECT_TRAITS(T)                     \

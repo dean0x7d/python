@@ -27,11 +27,7 @@ struct select_result_converter {
 
 template <class CallPolicies>
 struct select_result_converter<CallPolicies, void> {
-    struct type {
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-        static PyTypeObject const* get_pytype() { return nullptr; }
-#endif
-    };
+    struct type {};
 };
 
 template <class CallPolicies, class Result>
@@ -55,7 +51,6 @@ inline ResultConverter create_result_converter(PyObject* args) {
     return create_result_converter_impl<ResultConverter>(args, pick{});
 }
 
-
 // A function object type which wraps C++ objects as Python callable
 // objects.
 //
@@ -76,13 +71,30 @@ inline ResultConverter create_result_converter(PyObject* args) {
 //      argument types.
 template<class Function, class CallPolicies, class Signature,
          class = cpp14::make_index_sequence<Signature::size - 1>>
-struct caller;
+class caller;
 
 template<class Function, class CallPolicies, class Result, class... Args, std::size_t... Is>
-struct caller<Function, CallPolicies, type_list<Result, Args...>, cpp14::index_sequence<Is...>>
-    : CallPolicies // inherit to take advantage of empty base class optimisation
+class caller<Function, CallPolicies, type_list<Result, Args...>, cpp14::index_sequence<Is...>>
+    : public CallPolicies // inherit to take advantage of empty base class optimisation
 {
-    caller(Function f, CallPolicies const& cp) : CallPolicies(cp), m_function(f) {}
+    using argument_package = typename CallPolicies::argument_package;
+    using signature_t = typename CallPolicies::template extract_signature<
+        type_list<Result, Args...>
+    >::type;
+    using signature_return_t = cpp14::remove_cv_t<cpp14::remove_pointer_t<
+        typename CallPolicies::template extract_return_type<signature_t>::type
+    >>;
+
+public:
+    caller(Function f, CallPolicies const& cp)
+        : CallPolicies(cp), m_function(f)
+    {
+#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
+        // VS2015 RC doesn't work correctly if pytype is passed directly to the function
+        static constexpr auto pytype = to_python<signature_return_t>::pytype;
+        converter::registry::set_to_python_type(type_id<signature_return_t>(), pytype);
+#endif
+    }
 
     PyObject* operator()(PyObject* args, PyObject* /*kwargs*/) {
         auto arg_pack = argument_package{args};
@@ -90,26 +102,20 @@ struct caller<Function, CallPolicies, type_list<Result, Args...>, cpp14::index_s
     }
     
     static unsigned min_arity() { return sizeof...(Args); }
-    
+
     static py_func_sig_info signature() {
-        using Sig = typename CallPolicies::template extract_signature<type_list<Result, Args...>>::type;
-        auto sig = detail::signature<Sig>::elements();
+        auto sig = detail::signature<signature_t>::elements();
 
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-        using rtype = typename CallPolicies::template extract_return_type<Sig>::type;
-
         sig[0] = {
-            type_id<rtype>(),
-            select_result_converter_t<CallPolicies, Result>::get_pytype(),
-            is_reference_to_non_const<rtype>::value
+            type_id<signature_return_t>(),
+            is_reference_to_non_const<signature_return_t>::value
         };
 #endif
         return sig;
     }
 
 private:
-    using argument_package = typename CallPolicies::argument_package;
-
     template<class... Converters>
     PyObject* call_impl(argument_package arg_pack, Converters... converters) {
         for (auto is_convertible : {converters.check()..., true}) {

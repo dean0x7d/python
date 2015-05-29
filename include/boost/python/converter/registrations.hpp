@@ -24,8 +24,7 @@ using convertible_function = void* (*)(PyObject*);
 struct rvalue_from_python_stage1_data;
 using constructor_function = void (*)(PyObject* source, rvalue_from_python_stage1_data*);
 
-struct BOOST_PYTHON_DECL registration
-{
+struct BOOST_PYTHON_DECL registration {
     struct lvalue_from_python {
         convertible_function convert;
     };
@@ -33,10 +32,11 @@ struct BOOST_PYTHON_DECL registration
     struct rvalue_from_python {
         convertible_function convertible;
         constructor_function construct;
-        pytype_function expected_pytype;
+        PyTypeObject const* pytype;
+        registration const* pytype_proxy;
     };
 
- public: // member functions
+public: // member functions
     explicit registration(type_info target, bool is_shared_ptr = false)
         : target_type(target), is_shared_ptr(is_shared_ptr) {}
 
@@ -54,7 +54,7 @@ struct BOOST_PYTHON_DECL registration
     PyTypeObject const* expected_from_python_type() const;
     PyTypeObject const* to_python_target_type() const;
 
- public: // data members. So sue me.
+public: // data members. So sue me.
     const python::type_info target_type;
 
     // The chain of eligible from_python converters when an lvalue is required
@@ -68,13 +68,13 @@ struct BOOST_PYTHON_DECL registration
 
     // The unique to_python converter for the associated C++ type.
     to_python_function m_to_python = nullptr;
-    pytype_function m_to_python_target_type = nullptr;
+    PyTypeObject const* to_python_pytype = nullptr;
 
     // True iff this type is a shared_ptr.  Needed for special rvalue
     // from_python handling.
     const bool is_shared_ptr;
 
- public:
+public:
     // Prevent looping in implicit conversions.
     mutable bool is_being_visited = false;
 };

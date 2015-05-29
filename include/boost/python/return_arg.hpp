@@ -19,13 +19,6 @@ namespace detail {
             struct type {
                 static bool convertible() { return true; }
                 PyObject* operator()(value_arg_t<T>) const { return none(); }
-
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-                static PyTypeObject const* get_pytype() {
-                    auto r = converter::registry::query(type_id<cpp14::remove_pointer_t<T>>());
-                    return r ? r->expected_from_python_type() : nullptr;
-                }
-#endif
             };
         };
     };

@@ -82,13 +82,8 @@ private:
 
         if ((existing == 0) || (existing->m_to_python == 0))
         {
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-            converter::registry::insert(&extract, type_id<Pointee>(), &get_pytype);
-            converter::registry::insert(&wrap, type_id<Pointee*>(), &get_pytype);
-#else
-            converter::registry::insert(&extract, type_id<Pointee>());
-            converter::registry::insert(&wrap, type_id<Pointee*>());
-#endif
+            converter::registry::insert_lvalue_converter(&extract, type_id<Pointee>(), &type_object);
+            converter::registry::insert_to_python_converter(&wrap, type_id<Pointee*>(), &type_object);
         }
     }
 
@@ -99,9 +94,6 @@ private:
     };
     
     static PyTypeObject type_object;
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    static PyTypeObject const *get_pytype(){return  &type_object; }
-#endif
 };
 
 template <class Pointee>

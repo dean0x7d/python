@@ -56,6 +56,10 @@ namespace
               if (type && PyType_Check(type))
               {
                   array_type = handle<>(type);
+                  converter::registry::set_class_object(
+                      type_id<numeric::array>(), downcast<PyTypeObject>(type)
+                  );
+
                   PyObject* function = ::PyObject_GetAttrString(module, const_cast<char*>("array"));
                   
                   if (function && PyCallable_Check(function))
@@ -112,13 +116,6 @@ namespace aux
       load(true);
       return detail::new_non_null_reference(
           pytype_check(downcast<PyTypeObject>(array_type.get()), obj));
-  }
-
-  PyTypeObject const* array_object_manager_traits::get_pytype()
-  {
-      load(false);
-      if(!array_type) return 0;
-      return downcast<PyTypeObject>(array_type.get());
   }
 
   object array_base::argmax(long axis)

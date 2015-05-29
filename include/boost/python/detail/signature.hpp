@@ -16,7 +16,6 @@ namespace boost { namespace python { namespace detail {
 
 struct signature_element {
     type_info cpptype;
-    PyTypeObject const* pytype;
     bool lvalue;
 };
 
@@ -27,23 +26,13 @@ using is_reference_to_non_const = std::integral_constant<bool,
 	std::is_reference<T>::value && !std::is_const<cpp14::remove_reference_t<T>>::value
 >;
 
-inline PyTypeObject const* get_expected_from_python_type(type_info ti) {
-    auto r = converter::registry::query(ti);
-    return r ? r->expected_from_python_type() : nullptr;
-};
-
 template<class Sig> struct signature;
 
 template<class... Args>
 struct signature<type_list<Args...>> {
     static py_func_sig_info elements() {
         return {
-            { type_id<Args>(),
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-              get_expected_from_python_type(type_id<cpp14::remove_pointer_t<Args>>()),
-#else
-              nullptr,
-#endif
+            { type_id<cpp14::remove_pointer_t<Args>>(),
               is_reference_to_non_const<Args>::value }...
         };
     }

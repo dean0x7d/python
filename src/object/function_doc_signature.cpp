@@ -81,13 +81,15 @@ bool function_doc_signature_generator::are_seq_overloads(function const* f1, fun
     return true;
 }
 
-inline char const* get_pytype_string(python::detail::signature_element const& s) {
+inline char const* get_pytype_string(python::detail::signature_element const& s,
+                                     bool is_return = false)
+{
     if (s.cpptype == typeid(void))
         return "None";
-    else if (s.pytype)
-        return s.pytype->tp_name;
-    else
-        return "object";
+
+    auto const& r = python::converter::registry::lookup(s.cpptype);
+    auto pytype = is_return ? r.to_python_target_type() : r.expected_from_python_type();
+    return pytype ? pytype->tp_name : "object";
 }
 
 str function_doc_signature_generator::pretty_signature(function const* f, int num_optional, dict fmt) {
@@ -133,7 +135,7 @@ str function_doc_signature_generator::pretty_signature(function const* f, int nu
 
     auto signature_map = dict{
         "cpptype_return"_a = cpptype_return,
-        "pytype_return"_a = get_pytype_string(signature[0]),
+        "pytype_return"_a = get_pytype_string(signature[0], true),
         "function_name"_a = f->m_name,
         "parameters"_a = [&]{
             auto separator = str{fmt["separator"]};

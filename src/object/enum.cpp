@@ -184,8 +184,8 @@ enum_base::enum_base(
     : object(new_enum_type(name, doc))
 {
     converter::registry::set_class_object(id, downcast<PyTypeObject>(ptr()));
-    converter::registry::insert(to_python, id);
-    converter::registry::insert(convertible, construct, id);
+    converter::registry::insert_to_python_converter(to_python, id);
+    converter::registry::insert_rvalue_converter(convertible, construct, id);
 }
 
 void enum_base::add_value(char const* name_, long value)

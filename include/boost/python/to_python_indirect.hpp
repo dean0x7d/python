@@ -33,13 +33,6 @@ struct to_python_indirect {
         }
         return MakeHolder::execute(&x);
     }
-
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    static PyTypeObject const* get_pytype() {
-        auto r = converter::registry::query(type_id<cpp14::remove_pointer_t<T>>());
-        return r ? r->m_class_object : nullptr;
-    }
-#endif
 };
 
 namespace detail {
