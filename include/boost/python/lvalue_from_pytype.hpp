@@ -82,13 +82,11 @@ struct lvalue_from_pytype
 {
     lvalue_from_pytype()
     {
-        converter::registry::insert
-            ( &extract
-            , detail::extractor_type_id(&Extractor::execute)
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-            , &get_pytype
-#endif
-            );
+        converter::registry::insert_lvalue_converter(
+            &extract,
+            detail::extractor_type_id(&Extractor::execute),
+            python_type
+        );
     }
  private:
     static void* extract(PyObject* op)
@@ -100,9 +98,6 @@ struct lvalue_from_pytype
             : 0
             ;
     }
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    static PyTypeObject const*get_pytype() { return python_type; }
-#endif
 };
 
 }} // namespace boost::python

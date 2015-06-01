@@ -504,7 +504,7 @@ namespace objects
         if (result.get() == 0)
         {
             object report("extension class wrapper for base class ");
-            report = report + id.name() + " has not been created yet";
+            report = report + id.pretty_name() + " has not been created yet";
             PyErr_SetObject(PyExc_RuntimeError, report.ptr());
             throw_error_already_set();
         }

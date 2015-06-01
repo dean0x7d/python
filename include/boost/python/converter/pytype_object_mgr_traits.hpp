@@ -29,10 +29,6 @@ struct pytype_object_manager_traits {
     static python::detail::new_reference adopt(PyObject* p) {
         return python::detail::new_reference(python::pytype_check(pytype, p));
     }
-
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    static PyTypeObject const* get_pytype() { return pytype; }
-#endif
 };
 
 }}} // namespace boost::python::converter

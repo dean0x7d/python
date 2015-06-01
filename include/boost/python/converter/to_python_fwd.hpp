@@ -10,4 +10,9 @@ namespace converter {
 template<class T>
 struct to_python_value;
 
+template<class T>
+struct to_python {
+    static constexpr PyTypeObject const* pytype = nullptr;
+};
+
 }} // namespace boost::python

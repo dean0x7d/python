@@ -13,9 +13,6 @@
 # include <boost/python/converter/from_python.hpp>
 # include <boost/python/converter/rvalue_from_python_data.hpp>
 # include <boost/python/converter/registered.hpp>
-# ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-#  include <boost/python/converter/pytype_function.hpp>
-# endif
 
 # include <boost/python/detail/none.hpp>
 
@@ -34,11 +31,9 @@ struct shared_ptr_deleter {
 template <class T>
 struct shared_ptr_from_python {
     shared_ptr_from_python() {
-        converter::registry::insert(
-            &convertible, &construct, type_id<shared_ptr<T>>()
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-            , &converter::expected_from_python_type_direct<T>::get_pytype
-#endif
+        converter::registry::insert_rvalue_converter(
+            &convertible, &construct, type_id<shared_ptr<T>>(),
+            nullptr, &converter::registry::lookup(type_id<T>())
         );
     }
 
@@ -92,12 +87,6 @@ struct to_python_value<converter::shared_ptr<T>> {
             return converters.to_python(&source);
         }
     }
-
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    static PyTypeObject const* get_pytype() {
-        return converter::registered<T>::converters.to_python_target_type();
-    }
-#endif
 };
 
 }} // namespace boost::python

@@ -8,13 +8,25 @@
 # include <boost/python/detail/prefix.hpp>
 # include <typeindex>
 # include <ostream>
+# include <string>
 
-# if !defined(BOOST_PYTHON_HAVE_GCC_CP_DEMANGLE) && defined(__GNUC__) && !defined(__EDG_VERSION__)
-#  define BOOST_PYTHON_HAVE_GCC_CP_DEMANGLE
-namespace boost { namespace python { namespace detail {
-    BOOST_PYTHON_DECL char const* gcc_demangle(char const*);
-}}}
+# ifndef BOOST_PYTHON_HAVE_GCC_CP_DEMANGLE
+#  if defined(__has_include)
+#   if __has_include(<cxxabi.h>)
+#    define BOOST_PYTHON_HAVE_GCC_CP_DEMANGLE
+#   endif
+#  elif defined(__GLIBCXX__)
+#   define BOOST_PYTHON_HAVE_GCC_CP_DEMANGLE
+#  endif
 # endif
+
+namespace boost { namespace python { namespace detail {
+# ifdef BOOST_PYTHON_HAVE_GCC_CP_DEMANGLE
+    BOOST_PYTHON_DECL std::string demangle(char const* name);
+# else
+    inline std::string demangle(char const* name) { return name; }
+# endif
+}}}
 
 namespace boost { namespace python { 
 
@@ -25,13 +37,7 @@ namespace boost { namespace python {
 struct type_info : std::type_index {
     using std::type_index::type_index;
 
-    char const* name() const {
-#  ifdef BOOST_PYTHON_HAVE_GCC_CP_DEMANGLE
-        return detail::gcc_demangle(std::type_index::name());
-#  else
-        return std::type_index::name();
-#  endif
-    }
+    std::string pretty_name() const { return detail::demangle(name()); }
 
     friend BOOST_PYTHON_DECL std::ostream& operator<<(std::ostream&, type_info const&);
 };

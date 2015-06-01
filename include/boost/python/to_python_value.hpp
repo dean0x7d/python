@@ -20,12 +20,6 @@ namespace detail
       PyObject* operator()(T const& x) const {
           return python::upcast<PyObject>(python::xincref(get_managed_object(x)));
       }
-
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-      static PyTypeObject const* get_pytype() {
-          return converter::object_manager_traits<T>::get_pytype();
-      }
-#endif
   };
 
   template <class T>
@@ -34,11 +28,6 @@ namespace detail
           return converter::registered<T>::converters.to_python(&x);
       }
 
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-      static PyTypeObject const* get_pytype() {
-          return converter::registered<T>::converters.to_python_target_type();
-      }
-#endif
       // This information helps make_getter() decide whether to try to
       // return an internal reference or not. I don't like it much,
       // but it will have to serve for now.

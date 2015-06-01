@@ -112,6 +112,21 @@ bye
 >>> Y.release()
 >>> Y.count()
 0
+
+>>> print look.__doc__.splitlines()[1]
+look(arg1: X) -> int:
+
+>>> print store.__doc__.splitlines()[1]
+store(arg1: X) -> None:
+
+>>> print modify.__doc__.splitlines()[1]
+modify(arg1: X) -> None:
+
+>>> print Y.get.__doc__.splitlines()[1]
+get() -> Y:
+
+>>> print Y.get1.__doc__.splitlines()[1]
+get1() -> Y:
 '''
 
 def run(args = None):

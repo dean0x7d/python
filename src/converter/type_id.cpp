@@ -4,7 +4,6 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 
 #include <boost/python/type_id.hpp>
-#include <unordered_map>
 #include <memory>
 
 #ifdef BOOST_PYTHON_HAVE_GCC_CP_DEMANGLE
@@ -14,39 +13,26 @@
 namespace boost { namespace python {
 
 #ifdef BOOST_PYTHON_HAVE_GCC_CP_DEMANGLE
-namespace detail
-{
-  BOOST_PYTHON_DECL char const* gcc_demangle(char const* mangled)
-  {
-      // Note: the memory allocated for the demangled names is freed by the OS.
-      static std::unordered_map<char const*, char const*> type_names;
+namespace detail {
+    BOOST_PYTHON_DECL std::string demangle(char const* mangled) {
+        int status = -4;
+        std::unique_ptr<char, void(*)(void*)> demangled{
+            abi::__cxa_demangle(mangled, nullptr, nullptr, &status),
+            std::free
+        };
+        assert(status != -3); // invalid argument error
 
-      auto& demangled = type_names[mangled];
-      if (demangled == nullptr) {
-          int status = -4;
-          std::unique_ptr<char, void(*)(void*)> p{
-              abi::__cxa_demangle(mangled, nullptr, nullptr, &status),
-              std::free
-          };
-          assert(status != -3); // invalid argument error
-    
-          if (status == -1) {
-              throw std::bad_alloc();
-          }
-          else {
-              // In case of an invalid mangled name, the best we can do is to return it intact.
-              demangled = (status == -2) ? mangled : p.release();
-          }
-      }
-      
-      return demangled;
-  }
+        if (status == -1)
+            throw std::bad_alloc();
+        // In case of an invalid mangled name, the best we can do is to return it intact.
+        return (status == 0) ? demangled.get() : mangled;
+    }
 }
 #endif // BOOST_PYTHON_HAVE_GCC_CP_DEMANGLE
 
 BOOST_PYTHON_DECL std::ostream& operator<<(std::ostream& os, type_info const& x)
 {
-    return os << x.name();
+    return os << x.pretty_name();
 }
 
 }} // namespace boost::python

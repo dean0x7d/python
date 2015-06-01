@@ -12,6 +12,7 @@
 # include <boost/python/converter/to_python_fwd.hpp>
 # include <boost/python/converter/shared_ptr.hpp>
 # include <boost/python/converter/std_tuple.hpp>
+# include <boost/python/converter/std_vector.hpp>
 
 # include <string>
 # include <complex>
@@ -34,15 +35,17 @@ namespace converter
 }
 
 // Specialize argument and return value converters for T using expr
-# define BOOST_PYTHON_TO_PYTHON_BY_VALUE(T, expr, pytype)       \
+# define BOOST_PYTHON_TO_PYTHON_BY_VALUE(T, expr, pytype_)      \
 template<>                                                      \
 struct to_python_value<T> {                                     \
     PyObject* operator()(T const& x) const {                    \
         return (expr);                                          \
     }                                                           \
-    static PyTypeObject const* get_pytype() {                   \
-        return (pytype);                                        \
-    }                                                           \
+};                                                              \
+                                                                \
+template<>                                                      \
+struct to_python<T> {                                           \
+    static constexpr PyTypeObject const* pytype = pytype_;      \
 };
 
 // Specialize converters for signed and unsigned T to Python Int

@@ -7,6 +7,7 @@
 #include <boost/python/extract.hpp>
 #include <boost/python/to_python_converter.hpp>
 #include <boost/python/class.hpp>
+#include <boost/python/converter/pytype_function.hpp>
 
 using namespace boost::python;
 
@@ -73,10 +74,10 @@ B func(const B& b) { return b ; }
 
 BOOST_PYTHON_MODULE(pytype_function_ext)
 {
+  class_<A>("A") ;
+
   to_python_converter< B , BToPython,true >(); //has get_pytype
   BFromPython();
-
-  class_<A>("A") ;
 
   def("func", &func);
 

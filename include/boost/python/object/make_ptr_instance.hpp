@@ -32,12 +32,6 @@ struct make_ptr_instance : make_instance_impl<T, Holder, make_ptr_instance<T, Ho
 
         return converter::registered<T>::converters.get_class_object();
     }
-
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    static PyTypeObject const* get_pytype() {
-        return converter::registered<T>::converters.get_class_object();
-    }
-#endif
 };
 
 }}} // namespace boost::python::object

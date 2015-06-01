@@ -16,11 +16,8 @@ struct std_tuple_from_python<std::tuple<Ts...>, cpp14::index_sequence<Is...>> {
     using tuple_t = std::tuple<Ts...>;
 
     std_tuple_from_python() {
-        registry::insert(
-            &convertible, &construct, type_id<tuple_t>()
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-          , &get_pytype
-#endif
+        registry::insert_rvalue_converter(
+            &convertible, &construct, type_id<tuple_t>(), &PyTuple_Type
         );
     }
 
@@ -45,10 +42,6 @@ struct std_tuple_from_python<std::tuple<Ts...>, cpp14::index_sequence<Is...>> {
 
         data->convertible = storage;
     }
-
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    static PyTypeObject const* get_pytype() { return &PyTuple_Type; }
-#endif
 };
 
 template<class... Ts>
@@ -71,16 +64,17 @@ struct to_python_value<std::tuple<Ts...>> {
         return convert_impl(source, cpp14::make_index_sequence<sizeof...(Ts)>{});
     }
 
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    static PyTypeObject const* get_pytype() { return &PyTuple_Type; }
-#endif
-
     template<std::size_t... Is>
     static PyObject* convert_impl(std::tuple<Ts...> const& source, cpp14::index_sequence<Is...>) {
         return PyTuple_Pack(
             sizeof...(Ts), converter::arg_to_python<Ts>{std::get<Is>(source)}.get()...
         );
     }
+};
+
+template<class... Ts>
+struct to_python<std::tuple<Ts...>> {
+    static constexpr PyTypeObject const* pytype = &PyTuple_Type;
 };
 
 }} // namespace boost::python

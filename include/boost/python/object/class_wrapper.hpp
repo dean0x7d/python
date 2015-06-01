@@ -18,30 +18,22 @@ namespace boost { namespace python { namespace objects {
 
 template <class Src, class MakeInstance>
 struct class_cref_wrapper
-    : to_python_converter<Src,class_cref_wrapper<Src,MakeInstance> ,true>
+    : to_python_converter<Src,class_cref_wrapper<Src,MakeInstance>, false>
 {
     static PyObject* convert(Src const& x)
     {
         return MakeInstance::execute(x);
     }
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    static PyTypeObject const* get_pytype() {
-        return converter::registry::lookup(type_id<Src>()).m_class_object;
-    }
-#endif
 };
 
 template <class Src, class MakeInstance>
 struct class_value_wrapper
-    : to_python_converter<Src,class_value_wrapper<Src,MakeInstance> ,true>
+    : to_python_converter<Src,class_value_wrapper<Src,MakeInstance>, false>
 {
     static PyObject* convert(Src x)
     {
         return MakeInstance::execute(std::move(x));
     }
-#ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-    static PyTypeObject const *get_pytype() { return MakeInstance::get_pytype(); }
-#endif
 };
 
 }}} // namespace boost::python::objects

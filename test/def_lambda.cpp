@@ -39,7 +39,7 @@ BOOST_PYTHON_MODULE(def_lambda_ext) {
 	}, args("s", "i"));
 
 	def("and_defaults", [](object o, std::string s, int i, bool b) {
-		return make_tuple(o, s, i, b);
+		return boost::python::make_tuple(o, s, i, b);
 	}, args("o", "s", "i"_a=7, "b"_a=false));
 
 
