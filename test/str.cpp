@@ -82,7 +82,7 @@ void work_with_string(object print)
     print(str("{} <-> {} <=> {}").format("string", 'a', 2));
     print(str("{first} <-> {second} <=> {third}").format(**d));
     print(str("{first} <-> {second} <=> {third}").format(kwargs));
-    print("{first} {second}"_s.format(**dict{"second"_a=2, "first"_a="keyword arguments"}));
+    print("{first} {second}"_s.format(**dict{"second"_kw=2, "first"_kw="keyword arguments"}));
 #if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 2
     print(str("{first} <-> {second} <=> {third}").format_map(d));
 #else

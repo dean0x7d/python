@@ -13,12 +13,12 @@ using namespace boost::python;
 
 BOOST_PYTHON_MODULE(std_containers_ext) {
 	docstring_options::update_format(dict{
-		"doc"_a = "{python_signature}",
+		"doc"_kw = "{python_signature}",
 	});
 	docstring_options::update_python_format(dict{
-		"signature"_a = "{function_name}({parameters}) -> {pytype_return}:",
-		"parameter"_a = "{name}: {pytype}{default_value}",
-		"unnamed"_a = "a{}"
+		"signature"_kw = "{function_name}({parameters}) -> {pytype_return}:",
+		"parameter"_kw = "{name}: {pytype}{default_value}",
+		"unnamed"_kw = "a{}"
 	});
 
 	// TUPLE

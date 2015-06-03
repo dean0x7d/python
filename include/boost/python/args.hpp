@@ -15,6 +15,7 @@
 namespace boost { namespace python {
 
 using arg = detail::keywords<1>;
+using kerword = detail::keywords<1>;
 
 namespace detail
 {
@@ -85,8 +86,8 @@ namespace detail
 }
 
 inline namespace literals {
-    inline arg operator"" _a(char const* str, std::size_t) {
-        return arg{str};
+    inline kerword operator"" _kw(char const* str, std::size_t) {
+        return kerword{str};
     }
 }
 

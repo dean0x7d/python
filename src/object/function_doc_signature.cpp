@@ -12,30 +12,30 @@ namespace boost { namespace python {
 dict& docstring_options::format() {
     static dict fmt = []{
         auto fmt_ = dict{
-            "doc"_a = "\n{python_signature}{docstring}{cpp_signature}",
-            "docstring_indent"_a = "    ",
-            "cpp"_a = dict{
-                "signature"_a = "\n    C++ signature :\n"
+            "doc"_kw = "\n{python_signature}{docstring}{cpp_signature}",
+            "docstring_indent"_kw = "    ",
+            "cpp"_kw = dict{
+                "signature"_kw = "\n    C++ signature :\n"
                                 "        {cpptype_return} {function_name}({parameters})",
-                "parameter"_a = "{cpptype}{lvalue} {name}{default_value}",
-                "unnamed"_a = "arg{}",
-                "default_value"_a = "={!r}",
-                "lvalue"_a = " {lvalue}",
-                "separator"_a = ", ",
-                "optional_open"_a = " [",
-                "optional_close"_a = "]",
-                "raw"_a = "PyObject* args, PyObject* kwargs"
+                "parameter"_kw = "{cpptype}{lvalue} {name}{default_value}",
+                "unnamed"_kw = "arg{}",
+                "default_value"_kw = "={!r}",
+                "lvalue"_kw = " {lvalue}",
+                "separator"_kw = ", ",
+                "optional_open"_kw = " [",
+                "optional_close"_kw = "]",
+                "raw"_kw = "PyObject* args, PyObject* kwargs"
             },
-            "python"_a = dict{
-                "signature"_a = "{function_name}({parameters}) -> {pytype_return} :",
-                "parameter"_a = "({pytype}){name}{default_value}",
-                "unnamed"_a = "arg{}",
-                "default_value"_a = "={!r}",
-                "lvalue"_a = "",
-                "separator"_a = ", ",
-                "optional_open"_a = " [",
-                "optional_close"_a = "]",
-                "raw"_a = "*args, **kwargs"
+            "python"_kw = dict{
+                "signature"_kw = "{function_name}({parameters}) -> {pytype_return} :",
+                "parameter"_kw = "({pytype}){name}{default_value}",
+                "unnamed"_kw = "arg{}",
+                "default_value"_kw = "={!r}",
+                "lvalue"_kw = "",
+                "separator"_kw = ", ",
+                "optional_open"_kw = " [",
+                "optional_close"_kw = "]",
+                "raw"_kw = "*args, **kwargs"
             }
         };
 
@@ -115,11 +115,11 @@ str function_doc_signature_generator::pretty_signature(function const* f, int nu
             }();
 
             auto parameter_map = dict{
-                "name"_a = name,
-                "pytype"_a = pytype,
-                "cpptype"_a = str{signature[n].cpptype.pretty_name()},
-                "lvalue"_a = signature[n].lvalue ? str{fmt["lvalue"]} : ""_s,
-                "default_value"_a = (kwarg && len(kwarg) == 2)
+                "name"_kw = name,
+                "pytype"_kw = pytype,
+                "cpptype"_kw = str{signature[n].cpptype.pretty_name()},
+                "lvalue"_kw = signature[n].lvalue ? str{fmt["lvalue"]} : ""_s,
+                "default_value"_kw = (kwarg && len(kwarg) == 2)
                                     ? str{fmt["default_value"]}.format(kwarg[1])
                                     : ""_s
             };
@@ -134,10 +134,10 @@ str function_doc_signature_generator::pretty_signature(function const* f, int nu
     }
 
     auto signature_map = dict{
-        "cpptype_return"_a = cpptype_return,
-        "pytype_return"_a = get_pytype_string(signature[0], true),
-        "function_name"_a = f->m_name,
-        "parameters"_a = [&]{
+        "cpptype_return"_kw = cpptype_return,
+        "pytype_return"_kw = get_pytype_string(signature[0], true),
+        "function_name"_kw = f->m_name,
+        "parameters"_kw = [&]{
             auto separator = str{fmt["separator"]};
             auto optional_open = str{fmt["optional_open"]};
             auto optional_separator = str{optional_open + separator};
@@ -194,13 +194,13 @@ list function_doc_signature_generator::function_doc_signatures(function const* f
     for (auto const& func : overloads) {
         auto docstring = func.f->doc() ? str{func.f->doc()} : ""_s;
         auto mapping = dict{
-            "python_signature"_a = func.f->show_python_signature
+            "python_signature"_kw = func.f->show_python_signature
                 ? pretty_signature(func.f, func.num_optional, dict{format["python"]}) + "\n"_s
                 : ""_s,
-            "docstring"_a = docstring
+            "docstring"_kw = docstring
                 ? indent + indent.join(docstring.splitlines(true)) + "\n"_s
                 : ""_s,
-            "cpp_signature"_a = func.f->show_cpp_signature
+            "cpp_signature"_kw = func.f->show_cpp_signature
                 ? pretty_signature(func.f, func.num_optional, dict{format["cpp"]})
                 : ""_s
         };
