@@ -27,6 +27,10 @@ struct functions
         return (x.get()) ? x->value() : -1;
     }
 
+    static int look_const(shared_ptr<T const> const& x) {
+        return (x.get()) ? x->value() : -1;
+    }
+
     static void store(shared_ptr<T> x)
     {
         storage = x;
@@ -54,6 +58,7 @@ struct functions
     static void expose(C const& c)
     {
         def("look", &look);
+        def("look_const", &look_const);
         def("store", &store);
         def("modify", &modify);
         def("identity", &identity);
@@ -126,6 +131,10 @@ shared_ptr<Y> factory(int n)
     return shared_ptr<Y>(n < 42 ? new Y(n) : new YY(n));
 }
 
+shared_ptr<Y const> factory_const(int n) {
+    return shared_ptr<Y>(n < 42 ? new Y(n) : new YY(n));
+}
+
 // regressions from Nicodemus
     struct A
     {
@@ -176,6 +185,7 @@ BOOST_PYTHON_MODULE(shared_ptr_ext)
     def("New", &New);
 
     def("factory", factory);
+    def("factory_const", factory_const);
     
     functions<X>::expose(
         class_<X, noncopyable>("X", init<int>())
