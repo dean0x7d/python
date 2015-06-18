@@ -38,6 +38,38 @@ True
 ... except TypeError: pass
 ... else: print 'expected a TypeError exception'
 
+### PAIR
+
+>>> print pair_return_to_python.__doc__
+pair_return_to_python() -> tuple:
+
+>>> print pair_arg_from_python.__doc__
+pair_arg_from_python(a1: tuple) -> tuple:
+
+>>> pair_return_to_python()
+(1, 2.0)
+
+>>> pair_arg_to_python(print_func)
+('char const*', 'std::string')
+
+>>> pair_return_from_python((2, 3))
+(2, 3)
+
+>>> pair_arg_from_python((1, 2))
+(1, 2)
+
+>>> try: pair_return_from_python((2, 'wrong type'))
+... except TypeError: pass
+... else: print 'expected a TypeError exception'
+
+>>> try: pair_return_from_python('wrong type')
+... except TypeError: pass
+... else: print 'expected a TypeError exception'
+
+>>> try: pair_return_from_python((2, 3, 4))
+... except TypeError: pass
+... else: print 'expected a TypeError exception'
+
 ### VECTOR
 
 >>> print vector_return_to_python.__doc__

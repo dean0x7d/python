@@ -37,6 +37,21 @@ BOOST_PYTHON_MODULE(std_containers_ext) {
 	});
     def("tuple_empty", [](std::tuple<>) { return true; });
 
+	// PAIR
+    def("pair_return_to_python", []{
+		return std::make_pair(1, 2.0f);
+	});
+    def("pair_arg_to_python", [](object func) {
+		func(std::make_pair("char const*", std::string("std::string")));
+	});
+    def("pair_return_from_python", [](tuple pt) {
+		auto t = extract<std::pair<int, int>>{pt}();
+		return make_tuple(std::get<0>(t), std::get<1>(t));
+	});
+    def("pair_arg_from_python", [](std::pair<int, int> t) {
+		return make_tuple(std::get<0>(t), std::get<1>(t));
+	});
+
     // VECTOR
     def("vector_return_to_python", []{
 		return std::vector<int>{1, 2, 3};
