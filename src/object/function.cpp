@@ -175,7 +175,7 @@ void function::argument_error(PyObject* args, PyObject* /*keywords*/) const {
     }
 
     auto cpp_fmt = dict{docstring_options::format()["cpp"]};
-    cpp_fmt.update(dict{"signature"_a = "{function_name}({parameters})"});
+    cpp_fmt.update(dict{"signature"_kw = "{function_name}({parameters})"});
 
     auto cpp_signatures = list{};
     for (auto f = this; f; f = f->m_overloads.get()) {
@@ -188,9 +188,9 @@ void function::argument_error(PyObject* args, PyObject* /*keywords*/) const {
                "    {signatures}"_s;
 
     auto message = fmt.format(**dict{
-        "function_name"_a = "{}.{}"_s.format(m_namespace, m_name),
-        "actual_args"_a = ", "_s.join(actual_args),
-        "signatures"_a = "\n    "_s.join(cpp_signatures)
+        "function_name"_kw = "{}.{}"_s.format(m_namespace, m_name),
+        "actual_args"_kw = ", "_s.join(actual_args),
+        "signatures"_kw = "\n    "_s.join(cpp_signatures)
     });
 
     PyErr_SetObject(exception.get(), message.ptr());

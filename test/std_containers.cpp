@@ -13,12 +13,12 @@ using namespace boost::python;
 
 BOOST_PYTHON_MODULE(std_containers_ext) {
 	docstring_options::update_format(dict{
-		"doc"_a = "{python_signature}",
+		"doc"_kw = "{python_signature}",
 	});
 	docstring_options::update_python_format(dict{
-		"signature"_a = "{function_name}({parameters}) -> {pytype_return}:",
-		"parameter"_a = "{name}: {pytype}{default_value}",
-		"unnamed"_a = "a{}"
+		"signature"_kw = "{function_name}({parameters}) -> {pytype_return}:",
+		"parameter"_kw = "{name}: {pytype}{default_value}",
+		"unnamed"_kw = "a{}"
 	});
 
 	// TUPLE
@@ -36,6 +36,21 @@ BOOST_PYTHON_MODULE(std_containers_ext) {
 		return make_tuple(std::get<0>(t), std::get<1>(t));
 	});
     def("tuple_empty", [](std::tuple<>) { return true; });
+
+	// PAIR
+    def("pair_return_to_python", []{
+		return std::make_pair(1, 2.0f);
+	});
+    def("pair_arg_to_python", [](object func) {
+		func(std::make_pair("char const*", std::string("std::string")));
+	});
+    def("pair_return_from_python", [](tuple pt) {
+		auto t = extract<std::pair<int, int>>{pt}();
+		return make_tuple(std::get<0>(t), std::get<1>(t));
+	});
+    def("pair_arg_from_python", [](std::pair<int, int> t) {
+		return make_tuple(std::get<0>(t), std::get<1>(t));
+	});
 
     // VECTOR
     def("vector_return_to_python", []{

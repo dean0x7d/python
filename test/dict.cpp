@@ -19,8 +19,8 @@ object new_dict()
 }
 
 dict initializer_list() {
-    return dict{"k1"_a="char const*", "k2"_a=std::string{"string"}, 
-                "k3"_a=1, "k4"_a=list(), "default"_a};
+    return dict{"k1"_kw="char const*", "k2"_kw=std::string{"string"},
+                "k3"_kw=1, "k4"_kw=list(), "default"_kw};
 }
 
 object data_dict()

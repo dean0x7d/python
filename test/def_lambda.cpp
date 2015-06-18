@@ -14,11 +14,11 @@ struct X {
 
 BOOST_PYTHON_MODULE(def_lambda_ext) {
 	docstring_options::update_format(dict{
-		"doc"_a = "{python_signature}",
+		"doc"_kw = "{python_signature}",
 	});
 	docstring_options::update_python_format(dict{
-		"signature"_a = "{function_name}({parameters}) -> {pytype_return}:",
-		"parameter"_a = "{name}: {pytype}{default_value}",
+		"signature"_kw = "{function_name}({parameters}) -> {pytype_return}:",
+		"parameter"_kw = "{name}: {pytype}{default_value}",
 	});
 
 	def("captureless", []{
@@ -40,7 +40,7 @@ BOOST_PYTHON_MODULE(def_lambda_ext) {
 
 	def("and_defaults", [](object o, std::string s, int i, bool b) {
 		return boost::python::make_tuple(o, s, i, b);
-	}, args("o", "s", "i"_a=7, "b"_a=false));
+	}, args("o", "s", "i"_kw=7, "b"_kw=false));
 
 
 	class_<X>{"X"}

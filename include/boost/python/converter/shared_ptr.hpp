@@ -31,10 +31,15 @@ struct shared_ptr_deleter {
 template <class T>
 struct shared_ptr_from_python {
     shared_ptr_from_python() {
-        converter::registry::insert_rvalue_converter(
-            &convertible, &construct, type_id<shared_ptr<T>>(),
-            nullptr, &converter::registry::lookup(type_id<T>())
-        );
+        // register the converter for both const and non-const versions of the underlying type
+        using ptr_to_const = shared_ptr<cpp14::add_const_t<T>>;
+        using ptr_to_non_const = shared_ptr<cpp14::remove_const_t<T>>;
+
+        for (auto& cpptype : {type_id<ptr_to_const>(), type_id<ptr_to_non_const>()}) {
+            registry::insert_rvalue_converter(
+                &convertible, &construct, cpptype, nullptr, &registry::lookup(type_id<T>())
+            );
+        }
     }
 
 private:

@@ -54,8 +54,8 @@ BOOST_PYTHON_MODULE(args_ext)
     def("f", f, (arg("x")=1, arg("y")=4.25, arg("z")="wow")
         , "This is f's docstring"
         );
-    def("f_a", f, ("x"_a=1, "y"_a=4.25, "z"_a="wow"));
-    def("f_b", f, args("x"_a=1, "y"_a=4.25, "z"_a="wow"));
+    def("f_a", f, ("x"_kw=1, "y"_kw=4.25, "z"_kw="wow"));
+    def("f_b", f, args("x"_kw=1, "y"_kw=4.25, "z"_kw="wow"));
 
     def("raw", raw_function(raw_func));
     

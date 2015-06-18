@@ -23,6 +23,11 @@
 >>> type(factory(42))
 <class 'shared_ptr_ext.YY'>
 
+>>> type(factory_const(3))
+<class 'shared_ptr_ext.Y'>
+>>> type(factory_const(42))
+<class 'shared_ptr_ext.YY'>
+
 >>> class P(Z):
 ...     def v(self):
 ...         return -Z.v(self);
@@ -36,10 +41,14 @@
 -12
 >>> look(p)
 12
+>>> look_const(p)
+12
 >>> try: modify(p)
 ... except TypeError: pass
 ... else: 'print expected a TypeError'
 >>> look(None)
+-1
+>>> look_const(None)
 -1
 >>> store(p)
 >>> del p
@@ -82,6 +91,8 @@ bye
 17
 >>> look(x)
 17
+>>> look_const(x)
+17
 >>> try: modify(x)
 ... except TypeError: pass
 ... else: 'print expected a TypeError'
@@ -104,6 +115,8 @@ bye
 >>> modify(y)
 >>> look(y)
 -1
+>>> look_const(y)
+-1
 >>> store(Y(23))
 >>> Y.count()
 1
@@ -115,6 +128,9 @@ bye
 
 >>> print look.__doc__.splitlines()[1]
 look(arg1: X) -> int:
+
+>>> print look_const.__doc__.splitlines()[1]
+look_const(arg1: X) -> int:
 
 >>> print store.__doc__.splitlines()[1]
 store(arg1: X) -> None:

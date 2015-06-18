@@ -11,16 +11,23 @@
 
 namespace boost { namespace python { namespace converter {
 
-namespace detail
-{
-  template <class T>
-  struct registered_base {
-      static registration const& converters;
-  };
+namespace detail {
+    template<class T>
+    struct registered_base {
+        static registration const& converters;
+    };
 
-  template<class T>
-  registration const& registered_base<T>::converters =
-      registry::lookup(type_id<T>(), is_shared_ptr<T>::value);
+    template<class T>
+    registration const& registered_base<T>::converters = registry::lookup(type_id<T>());
+
+    template<class T>
+    struct registered_base<shared_ptr<T>> {
+        static registration const& converters;
+    };
+
+    template<class T>
+    registration const& registered_base<shared_ptr<T>>::converters =
+        registry::lookup(type_id<shared_ptr<cpp14::remove_const_t<T>>>(), true);
 }
 
 template <class T>
