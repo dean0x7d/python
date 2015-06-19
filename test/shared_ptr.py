@@ -23,11 +23,6 @@
 >>> type(factory(42))
 <class 'shared_ptr_ext.YY'>
 
->>> type(factory_const(3))
-<class 'shared_ptr_ext.Y'>
->>> type(factory_const(42))
-<class 'shared_ptr_ext.YY'>
-
 >>> class P(Z):
 ...     def v(self):
 ...         return -Z.v(self);
@@ -108,6 +103,9 @@ bye
 >>> X.count()
 0
 
+>>> xc = make_const(17)
+>>> xc.value()
+17
 
 >>> y = Y(19)
 >>> y.value()
@@ -125,6 +123,10 @@ bye
 >>> Y.release()
 >>> Y.count()
 0
+
+>>> yc = make_const(19)
+>>> yc.value()
+19
 
 >>> print look.__doc__.splitlines()[1]
 look((X)arg1) -> int :

@@ -131,8 +131,12 @@ shared_ptr<Y> factory(int n)
     return shared_ptr<Y>(n < 42 ? new Y(n) : new YY(n));
 }
 
-shared_ptr<Y const> factory_const(int n) {
-    return shared_ptr<Y>(n < 42 ? new Y(n) : new YY(n));
+shared_ptr<X const> make_const(int n) {
+    return shared_ptr<X>(new X(n));
+}
+
+shared_ptr<Y const> make_held_const(int n) {
+    return shared_ptr<Y>(new Y(n));
 }
 
 // regressions from Nicodemus
@@ -185,7 +189,8 @@ BOOST_PYTHON_MODULE(shared_ptr_ext)
     def("New", &New);
 
     def("factory", factory);
-    def("factory_const", factory_const);
+    def("make_const", make_const);
+    def("make_held_const", make_held_const);
     
     functions<X>::expose(
         class_<X, noncopyable>("X", init<int>())
