@@ -88,7 +88,7 @@ struct to_python_value<converter::shared_ptr<T>> {
         else {
             auto const& converters = converter::registered<converter::shared_ptr<T>>::converters;
             if (!converters.has_to_python())
-                register_ptr_to_python<converter::shared_ptr<T>>();
+                register_ptr_to_python<converter::shared_ptr<cpp14::remove_const_t<T>>>();
             return converters.to_python(&source);
         }
     }
