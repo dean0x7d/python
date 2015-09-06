@@ -113,3 +113,7 @@ function(boost_python_add_executable TARGET)
         target_link_libraries(${TARGET} PUBLIC ${PYTHON_LIBRARIES})
     endif()
 endfunction()
+
+enable_testing()
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -C $<CONFIG>)
+add_subdirectory(test EXCLUDE_FROM_ALL)
