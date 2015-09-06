@@ -143,12 +143,8 @@ if(CMAKE_HOST_WIN32)
     set(PYTHON_LIBRARY
         "${PYTHON_PREFIX}/libs/Python${PYTHON_LIBRARY_SUFFIX}.lib")
 elseif(APPLE)
-     # Seems to require "-undefined dynamic_lookup" instead of linking
-     # against the .dylib, otherwise it crashes. This flag is added
-     # below
-    set(PYTHON_LIBRARY "")
-    #set(PYTHON_LIBRARY
-    #    "${PYTHON_PREFIX}/lib/libpython${PYTHON_LIBRARY_SUFFIX}.dylib")
+    set(PYTHON_LIBRARY
+        "${PYTHON_PREFIX}/lib/libpython${PYTHON_LIBRARY_SUFFIX}.dylib")
 else()
     if(${PYTHON_SIZEOF_VOID_P} MATCHES 8)
         set(_PYTHON_LIBS_SEARCH "${PYTHON_PREFIX}/lib64" "${PYTHON_PREFIX}/lib")
@@ -162,7 +158,11 @@ else()
         NAMES "python${PYTHON_LIBRARY_SUFFIX}"
         PATHS ${_PYTHON_LIBS_SEARCH}
         NO_DEFAULT_PATH)
-    #message(STATUS "Found Python lib ${PYTHON_LIBRARY}")
+
+    # If all else fails, just set the name/version and let the linker figure out the path.
+    if(NOT PYTHON_LIBRARY)
+        set(PYTHON_LIBRARY python${PYTHON_LIBRARY_SUFFIX})
+    endif()
 endif()
 
 # For backward compatibility, set PYTHON_INCLUDE_PATH, but make it internal.
