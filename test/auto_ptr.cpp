@@ -14,6 +14,10 @@
 
 #include <memory>
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations" // std::auto_ptr
+#endif
+
 using namespace boost::python;
 
 typedef test_class<> X;

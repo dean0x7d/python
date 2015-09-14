@@ -71,4 +71,6 @@
 #  define BOOST_PYTHON_USE_STD_REF
 # endif
 
+# define BP_DEPRECATED
+
 #endif // CONFIG_DWA052200_H_

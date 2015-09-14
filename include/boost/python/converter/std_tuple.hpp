@@ -38,6 +38,7 @@ struct std_tuple_from_python<Tuple<Ts...>, cpp14::index_sequence<Is...>> {
     static void construct(PyObject* source, rvalue_from_python_stage1_data* data) {
         void* storage = ((rvalue_from_python_storage<tuple_t>*)data)->storage.bytes;
 
+        (void)source; // suppress GCC unused parameter warning when sizeof...(Ts) == 0
         new (storage) tuple_t(arg_from_python<Ts>{PyTuple_GET_ITEM(source, Is)}()...);
 
         data->convertible = storage;

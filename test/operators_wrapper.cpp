@@ -1,6 +1,10 @@
 #include "boost/python.hpp"
 #include <memory>
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations" // std::auto_ptr
+#endif
+
 struct vector
 {
     virtual ~vector() {}

@@ -76,27 +76,30 @@ struct get_signature {
 # include <boost/python/detail/get_signature.hpp>
 # undef BOOST_PYTHON_FN_CC
 
+// Alternate calling conventions are obsolete on Windows for x64 and ARM
+# if !defined(_M_X64) && !defined(_M_ARM)
 // __cdecl calling convention
-# if defined(BOOST_PYTHON_ENABLE_CDECL)
-#  define BOOST_PYTHON_FN_CC __cdecl
-#  define BOOST_PYTHON_FN_CC_IS_CDECL
-#  include <boost/python/detail/get_signature.hpp>
-#  undef BOOST_PYTHON_FN_CC
-#  undef BOOST_PYTHON_FN_CC_IS_CDECL
-# endif
+#  if defined(BOOST_PYTHON_ENABLE_CDECL)
+#   define BOOST_PYTHON_FN_CC __cdecl
+#   define BOOST_PYTHON_FN_CC_IS_CDECL
+#   include <boost/python/detail/get_signature.hpp>
+#   undef BOOST_PYTHON_FN_CC
+#   undef BOOST_PYTHON_FN_CC_IS_CDECL
+#  endif
 
 // __stdcall calling convention
-# if defined(BOOST_PYTHON_ENABLE_STDCALL)
-#  define BOOST_PYTHON_FN_CC __stdcall
-#  include <boost/python/detail/get_signature.hpp>
-#  undef BOOST_PYTHON_FN_CC
-# endif
+#  if defined(BOOST_PYTHON_ENABLE_STDCALL)
+#   define BOOST_PYTHON_FN_CC __stdcall
+#   include <boost/python/detail/get_signature.hpp>
+#   undef BOOST_PYTHON_FN_CC
+#  endif
 
 // __fastcall calling convention
-# if defined(BOOST_PYTHON_ENABLE_FASTCALL)
-#  define BOOST_PYTHON_FN_CC __fastcall
-#  include <boost/python/detail/get_signature.hpp>
-#  undef BOOST_PYTHON_FN_CC
+#  if defined(BOOST_PYTHON_ENABLE_FASTCALL)
+#   define BOOST_PYTHON_FN_CC __fastcall
+#   include <boost/python/detail/get_signature.hpp>
+#   undef BOOST_PYTHON_FN_CC
+#  endif
 # endif
 
 template<class Function, class Target = void>

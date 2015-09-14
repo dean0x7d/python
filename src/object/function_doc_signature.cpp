@@ -92,7 +92,7 @@ inline char const* get_pytype_string(python::detail::signature_element const& s,
     return pytype ? pytype->tp_name : "object";
 }
 
-str function_doc_signature_generator::pretty_signature(function const* f, int num_optional, dict fmt) {
+str function_doc_signature_generator::pretty_signature(function const* f, std::size_t num_optional, dict fmt) {
     auto arity = f->m_fn.max_arity();
     auto signature = f->m_fn.signature();
     auto arg_names = f->m_arg_names;

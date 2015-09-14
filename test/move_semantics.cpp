@@ -48,7 +48,7 @@ struct rvalue_converter {
     
     static void* convertible(PyObject* source) { return source; }
 
-    static void construct(PyObject* source, converter::rvalue_from_python_stage1_data* data) {
+    static void construct(PyObject* /*source*/, converter::rvalue_from_python_stage1_data* data) {
         void* storage = ((converter::rvalue_from_python_storage<T>*)data)->storage.bytes;
         new (storage) T{};
         data->convertible = storage;

@@ -20,12 +20,6 @@ BOOST_PYTHON_DECL object const& make_instance_reduce_function();
 
 struct pickle_suite;
 
-namespace error_messages {
-
-  template <class T>
-  struct missing_pickle_suite_function_or_incorrect_signature {};
-}
-
 namespace detail { struct pickle_suite_registration; }
 
 struct pickle_suite
@@ -94,18 +88,6 @@ namespace detail {
       cl.def("__getinitargs__", getinitargs_fn);
       cl.def("__getstate__", getstate_fn);
       cl.def("__setstate__", setstate_fn);
-    }
-
-    template <class Class_>
-    static
-    void
-    register_(
-      Class_&,
-      ...)
-    {
-      typedef typename
-        error_messages::missing_pickle_suite_function_or_incorrect_signature<
-          Class_>::error_type error_type;
     }
   };
 

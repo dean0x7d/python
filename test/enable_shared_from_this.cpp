@@ -37,7 +37,7 @@ public:
         TestPtr kungFuDeathGrip(shared_from_this());
     }
 
-    void take(TestPtr t) {
+    void take(TestPtr) {
     }
 };
 
