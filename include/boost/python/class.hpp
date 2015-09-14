@@ -62,7 +62,7 @@ private:
 public:
     // Construct with default __init__() function
     class_(char const* name, char const* docstring = nullptr)
-        : class_{name, nullptr, init<>{}}
+        : class_{name, docstring, init<>{}}
     {}
 
     // Construct with init<> function
@@ -186,7 +186,7 @@ public: // Property creation
 
 public: // Pickle support
     template<class PickleSuiteType>
-    self& def_pickle(PickleSuiteType const& x) {
+    self& def_pickle(PickleSuiteType const&) {
         static_assert(std::is_base_of<pickle_suite, PickleSuiteType>::value, "");
 
         detail::pickle_suite_finalize<PickleSuiteType>::register_(

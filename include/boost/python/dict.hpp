@@ -55,7 +55,7 @@ public:
 
     // D.has_key(k) -> bool. Deprecated in favor of D.contains(k).
     template<class T>
-    [[deprecated]] bool has_key(T&& key) const {
+    BP_DEPRECATED bool has_key(T&& key) const {
         return contains(std::forward<T>(key));
     }
 

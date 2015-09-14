@@ -95,4 +95,6 @@
 #define BOOST_PYTHON_SUPPORTS_PY_SIGNATURES // enables smooth transition
 #endif
 
+#define BP_DEPRECATED
+
 #endif // CONFIG_DWA052200_H_

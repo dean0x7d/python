@@ -30,7 +30,7 @@ function(set_warning_level TARGET)
     if(WIN32)
         target_compile_options(${TARGET} PRIVATE /W3)
     else()
-        target_compile_options(${TARGET} PRIVATE -Wall)
+        target_compile_options(${TARGET} PRIVATE -Wall -Wextra)
     endif()
 endfunction()
 

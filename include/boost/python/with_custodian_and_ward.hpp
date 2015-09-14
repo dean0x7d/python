@@ -20,7 +20,7 @@ struct with_custodian_and_ward : BasePolicy {
 
     template <class ArgumentPackage>
     static bool precall(ArgumentPackage const& args) {
-        auto arity = args.arity();
+        auto arity = static_cast<std::size_t>(args.arity());
         if (custodian > arity || ward > arity) {
             PyErr_SetString(
                 PyExc_IndexError,
@@ -50,7 +50,7 @@ struct with_custodian_and_ward_postcall : BasePolicy {
     
     template <class ArgumentPackage>
     static PyObject* postcall(ArgumentPackage const& args, PyObject* result) {
-        auto arity = args.arity();
+        auto arity = static_cast<std::size_t>(args.arity());
         if (custodian > arity || ward > arity) {
             PyErr_SetString(
                 PyExc_IndexError,

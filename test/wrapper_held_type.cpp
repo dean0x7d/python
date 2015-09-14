@@ -11,6 +11,10 @@
 
 #include <memory>
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations" // std::auto_ptr
+#endif
+
 struct data
 {
     virtual ~data() {}; // silence compiler warnings

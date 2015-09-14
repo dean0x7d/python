@@ -81,8 +81,10 @@ PyTypeObject life_support_type = {
     0,                                      /* tp_cache */
     0,                                      /* tp_subclasses */
     0,                                      /* tp_weaklist */
-#if PYTHON_API_VERSION >= 1012
-    0                                       /* tp_del */
+    0,                                      /* tp_del */
+    0,                                      /* tp_version_tag */
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 4
+    0                                       /* tp_finalize */
 #endif
 };
 

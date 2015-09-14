@@ -45,8 +45,8 @@ namespace
           // this node hasn't been used as a target yet
           if (to_target[target] != 0) {
               auto reversed = reversed_edges();
-              auto queue = std::vector<int>{target};
-              auto next_queue = std::vector<int>{};
+              auto queue = std::vector<vertex_t>{target};
+              auto next_queue = std::vector<vertex_t>{};
 
               auto distance = 0;
               while (!queue.empty()) {
@@ -69,9 +69,9 @@ namespace
           return to_target;
       }
 
-      int add_vertex() {
+      vertex_t add_vertex() {
           edges.emplace_back();
-          return static_cast<int>(edges.size() - 1);
+          return static_cast<vertex_t>(edges.size() - 1);
       }
 
       void add_edge(vertex_t src, vertex_t dst, cast_function cast) {
@@ -85,7 +85,8 @@ namespace
   private:
       adjacency_list reversed_edges() const {
           auto reversed = adjacency_list(edges.size());
-          for (vertex_t src = 0; src < edges.size(); ++src) {
+          auto const num_edges = static_cast<vertex_t>(edges.size());
+          for (vertex_t src = 0; src < num_edges; ++src) {
               for (auto edge : edges[src]) {
                   auto dst = edge.target;
                   edge.target = src;

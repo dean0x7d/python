@@ -176,8 +176,10 @@ static PyTypeObject static_data_object = {
     0,                                      /* tp_cache */
     0,                                      /* tp_subclasses */
     0,                                      /* tp_weaklist */
-#if PYTHON_API_VERSION >= 1012
-    0                                       /* tp_del */
+    0,                                      /* tp_del */
+    0,                                      /* tp_version_tag */
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 4
+    0                                       /* tp_finalize */
 #endif
 };
 
@@ -282,8 +284,10 @@ static PyTypeObject class_metatype_object = {
     0,                                      /* tp_cache */
     0,                                      /* tp_subclasses */
     0,                                      /* tp_weaklist */
-#if PYTHON_API_VERSION >= 1012
-    0                                       /* tp_del */
+    0,                                      /* tp_del */
+    0,                                      /* tp_version_tag */
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 4
+    0                                       /* tp_finalize */
 #endif
 };
 
@@ -437,8 +441,10 @@ namespace objects
       0,                                      /* tp_cache */
       0,                                      /* tp_subclasses */
       0,                                      /* tp_weaklist */
-#if PYTHON_API_VERSION >= 1012
-      0                                       /* tp_del */
+      0,                                      /* tp_del */
+      0,                                      /* tp_version_tag */
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 4
+      0                                       /* tp_finalize */
 #endif
   };
 
@@ -696,7 +702,7 @@ void* instance_holder::allocate(PyObject* self_, std::size_t holder_offset, std:
     assert(PyType_IsSubtype(Py_TYPE(Py_TYPE(self_)), &class_metatype_object));
     objects::instance<>* self = (objects::instance<>*)self_;
     
-    auto total_size_needed = holder_offset + holder_size;
+    auto total_size_needed = static_cast<ssize_t>(holder_offset + holder_size);
     
     if (-Py_SIZE(self) >= total_size_needed)
     {

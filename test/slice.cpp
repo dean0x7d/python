@@ -45,8 +45,7 @@ bool check_string_rich_slice()
 // value doesn't make any sense.
 #define ASSERT_EQUAL( e1, e2 ) \
     if (!all((e1) == (e2)))                                                             \
-        return "assertion failed: " #e1 " == " #e2 "\nLHS:\n%s\nRHS:\n%s" % make_tuple(e1,e2);    \
-else
+        return "assertion failed: " #e1 " == " #e2 "\nLHS:\n%s\nRHS:\n%s" % make_tuple(e1,e2);
 
 // These tests work with Python 2.2, but you must have Numeric installed.
 object check_numeric_array_rich_slice(

@@ -367,20 +367,22 @@ BOOST_PYTHON_DECL void add_to_namespace(object const& name_space, char const* na
 extern "C"
 {
     // Stolen from Python's funcobject.c
-    static PyObject* function_descr_get(PyObject *func, PyObject *obj, PyObject *type_) {
 #if PY_MAJOR_VERSION >= 3
+    static PyObject* function_descr_get(PyObject *func, PyObject *obj, PyObject * /*type_*/) {
         // The implement is different in Python 3 because of the removal of unbound method
         if (obj == Py_None || obj == NULL) {
             Py_INCREF(func);
             return func;
         }
         return PyMethod_New(func, obj);
+    }
 #else
+    static PyObject* function_descr_get(PyObject *func, PyObject *obj, PyObject *type_) {
         if (obj == Py_None)
             obj = nullptr;
         return PyMethod_New(func, obj, type_);
-#endif
     }
+#endif
 
     static void function_dealloc(PyObject* p) {
         delete static_cast<function*>(p);
@@ -501,7 +503,11 @@ PyTypeObject function_type = {
     0,                                      /* tp_cache */
     0,                                      /* tp_subclasses */
     0,                                      /* tp_weaklist */
-    0                                       /* tp_del */
+    0,                                      /* tp_del */
+    0,                                      /* tp_version_tag */
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 4
+    0                                       /* tp_finalize */
+#endif
 };
 
 object function_object(
