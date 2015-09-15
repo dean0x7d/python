@@ -99,7 +99,7 @@ str function_doc_signature_generator::pretty_signature(function const* f, std::s
 
     auto cpptype_return = str{signature[0].cpptype.pretty_name()};
     auto params = list{};
-    if (arity != std::numeric_limits<decltype(arity)>::max()) {
+    if (arity != objects::py_function::no_arity) {
         // regular function
         for (unsigned n = 1; n <= arity; ++n) {
             auto kwarg = (arg_names && arg_names[n-1]) ? object{arg_names[n-1]} : object{};

@@ -14,11 +14,11 @@ namespace boost { namespace python {
 
 struct default_result_converter;
 
-template<int offset>
+template<std::size_t offset>
 struct offset_args {
     PyObject* base_args;
 
-    PyObject* get(int n) const {
+    PyObject* get(std::size_t n) const {
         return PyTuple_GET_ITEM(base_args, n + offset);
     }
 

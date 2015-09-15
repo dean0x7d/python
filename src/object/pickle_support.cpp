@@ -44,10 +44,7 @@ namespace {
       result.append(initargs);
       object getstate = getattr(instance_obj, "__getstate__", none);
       object instance_dict = getattr(instance_obj, "__dict__", none);
-      long len_instance_dict = 0;
-      if (!instance_dict.is_none()) {
-          len_instance_dict = len(instance_dict);
-      }
+      auto const len_instance_dict = !instance_dict.is_none() ? len(instance_dict) : 0;
       if (!getstate.is_none()) {
           if (len_instance_dict > 0) {
               object getstate_manages_dict = getattr(

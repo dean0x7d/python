@@ -7,6 +7,7 @@
 
 # include <boost/python/detail/signature.hpp>
 # include <memory>
+# include <limits>
 
 namespace boost { namespace python { namespace objects {
 
@@ -98,6 +99,8 @@ private:
 };
 
 struct py_function {
+    static constexpr auto no_arity = std::numeric_limits<std::size_t>::max();
+
     template <class Caller>
     py_function(Caller const& caller)
         : m_impl(new caller_py_function_impl<Caller>(caller))

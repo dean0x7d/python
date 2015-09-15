@@ -201,27 +201,27 @@ struct int_from_noddy
 //
 
 // Returns the length of s's held string
-int f(simple const& s)
+size_t f(simple const& s)
 {
     return strlen(s.s);
 }
 
-int f_mutable_ref(simple& s)
+size_t f_mutable_ref(simple& s)
 {
     return strlen(s.s);
 }
 
-int f_mutable_ptr(simple* s)
+size_t f_mutable_ptr(simple* s)
 {
     return strlen(s->s);
 }
 
-int f_const_ptr(simple const* s)
+size_t f_const_ptr(simple const* s)
 {
     return strlen(s->s);
 }
 
-int f2(SimpleObject const& s)
+size_t f2(SimpleObject const& s)
 {
     return strlen(s.x.s);
 }
