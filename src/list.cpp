@@ -45,7 +45,7 @@ void list_base::extend(object_cref sequence)
     this->attr("extend")(sequence);
 }
 
-long list_base::index(object_cref value) const
+ssize_t list_base::index(object_cref value) const
 {
     object result_obj(this->attr("index")(value));
     ssize_t result = BOOST_PyInt_AsSsize_t(result_obj.ptr());

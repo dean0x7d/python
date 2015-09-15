@@ -23,7 +23,7 @@ namespace detail
 
       void extend(object_cref sequence); // extend list by appending sequence elements
     
-      long index(object_cref value) const; // return index of first occurrence of value
+      ssize_t index(object_cref value) const; // return index of first occurrence of value
 
       void insert(ssize_t index, object_cref); // insert object before index
       void insert(object const& index, object_cref);
@@ -72,7 +72,7 @@ class list : public detail::list_base
     }
 
     template <class T>
-    long count(T const& value) const
+    ssize_t count(T const& value) const
     {
         return base::count(object(value));
     }
@@ -84,7 +84,7 @@ class list : public detail::list_base
     }
 
     template <class T>
-    long index(T const& x) const
+    ssize_t index(T const& x) const
     {
         return base::index(object(x));
     }

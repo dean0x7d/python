@@ -168,13 +168,13 @@ namespace boost { namespace python {
         static index_type
         convert_index(Container& container, PyObject* i_)
         { 
-            extract<long> i(i_);
+            extract<ssize_t> i(i_);
             if (i.check())
             {
-                long index = i();
+                auto index = i();
                 if (index < 0)
-                    index += DerivedPolicies::size(container);
-                if (index >= long(container.size()) || index < 0)
+                    index += static_cast<ssize_t>(DerivedPolicies::size(container));
+                if (index >= static_cast<ssize_t>(container.size()) || index < 0)
                 {
                     PyErr_SetString(PyExc_IndexError, "Index out of range");
                     throw_error_already_set();

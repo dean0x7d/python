@@ -98,7 +98,7 @@ int check_slice_get_indices(const slice index)
     typedef std::vector<int>::iterator coll_iterator;
     
     for (coll_iterator i = coll.begin(); i != coll.end(); ++i) {
-        *i = i - coll.begin() - 5;
+        *i = static_cast<int>(i - coll.begin()) - 5;
     }
     
     slice::range<std::vector<int>::iterator> bounds;

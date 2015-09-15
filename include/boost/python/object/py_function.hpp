@@ -7,6 +7,7 @@
 
 # include <boost/python/detail/signature.hpp>
 # include <memory>
+# include <limits>
 
 namespace boost { namespace python { namespace objects {
 
@@ -18,8 +19,8 @@ namespace boost { namespace python { namespace objects {
 struct py_function_impl_base {
     virtual ~py_function_impl_base() = default;
     virtual PyObject* operator()(PyObject*, PyObject*) = 0;
-    virtual unsigned min_arity() const = 0;
-    virtual unsigned max_arity() const { return min_arity(); }
+    virtual std::size_t min_arity() const = 0;
+    virtual std::size_t max_arity() const { return min_arity(); }
     virtual python::detail::py_func_sig_info signature() const = 0;
 };
 
@@ -33,7 +34,7 @@ struct caller_py_function_impl : py_function_impl_base {
         return m_caller(args, kw);
     }
     
-    virtual unsigned min_arity() const final {
+    virtual std::size_t min_arity() const final {
         return m_caller.min_arity();
     }
     
@@ -55,7 +56,7 @@ struct signature_py_function_impl : py_function_impl_base {
         return m_caller(args, kw);
     }
 
-    virtual unsigned min_arity() const final {
+    virtual std::size_t min_arity() const final {
         return Sig::size - 1;
     }
     
@@ -69,7 +70,7 @@ private:
 
 template <class Caller, class Sig>
 struct full_py_function_impl : py_function_impl_base {
-    full_py_function_impl(Caller const& caller, unsigned min_arity, unsigned max_arity)
+    full_py_function_impl(Caller const& caller, std::size_t min_arity, std::size_t max_arity)
       : m_caller(caller)
       , m_min_arity(min_arity)
       , m_max_arity(max_arity > min_arity ? max_arity : min_arity)
@@ -79,11 +80,11 @@ struct full_py_function_impl : py_function_impl_base {
         return m_caller(args, kw);
     }
 
-    virtual unsigned min_arity() const final {
+    virtual std::size_t min_arity() const final {
         return m_min_arity;
     }
     
-    virtual unsigned max_arity() const final {
+    virtual std::size_t max_arity() const final {
         return m_max_arity;
     }
 
@@ -93,11 +94,13 @@ struct full_py_function_impl : py_function_impl_base {
 
 private:
     Caller m_caller;
-    unsigned m_min_arity;
-    unsigned m_max_arity;
+    std::size_t m_min_arity;
+    std::size_t m_max_arity;
 };
 
 struct py_function {
+    static constexpr auto no_arity = std::numeric_limits<std::size_t>::max();
+
     template <class Caller>
     py_function(Caller const& caller)
         : m_impl(new caller_py_function_impl<Caller>(caller))
@@ -109,7 +112,7 @@ struct py_function {
     {}
 
     template <class Caller, class Sig>
-    py_function(Caller const& caller, Sig, unsigned min_arity, unsigned max_arity = 0)
+    py_function(Caller const& caller, Sig, std::size_t min_arity, std::size_t max_arity = 0)
       : m_impl(new full_py_function_impl<Caller, Sig>(caller, min_arity, max_arity))
     {}
 
@@ -117,11 +120,11 @@ struct py_function {
         return (*m_impl)(args, kw);
     }
 
-    unsigned min_arity() const {
+    std::size_t min_arity() const {
         return m_impl->min_arity();
     }
     
-    unsigned max_arity() const {
+    std::size_t max_arity() const {
         return m_impl->max_arity();
     }
 

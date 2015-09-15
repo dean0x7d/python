@@ -101,7 +101,7 @@ public:
         return call_impl(arg_pack, converter::arg_from_python<Args>(arg_pack.get(Is))...);
     }
     
-    static unsigned min_arity() { return sizeof...(Args); }
+    static std::size_t min_arity() { return sizeof...(Args); }
 
     static py_func_sig_info signature() {
         auto sig = detail::signature<signature_t>::elements();

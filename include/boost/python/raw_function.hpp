@@ -49,7 +49,7 @@ object raw_function(F f, std::size_t min_args = 0)
             detail::raw_dispatcher<F>(f)
           , detail::type_list<PyObject*>()
           , min_args
-          , (std::numeric_limits<unsigned>::max)()
+          , objects::py_function::no_arity
         )
     );
 }

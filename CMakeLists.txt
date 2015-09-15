@@ -25,7 +25,6 @@ endif()
 
 # Common warning level for library and tests
 function(set_warning_level TARGET)
-    # TODO: set higher warning level
     if(WIN32)
         target_compile_options(${TARGET} PRIVATE /W3)
     else()
