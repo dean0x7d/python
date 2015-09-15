@@ -76,8 +76,14 @@ function::function(py_function implementation,
 function::~function() {}
 
 PyObject* function::call(PyObject* args, PyObject* keywords) const {
-    auto const n_unnamed_actual = PyTuple_GET_SIZE(args);
-    auto const n_keyword_actual = keywords ? PyDict_Size(keywords) : 0;
+    auto const n_unnamed_actual = [&]{
+        auto const size = PyTuple_GET_SIZE(args);
+        return static_cast<std::size_t>(size >= 0 ? size : 0);
+    }();
+    auto const n_keyword_actual = [&]{
+        auto const size = keywords ? PyDict_Size(keywords) : 0;
+        return static_cast<std::size_t>(size >= 0 ? size : 0);
+    }();
     auto const n_actual = n_unnamed_actual + n_keyword_actual;
 
     // Try overloads looking for a match
@@ -107,7 +113,7 @@ PyObject* function::call(PyObject* args, PyObject* keywords) const {
                 };
 
                 // Fill in the positional arguments
-                for (ssize_t i = 0; i < n_unnamed_actual; ++i)
+                for (auto i = 0u; i < n_unnamed_actual; ++i)
                     PyTuple_SET_ITEM(inner_args.get(), i, incref(PyTuple_GET_ITEM(args, i)));
 
                 // Grab remaining arguments by name from the keyword dictionary
