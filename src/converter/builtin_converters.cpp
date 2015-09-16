@@ -302,7 +302,7 @@ namespace
       
       static bool extract(PyObject* intermediate)
       {
-          return PyObject_IsTrue(intermediate);
+          return PyObject_IsTrue(intermediate) != 0;
       }
 
       static PyTypeObject const* get_pytype()

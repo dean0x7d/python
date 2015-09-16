@@ -23,7 +23,7 @@ struct pytype_object_manager_traits {
     static constexpr bool is_specialized = true;
 
     static bool check(PyObject* x) {
-        return PyObject_IsInstance(x, (PyObject*)pytype);
+        return PyObject_IsInstance(x, (PyObject*)pytype) != 0;
     }
 
     static python::detail::new_reference adopt(PyObject* p) {

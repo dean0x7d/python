@@ -80,7 +80,7 @@ public:
     template<class T, class... Os>
     bool endswith(T&& suffix, Os&&... start_end) const {
         static_assert(sizeof...(Os) <= 2, "");
-        return int_call("endswith", std::forward<T>(suffix), std::forward<Os>(start_end)...);
+        return bool_call("endswith", std::forward<T>(suffix), std::forward<Os>(start_end)...);
     }
 
     template<class... Os>
@@ -117,20 +117,20 @@ public:
         return int_call("index", std::forward<T>(sub), std::forward<Os>(start_end)...);
     }
 
-    bool isalnum() const { return int_call("isalnum"); }
-    bool isalpha() const { return int_call("isalpha"); }
-    bool isdigit() const { return int_call("isdigit"); }
+    bool isalnum() const { return bool_call("isalnum"); }
+    bool isalpha() const { return bool_call("isalpha"); }
+    bool isdigit() const { return bool_call("isdigit"); }
 #if PY_MAJOR_VERSION >= 3
-    bool isidentifier() const { return int_call("isidentifier"); }
+    bool isidentifier() const { return bool_call("isidentifier"); }
 #endif
-    bool islower() const { return int_call("islower"); }
+    bool islower() const { return bool_call("islower"); }
 #if PY_MAJOR_VERSION >= 3
-    bool isnumeric() const { return int_call("isnumeric"); }
-    bool isprintable() const { return int_call("isprintable"); }
+    bool isnumeric() const { return bool_call("isnumeric"); }
+    bool isprintable() const { return bool_call("isprintable"); }
 #endif
-    bool isspace() const { return int_call("isspace"); }
-    bool istitle() const { return int_call("istitle"); }
-    bool isupper() const { return int_call("isupper"); }
+    bool isspace() const { return bool_call("isspace"); }
+    bool istitle() const { return bool_call("istitle"); }
+    bool isupper() const { return bool_call("isupper"); }
 
     template<class T>
     str join(T&& sequence) const {
@@ -221,7 +221,7 @@ public:
     template<class T, class... Os>
     bool startswith(T&& prefix, Os&&... start_end) const {
         static_assert(sizeof...(Os) <= 2, "");
-        return int_call("startswith", std::forward<T>(prefix), std::forward<Os>(start_end)...);
+        return bool_call("startswith", std::forward<T>(prefix), std::forward<Os>(start_end)...);
     }
 
     template<class... Os>
@@ -283,6 +283,12 @@ private:
             throw_error_already_set();
         return result;
     }
+
+    template<class... Args>
+    bool bool_call(char const* name, Args&&... args) const {
+        return int_call(name, std::forward<Args>(args)...) != 0;
+    }
+
 
     static ssize_t str_size_as_py_ssize_t(std::size_t n) {
         if (n > static_cast<std::size_t>(ssize_t_max)) {

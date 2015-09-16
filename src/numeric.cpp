@@ -107,7 +107,7 @@ namespace aux
   {
       if (!load(false))
           return false;
-      return ::PyObject_IsInstance(obj, array_type.get());
+      return ::PyObject_IsInstance(obj, array_type.get()) != 0;
   }
 
   python::detail::new_non_null_reference
