@@ -83,8 +83,8 @@ struct to_python_value<std::vector<T>> {
 };
 
 template<class T>
-struct to_python<std::vector<T>> {
-    static constexpr PyTypeObject const* pytype = &PyList_Type;
+struct to_python_pytype<std::vector<T>> {
+    static PyTypeObject const* get() { return &PyList_Type; }
 };
 
 }} // namespace boost::python

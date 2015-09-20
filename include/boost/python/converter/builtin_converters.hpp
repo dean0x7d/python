@@ -35,7 +35,7 @@ namespace converter
 }
 
 // Specialize argument and return value converters for T using expr
-# define BOOST_PYTHON_TO_PYTHON_BY_VALUE(T, expr, pytype_)      \
+# define BOOST_PYTHON_TO_PYTHON_BY_VALUE(T, expr, pytype)       \
 template<>                                                      \
 struct to_python_value<T> {                                     \
     PyObject* operator()(T const& x) const {                    \
@@ -44,8 +44,8 @@ struct to_python_value<T> {                                     \
 };                                                              \
                                                                 \
 template<>                                                      \
-struct to_python<T> {                                           \
-    static constexpr PyTypeObject const* pytype = pytype_;      \
+struct to_python_pytype<T> {                                    \
+    static PyTypeObject const* get() { return (pytype); }       \
 };
 
 // Specialize converters for signed and unsigned T to Python Int

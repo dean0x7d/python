@@ -11,8 +11,8 @@ template<class T>
 struct to_python_value;
 
 template<class T>
-struct to_python {
-    static constexpr PyTypeObject const* pytype = nullptr;
+struct to_python_pytype {
+    static PyTypeObject const* get() { return nullptr; }
 };
 
 }} // namespace boost::python
