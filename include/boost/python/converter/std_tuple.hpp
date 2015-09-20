@@ -97,13 +97,13 @@ template<class T1, class T2>
 struct to_python_value<std::pair<T1, T2>> : detail::to_python_tuple<std::pair, T1, T2> {};
 
 template<class... Ts>
-struct to_python<std::tuple<Ts...>> {
-    static constexpr PyTypeObject const* pytype = &PyTuple_Type;
+struct to_python_pytype<std::tuple<Ts...>> {
+    static PyTypeObject const* get() { return &PyTuple_Type; }
 };
 
 template<class T1, class T2>
-struct to_python<std::pair<T1, T2>> {
-    static constexpr PyTypeObject const* pytype = &PyTuple_Type;
+struct to_python_pytype<std::pair<T1, T2>> {
+    static PyTypeObject const* get() { return &PyTuple_Type; }
 };
 
 }} // namespace boost::python

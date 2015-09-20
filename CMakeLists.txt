@@ -35,7 +35,7 @@ endfunction()
 foreach(target boost_python_static boost_python_shared)
     set_warning_level(${target})
 
-    target_include_directories(${target} PUBLIC
+    target_include_directories(${target} SYSTEM PUBLIC
                                ${PROJECT_SOURCE_DIR}/include
                                ${PYTHON_INCLUDE_DIRS})
 

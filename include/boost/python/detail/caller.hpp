@@ -90,9 +90,10 @@ public:
         : CallPolicies(cp), m_function(f)
     {
 #ifndef BOOST_PYTHON_NO_PY_SIGNATURES
-        // VS2015 RC doesn't work correctly if pytype is passed directly to the function
-        static constexpr auto pytype = to_python<signature_return_t>::pytype;
-        converter::registry::set_to_python_type(type_id<signature_return_t>(), pytype);
+        converter::registry::set_to_python_type(
+            type_id<signature_return_t>(),
+            to_python_pytype<signature_return_t>::get()
+        );
 #endif
     }
 
