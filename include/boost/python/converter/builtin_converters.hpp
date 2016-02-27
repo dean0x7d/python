@@ -13,6 +13,7 @@
 # include <boost/python/converter/shared_ptr.hpp>
 # include <boost/python/converter/std_tuple.hpp>
 # include <boost/python/converter/std_vector.hpp>
+# include <boost/python/converter/std_unordered_map.hpp>
 
 # include <string>
 # include <complex>
