@@ -108,6 +108,40 @@ True
 ... except TypeError: pass
 ... else: print 'expected a TypeError exception'
 
+### UNORDERED_MAP
+
+>>> print unordered_map_return_to_python.__doc__
+unordered_map_return_to_python() -> dict:
+
+>>> print unordered_map_arg_from_python.__doc__
+unordered_map_arg_from_python(a1: dict) -> dict:
+
+>>> unordered_map_return_to_python() == {'a': 1, 'b': 2, 'c': 3}
+True
+
+>>> unordered_map_arg_to_python(print_func)
+{7: 'hello'}
+
+>>> unordered_map_return_from_python({'i': 2, 'j': 3}) == {'i': 2, 'j': 3}
+True
+
+>>> unordered_map_arg_from_python({'m': 1, 'n': 2}) == {'m': 1, 'n': 2}
+True
+
+>>> unordered_map_empty({})
+True
+
+>>> try: unordered_map_arg_from_python('wrong type')
+... except TypeError: pass
+... else: print 'expected a TypeError exception'
+
+>>> try: unordered_map_arg_from_python({(1, 2, 3): 'wrong type in dict'})
+... except TypeError: pass
+... else: print 'expected a TypeError exception'
+
+>>> try: unordered_map_arg_from_python({'a': 1, 'b': 2.0, 'c': 'mixed types'})
+... except TypeError: pass
+... else: print 'expected a TypeError exception'
 """
 
 def run(args = None):

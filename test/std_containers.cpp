@@ -7,6 +7,7 @@
 
 #include <tuple>
 #include <vector>
+#include <unordered_map>
 #include <string>
 
 using namespace boost::python;
@@ -66,4 +67,19 @@ BOOST_PYTHON_MODULE(std_containers_ext) {
 		return v;
 	});
     def("vector_empty", [](std::vector<int>) { return true; });
+
+	// UNORDERED_MAP
+    def("unordered_map_return_to_python", []{
+        return std::unordered_map<std::string, int>{{"a", 1}, {"b", 2}, {"c", 3}};
+    });
+	def("unordered_map_arg_to_python", [](object func) {
+		func(std::unordered_map<int, std::string>{{7, "hello"}});
+	});
+	def("unordered_map_return_from_python", [](dict d) {
+		return extract<std::unordered_map<std::string, int>>{d}();
+	});
+	def("unordered_map_arg_from_python", [](std::unordered_map<std::string, int> m) {
+		return m;
+	});
+	def("unordered_map_empty", [](std::unordered_map<std::string, int>) { return true; });
 }
