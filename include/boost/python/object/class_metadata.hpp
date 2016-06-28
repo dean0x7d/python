@@ -110,7 +110,7 @@ private:
 
     // Determine whether to use a "back-reference holder"
     template<class T>
-    using is_self = std::is_same<W, T>;
+    struct is_self : std::is_same<W, T>{};
 
     using use_back_reference = std::integral_constant<bool,
         has_back_reference<W>::value ||
